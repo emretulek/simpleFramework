@@ -15,15 +15,6 @@ use Core\Config\Config;
 class Auth
 {
 
-    /**
-     *
-     * @param int $id
-     * @param string $username
-     * @param int $level
-     * @param array|null $info
-     * @param bool $remember
-     * @return bool
-     */
     public static function login(int $id, string $username, int $level = 1, array $info = null, bool $remember = false)
     {
         Session::set('AUTH.LOGIN', true);
@@ -82,7 +73,7 @@ class Auth
     {
         ///* Session hijacking  security */
         if (Auth::info('token') != Cookie::get('user_token') && Cookie::get('user_token')) {
-            Auth::logout(true);
+            return false;
         }
 
         return Session::get('AUTH.LOGIN');

@@ -92,17 +92,17 @@ class Cookie
      */
     private static function expires($time)
     {
-        if ($integer_time = stristr("s", $time)) {
+        if ($integer_time = mb_stristr("s", $time)) {
             $expires = $integer_time;
-        } elseif ($integer_time = stristr("i", $time)) {
+        } elseif ($integer_time = mb_stristr("i", $time)) {
             $expires = $integer_time * 60;
-        } elseif ($integer_time = stristr("h", $time)) {
+        } elseif ($integer_time = mb_stristr("h", $time)) {
             $expires = $integer_time * 60 * 60;
-        } elseif ($integer_time = stristr("d", $time)) {
+        } elseif ($integer_time = mb_stristr("d", $time)) {
             $expires = $integer_time * 60 * 60 * 24;
-        } elseif ($integer_time = stristr("m", $time)) {
+        } elseif ($integer_time = mb_stristr("m", $time)) {
             $expires = $integer_time * 60 * 60 * 24 * 30;
-        } elseif ($integer_time = stristr("y", $time)) {
+        } elseif ($integer_time = mb_stristr("y", $time)) {
             $expires = $integer_time * 60 * 60 * 24 * 30 * 12;
         } else {
             $expires = intval($time) * 60 * 60;

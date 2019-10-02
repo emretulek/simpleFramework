@@ -18,7 +18,7 @@ class Session
      * @param bool $secure true değeri atanırsa https etki alanında çalışır.
      * @param bool $httponly oturum verilerine istemci tarafından erişim kısıtlanır.
      */
-    public static function start($lifetime = 3600, $path = '/', $domain = null, $secure = false, $httponly = true)
+    public static function start($lifetime = 0, $path = '/', $domain = null, $secure = false, $httponly = true)
     {
         session_set_cookie_params($lifetime, $path, $domain, $secure, $httponly);
         session_name("SID");

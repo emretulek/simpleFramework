@@ -14,7 +14,7 @@ class Request
      */
     public static function path()
     {
-        return parse_url(filter_input(INPUT_SERVER, 'REQUEST_URI'), PHP_URL_PATH);
+        return parse_url(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT), PHP_URL_PATH);
     }
 
 
@@ -37,10 +37,10 @@ class Request
     }
 
     /**
-     * * İstek yapılan adresi dizin yapısına göre parçalar.
+     * İstek yapılan adresi dizin yapısına göre parçalar.
      *
      * @param int|null $key index girilirse değerini girilmezse tüm segmentleri döndürür.
-     * @return array|bool
+     * @return mixed
      */
     public static function segments(?int $key = null)
     {

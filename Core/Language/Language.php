@@ -44,13 +44,13 @@ class Language
 
 
     /**
-     * @return string
+     * @return bool|string
      *
      * Aktif dil anahtarını döndürür.
      */
-    public static function get():string
+    public static function get()
     {
-        return $_SESSION['lang'] ?? '';
+        return $_SESSION['lang'] ?? false;
     }
 
 

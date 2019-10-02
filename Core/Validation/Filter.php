@@ -42,16 +42,29 @@ class Filter
     public function input($key, $required = false)
     {
         $this->key = $key;
-        $this->required = $required;
 
         if (array_key_exists($key, $this->params)) {
             $this->input = trim($this->params[$key]);
+            $this->is_required($required);
         }else{
             $this->input = null;
             $this->errorMessage('no_index');
         }
 
         return $this;
+    }
+
+
+    /**
+     * @param $required
+     */
+    private function is_required($required)
+    {
+        $this->required = $required;
+
+        if($required == true && empty($this->input)){
+            $this->errorMessage('required');
+        }
     }
 
 
@@ -167,10 +180,10 @@ class Filter
      */
     public function length($min = null, $max = null)
     {
-        if(!Valid::length($this->input, $min, $max) && $max == null){
+        if(!Valid::length($this->input, $min, $max) && $max === null){
             $this->errorMessage('min_len', $min);
         }
-        if(!Valid::length($this->input, $min, $max) && $min == null){
+        if(!Valid::length($this->input, $min, $max) && $min === null){
             $this->errorMessage('max_len', $max);
         }
         if(!Valid::length($this->input, $min, $max) && $min !== null && $max !== null){
@@ -190,10 +203,10 @@ class Filter
      */
     public function float($min = null, $max = null)
     {
-        if(!Valid::float($this->input, $min, $max) && $max == null){
+        if(!Valid::float($this->input, $min, $max) && $max === null){
             $this->errorMessage('min', $min);
         }
-        if(!Valid::float($this->input, $min, $max) && $min == null){
+        if(!Valid::float($this->input, $min, $max) && $min === null){
             $this->errorMessage('max', $max);
         }
         if(!Valid::float($this->input, $min, $max) && $min !== null && $max !== null){
@@ -215,10 +228,10 @@ class Filter
      */
     public function int($min = null, $max = null)
     {
-        if(!Valid::int($this->input, $min, $max) && $max == null){
+        if(!Valid::int($this->input, $min, $max) && $max === null){
             $this->errorMessage('min', $min);
         }
-        if(!Valid::int($this->input, $min, $max) && $min == null){
+        if(!Valid::int($this->input, $min, $max) && $min === null){
             $this->errorMessage('max', $max);
         }
         if(!Valid::int($this->input, $min, $max) && $min !== null && $max !== null){
@@ -347,7 +360,7 @@ class Filter
     public function label($label)
     {
         if(isset($this->error[$this->key])){
-            $this->error[$this->key] = $label.' '.$this->error[$this->key];
+            $this->error[$this->key] = '<b>'.$label.'</b> '.$this->error[$this->key];
         }
 
         return $this;
@@ -375,10 +388,11 @@ class Filter
      */
     public function result()
     {
-        if ($this->required === false && empty($this->input)) {
+        if($this->required == false && empty($this->input)){
             unset($this->error[$this->key]);
+        }else{
+            $this->required = false;
         }
-        $this->required = false;
 
         return $this->input;
     }

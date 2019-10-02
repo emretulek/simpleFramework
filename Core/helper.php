@@ -262,11 +262,11 @@ if (!function_exists('url')) {
         $parameters = $params ? '?' . http_build_query($params) : '';
 
         if (class_exists(Language::class)) {
-            if (Config::get('app.language') != Language::get()) {
+            if (Config::get('app.language') != Language::get() && Language::get() != '') {
                 return Request::baseUrl() . Language::get() . '/' . $path . $parameters;
             }
-            return Request::baseUrl() . $path . $parameters;
         }
+
         return Request::baseUrl() . $path . $parameters;
     }
 }
@@ -297,7 +297,11 @@ if (!function_exists('redirect')) {
     function redirect(string $url, $code = null)
     {
         if (!headers_sent()) {
-            (new Response())->redirect(url($url), $code);
+            if(filter_var($url, FILTER_VALIDATE_URL)){
+                (new Response())->redirect($url, $code);
+            }else{
+                (new Response())->redirect(url($url), $code);
+            }
         }else {
             echo '<meta http-equiv = "refresh" content = "0; url = ' . url($url) . '" />';
             echo 'Sayfa yönlendirilemiyor lütfen <a href="' . url($url) . '">Buraya tıklayın.</a>';

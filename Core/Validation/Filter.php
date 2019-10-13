@@ -62,7 +62,7 @@ class Filter
     {
         $this->required = $required;
 
-        if($required == true && empty($this->input)){
+        if($required == true && empty($this->input) && $this->input != 0){
             $this->errorMessage('required');
         }
     }

@@ -136,7 +136,7 @@ if (!function_exists('dot_aray_get')) {
             if (is_array($array) && array_key_exists($key, $array)) {
                 $array = $array[$key];
             } else {
-                return false;
+                return null;
             }
         }
         return $array;

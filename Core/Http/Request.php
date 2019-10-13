@@ -64,7 +64,7 @@ class Request
      *
      * @param string|null $name nokta ile birleşitirilmiş index (index1.index2) değeri alır,
      * belirtilmezse tüm diziyi döndürür. GET yoksa yada index yoksa false döner.
-     * @return null
+     * @return null|mixed
      */
     public static function get(string $name = null)
     {
@@ -78,7 +78,7 @@ class Request
      *
      * @param string|null $name nokta ile birleşitirilmiş index (index1.index2) değeri alır,
      * belirtilmezse tüm diziyi döndürür. POST yoksa yada index yoksa false döner.
-     * @return null
+     * @return null|mixed
      */
     public static function post(string $name = null)
     {
@@ -179,19 +179,55 @@ class Request
      */
     public static function local()
     {
-        return isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2) : null;
+        if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])){
+            $local = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
+            if(ctype_alpha($local)){
+                return $local;
+            }
+        }
+        return null;
     }
 
 
     /**
      * Useragen bilgisini döndürür.
      *
-     * @return mixed
+     * @return null|mixed
      */
     public static function userAgent()
     {
-        return $_SERVER['HTTP_USER_AGENT'] ?? null;
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
+        if($userAgent){
+            return filter_var($userAgent, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        }
+
+        return null;
     }
+
+
+    /**
+     * Referer bilgisini döndürür.
+     *
+     * @return mixed|null
+     */
+    public static function referer()
+    {
+        $referer = $_SERVER['HTTP_REFERER'] ?? null;
+
+        if (filter_var($referer, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return $referer;
+        }
+        if (filter_var($referer, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return $referer;
+        }
+        if (filter_var($referer, FILTER_VALIDATE_URL)) {
+            return $referer;
+        }
+
+        return null;
+    }
+
 
     /**
      * IP adresini döndürür.
@@ -232,23 +268,17 @@ class Request
         return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     }
 
+
     /**
      * $_SERVER değişkenlerini döndürür
      *
      * @param $value
-     * @return mixed|null
+     * @return mixed
      */
     public static function server($value)
     {
-        $value = strtoupper($value);
-
-        if(isset($_SERVER[$value])){
-            return $_SERVER[$value];
-        }elseif(isset($_SERVER['HTTP_'.$value])){
-            return $_SERVER['HTTP_'.$value];
-        }else{
-            return null;
-        }
+        $serverVariable = $_SERVER[strtoupper($value)] ?? $_SERVER['HTTP_'.strtoupper($value)] ?? null;
+        return filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     }
 }
 

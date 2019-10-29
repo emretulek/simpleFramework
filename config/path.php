@@ -14,6 +14,6 @@ return  array(
     'helpers' => 'Helpers',
     'routes' => 'routes',
     'services' => 'Services',
-    'logs' => 'logs',
-    'cache' => 'logs/cache'
+    'logs' => 'storage/logs',
+    'cache' => 'storage/cache'
 );

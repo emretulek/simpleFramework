@@ -3,7 +3,8 @@
 namespace Core\Language;
 
 use Core\Config\Config;
-use Core\Log\LogException;
+use Core\Exceptions\Exceptions;
+use Exception;
 
 /**
  * Class Language
@@ -11,35 +12,52 @@ use Core\Log\LogException;
  */
 class Language
 {
+    private static $default = array('key' => null, 'name' => null, 'local' => null);
     private static $languages = array();
     private static $translate = array();
 
 
     /**
-     * Ön tanımlı dil anahtarını döndürür örn; {tr, en, vb.}
-     *
-     * @return array|bool|mixed
+     * Öntanımlı dili ayarlar
+     * @param $key
      */
-    public static function default()
+    public static function setDefault($key)
     {
-        return Config::get('app.language');
+        if (self::exists($key)) {
+            self::$default = [
+                'key' => $key,
+                'name' => self::$languages[$key]['name'],
+                'local' => self::$languages[$key]['local'],
+            ];
+            self::set($key);
+        }
     }
 
+    /**
+     * Öntanımlı dil bilgilerini döndürür
+     */
+    public static function getDefault()
+    {
+        return self::$default;
+    }
 
     /**
-     * Ön tanımlı dil ve yerel zamanı değiştirir.
+     * Dili değiştirir.
      *
-     * @param string $key yeni dil anahtarı örn; {tr, en, vb.}
+     * @param string $key
+     * @return bool
      */
     public static function set(string $key)
     {
         if (self::exists($key)) {
-            $_SESSION['lang'] = $key;
-        }else{
-            $_SESSION['lang'] = self::default();
+
+            $_SESSION['lang'] = array_merge(['key' => $key], self::$languages[$key]);
+            self::loadFiles($key);
+
+            return true;
         }
 
-        setlocale(LC_ALL, self::$languages[$_SESSION['lang']]['local']);
+        return false;
     }
 
 
@@ -55,7 +73,7 @@ class Language
 
 
     /**
-     * Kullanılacak dil dosyalarını yükler.
+     * Kullanılacak dil dosyasını yükler.
      *
      * @param string $key dosyanın kullanılacağı dil anahtarı.
      * @param string $file yüklenecek dosya adı, uzantı olmadan örn; {settings, admin/settings}
@@ -68,22 +86,38 @@ class Language
         if (file_exists($fullPath)) {
             self::$translate[$key][basename($file)] = require($fullPath);
             return self::$translate[$key][basename($file)];
-        }
+        }else {
 
-        $fullPath = ROOT . Config::get('path.lang') . '/' . self::default() . '/' . $file . EXT;
-
-        if (file_exists($fullPath)) {
-            self::$translate[$key][basename($file)] = require($fullPath);
-            return self::$translate[$key][basename($file)];
-        }
-
-        try {
-            throw  new LogException('Dil dosyası bulunamadı. ' . $fullPath, E_WARNING);
-        } catch (LogException $exception) {
-            $exception->debug();
+            try {
+                throw  new Exception('Dil dosyası bulunamadı. ' . $fullPath, E_NOTICE);
+            } catch (Exception $e) {
+                Exceptions::debug($e);
+            }
         }
         return false;
     }
+
+
+    /**
+     * lang dizini altındaki ilgili tüm dil dosyalarını yükler
+     *
+     * @param $key
+     */
+    public static function loadFiles($key)
+    {
+        $fullPath = ROOT . Config::get('path.lang') . '/' . $key;
+        $files = array_map(function($file) {
+
+            return  pathinfo($file, PATHINFO_FILENAME);
+        },
+            array_diff(scandir($fullPath), array('..', '.'))
+        );
+
+        foreach ($files as $file){
+            self::loadFile($key, $file);
+        }
+    }
+
 
 
     /**
@@ -94,7 +128,25 @@ class Language
      */
     public static function translate(string $key)
     {
-        return dot_aray_get(self::$translate[self::get()], $key);
+        if($translated = dot_aray_get(self::$translate[self::get()], $key)){
+            return $translated;
+        }
+
+        return dot_aray_get(self::$translate[self::$default['key']], $key);
+
+    }
+
+
+    /**
+     * Dile yeni çeviriler eklemek için kullanılır
+     *
+     * @param string $key nokta ile birleştirilmiş dizi indexleri
+     * @param mixed $value çeviri
+     * @return mixed
+     */
+    public static function newTranslate(string $key, $value)
+    {
+        return dot_aray_set(self::$translate[self::get()], $key, $value);
     }
 
 
@@ -120,7 +172,7 @@ class Language
      */
     public static function exists(string $lang_key)
     {
-        if ($lang_key && array_key_exists($lang_key, self::$languages)) {
+        if (array_key_exists($lang_key, self::$languages)) {
             return true;
         }
         return false;

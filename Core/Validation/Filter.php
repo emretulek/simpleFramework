@@ -3,7 +3,7 @@
 namespace Core\Validation;
 
 use Core\Language\Language;
-
+use Core\Crypt\Hash;
 
 /**
  * Class Filter
@@ -162,7 +162,7 @@ class Filter
                 }
             }
 
-            $this->input = md5($this->input);
+            $this->input = Hash::password($this->input);
         }else{
             $this->errorMessage('password', 4, 16);
         }

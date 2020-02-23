@@ -5,25 +5,22 @@ namespace Core\Cache;
 
 
 use Core\App;
-use Core\Config\Config;
 
 class Cache
 {
+
+    private static $instance = false;
+
     /**
-     * @return CacheInterface|bool
+     * @param CacheInterface|null $cacheClass
+     * @return bool|mixed
      */
-    public static function init()
+    public static function init(?CacheInterface $cacheClass)
     {
-        if (Config::get('app.cache.enable')) {
-
-            if(Config::get('app.cache.driver') == 'memcache') {
-                return App::getInstance(new MemoryCache());
-            }
-
-            return App::getInstance(new FileCache());
+        if($cacheClass instanceof  CacheInterface) {
+            return self::$instance = App::getInstance($cacheClass);
         }
-
-        return false;
+        return self::$instance;
     }
 
 
@@ -36,7 +33,7 @@ class Cache
      */
     public static function add($key, $value, $compress = false, $expires = 2592000)
     {
-        if($cache = self::init()){
+        if($cache = self::init(null)) {
             return $cache->add($key, $value, $compress, $expires);
         }
 
@@ -53,7 +50,7 @@ class Cache
      */
     public static function set($key, $value, $compress = false, $expires = 2592000)
     {
-        if($cache = self::init()){
+        if($cache = self::init(null)){
             return $cache->set($key, $value, $compress, $expires);
         }
 
@@ -67,7 +64,7 @@ class Cache
      */
     public static function get($key)
     {
-        if($cache = self::init()){
+        if($cache = self::init(null)){
             return $cache->get($key);
         }
 
@@ -81,7 +78,7 @@ class Cache
      */
     public static function delete($key)
     {
-        if($cache = self::init()){
+        if($cache = self::init(null)){
             return $cache->delete($key);
         }
 
@@ -94,7 +91,7 @@ class Cache
      */
     public static function flush()
     {
-        if($cache = self::init()){
+        if($cache = self::init(null)){
             return $cache->flush();
         }
 

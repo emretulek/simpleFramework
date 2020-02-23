@@ -3,9 +3,9 @@
 namespace Core\Router;
 
 use Core\App;
+use Core\Exceptions\Exceptions;
 use Core\Http\HttpNotFound;
 use Core\Http\Request;
-use Core\Log\LogException;
 use Core\Config\Config;
 use ArgumentCountError;
 use Closure;
@@ -21,16 +21,13 @@ use ReflectionMethod;
  */
 class Router
 {
-
     private static $routeID = 0;
     private static $routes = [];
 
-    private static $groupID = 0;
-    private static $groups = [
-        'prefix' => [],
-        'namespace' => [],
-        'middleware' => []
-    ];
+
+    private static $methodPrefix = [];
+    private static $methodNamespace = [];
+    private static $methodMidleware = [];
 
     private static $prefix = '';
     private static $nameSpace = '';
@@ -55,22 +52,30 @@ class Router
         '#/index#' => '/'
     ];
 
+
     /**
+     * @param array $options
      * @param callable $callback
      */
-    public static function group(callable $callback)
+    public static function group(array $options, callable $callback)
     {
-        self::$groupID++;
+        if(array_key_exists('middleware', $options)){
+            self::$methodMidleware[] = $options['middleware'];
+        }
+
+        if(array_key_exists('namespace', $options)){
+            self::$methodNamespace[] = $options['namespace'];
+        }
+
+        if(array_key_exists('prefix', $options)){
+            self::$methodPrefix[] = $options['prefix'];
+        }
 
         call_user_func($callback);
 
-        if (self::$groupID > 0) {
-            unset(self::$groups['prefix'][self::$groupID]);
-            unset(self::$groups['namespace'][self::$groupID]);
-            unset(self::$groups['middleware'][self::$groupID]);
-        }
-
-        self::$groupID--;
+        array_pop(self::$methodMidleware);
+        array_pop(self::$methodNamespace);
+        array_pop(self::$methodPrefix);
     }
 
 
@@ -80,7 +85,13 @@ class Router
      */
     public static function prefix(string $prefix)
     {
-        self::$groups['prefix'][self::$groupID+1] = trim($prefix, '/');
+        if(isset(self::$routes[self::$routeID]['prefix']) && !empty(self::$routes[self::$routeID]['prefix'])) {
+            self::$routes[self::$routeID]['prefix'] .= '/' . trim($prefix, '/');
+        }else{
+            self::$routes[self::$routeID]['prefix'] = trim($prefix, '/');
+        }
+
+        self::$routes[self::$routeID]['requestUri'] = str_replace(self::$routes[self::$routeID]['prefix'], '', self::$routes[self::$routeID]['requestUri']);
 
         return App::getInstance(self::class);
     }
@@ -104,20 +115,26 @@ class Router
      */
     public static function nameSpace(string $nameSpace)
     {
-        self::$groups['namespace'][self::$groupID+1] = $nameSpace;
+        if(isset(self::$routes[self::$routeID]['namespace']) && !empty(self::$routes[self::$routeID]['namespace'])) {
+
+            self::$routes[self::$routeID]['namespace'] .= '\\'.trim($nameSpace, '\\');
+        }else {
+            self::$routes[self::$routeID]['namespace'] = trim($nameSpace, '\\');
+        }
 
         return App::getInstance(self::class);
     }
 
     /**
-     * @ingnore test
+     * @param $middleware
+     * @return Router
      */
-    public static function middleware($middlewares)
+    public static function middleware($middleware)
     {
-        if (is_callable($middlewares)) {
-            self::$groups['middleware'][self::$groupID+1] = $middlewares;
-        } else {
-            self::$groups['middleware'][self::$groupID+1] = ['Middleware\\' . $middlewares, 'handle'];
+        if(is_array($middleware)){
+            self::$routes[self::$routeID]['middleware'] = array_merge(self::$routes[self::$routeID]['middleware'], $middleware);
+        }else{
+            array_push(self::$routes[self::$routeID]['middleware'], $middleware);
         }
 
         return App::getInstance(self::class);
@@ -135,22 +152,39 @@ class Router
     {
         self::$routeID++;
 
+        self::$routes[self::$routeID]['requestUri'] = Request::requestUri();
         self::$routes[self::$routeID]['pattern'] = $pattern;
         self::$routes[self::$routeID]['cmp'] = $cmp;
         self::$routes[self::$routeID]['method'] = $method;
         self::$routes[self::$routeID]['name'] = null;
-        self::$routes[self::$routeID]['prefix'] = implode('/', self::$groups['prefix']);
-        self::$routes[self::$routeID]['namespace'] = implode('\\', self::$groups['namespace']);
-        self::$routes[self::$routeID]['middleware'] = self::$groups['middleware'];
+
+        self::$routes[self::$routeID]['prefix'] = implode('/', self::$methodPrefix);
+        self::$routes[self::$routeID]['namespace'] = implode('\\', self::$methodNamespace);
+        self::$routes[self::$routeID]['middleware'] = [];
+
+        foreach (self::$methodMidleware as $middleware){
+            if(is_array($middleware)){
+                self::$routes[self::$routeID]['middleware'] = array_merge(self::$routes[self::$routeID]['middleware'], $middleware);
+            }else{
+                array_push(self::$routes[self::$routeID]['middleware'], $middleware);
+            }
+        }
+
+        self::$routes[self::$routeID]['requestUri'] = str_replace(self::$routes[self::$routeID]['prefix'], '', self::$routes[self::$routeID]['requestUri']);
 
         return App::getInstance(self::class);
     }
 
 
+    /**
+     * otomatik route oluşturur
+     *
+     * @return Router
+     */
     public static function autoRute()
     {
         $segments = Request::segments();
-        $segments = array_slice($segments, count(self::$groups['prefix']));
+        $segments = array_slice($segments, count(self::$methodPrefix));
         $controller = isset($segments[0]) ? array_shift($segments) : self::$controller;
         $method = isset($segments[0]) ? array_shift($segments) : self::$method;
         $params = $segments ? implode('/', array_map(function ($item) {
@@ -173,7 +207,7 @@ class Router
     }
 
     /**
-     * @method Router::addRoute GET tüm istek türlerini kabul eder
+     * @method Router::addRoute GET okuma
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
@@ -185,7 +219,7 @@ class Router
     }
 
     /**
-     * @method Router::addRoute POST tüm istek türlerini kabul eder
+     * @method Router::addRoute POST oluşturma
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
@@ -197,7 +231,7 @@ class Router
     }
 
     /**
-     * @method Router::addRoute PUT tüm istek türlerini kabul eder
+     * @method Router::addRoute PUT güncelleme
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
@@ -209,7 +243,7 @@ class Router
     }
 
     /**
-     * @method Router::addRoute DELETE tüm istek türlerini kabul eder
+     * @method Router::addRoute DELETE silme
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
@@ -221,31 +255,31 @@ class Router
     }
 
     /**
-     * @method Router::addRoute CONNECT tüm istek türlerini kabul eder
+     * @method Router::addRoute PATCH kısmi güncelleme
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function connect($pattern, $cmp)
+    public static function patch($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'CONNECT');
+        return self::addRoute($pattern, $cmp, 'PATCH');
     }
 
     /**
-     * @method Router::addRoute HTTP tüm istek türlerini kabul eder
+     * @method Router::addRoute HEAD üst bilgi
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function http($pattern, $cmp)
+    public static function head($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'HTTP');
+        return self::addRoute($pattern, $cmp, 'HEAD');
     }
 
     /**
-     * @method Router::addRoute OPTIONS tüm istek türlerini kabul eder
+     * @method Router::addRoute OPTIONS seçenekler
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
@@ -258,40 +292,35 @@ class Router
 
 
     /**
-     * Eklenen yönlendirmeleri ilgili controller ve methoda iletir.
-     *
      * @param $controller
      * @param $method
      * @param $params
      * @return mixed
-     * @throws LogException
+     * @throws HttpNotFound
      */
     private static function route($controller, $method, $params)
     {
         try {
             //class mevcut değilse
             if (!class_exists($controller)) {
-                throw new HttpNotFound($controller . ' : class not found.');
+                throw new HttpNotFound($controller . ' : class not found.', E_NOTICE);
                 //method mevcut değilse
             } elseif (!method_exists($controller, $method)) {
-                throw new HttpNotFound($method . ' : method not found in ' . $controller);
+                throw new HttpNotFound($method . ' : method not found in ' . $controller, E_NOTICE);
             } else {
                 //method public değilse
                 $reflection = new ReflectionMethod($controller, $method);
                 if (!$reflection->isPublic()) {
-                    throw new HttpNotFound($method . ' : method is not a public');
+                    throw new HttpNotFound($method . ' : method is not a public', E_NOTICE);
                 }
             }
+
             return call_user_func_array([new $controller, $method], $params);
 
-        } catch (ArgumentCountError $exception) {
-            throw new LogException($exception->getMessage(), LogException::TYPE['NOTICE'], $exception);
-        } catch (ReflectionException $exception) {
-            throw new LogException($exception->getMessage(), LogException::TYPE['NOTICE'], $exception);
-        }catch (HttpNotFound $exception){
-            throw new LogException($exception->getMessage(), LogException::TYPE['NOTICE'], $exception);
-        }catch (Exception $exception){
-            throw new LogException($exception->getMessage(), $exception->getCode(), $exception);
+        } catch (ArgumentCountError $e) {
+            throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
+        } catch (ReflectionException $e) {
+            throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
         }
     }
 
@@ -303,32 +332,37 @@ class Router
     public static function start()
     {
         try {
-
             foreach (self::$routes as $name => $route) {
-                //prefix
-                self::setPrefix($route['prefix']);
 
-                $route['pattern'] = self::$prefix . $route['pattern'];
+                if (false !== ($matches = self::rootMatch($route['pattern'], $route['requestUri']))) {
 
-                if (false !== ($matches = self::rootMatch($route['pattern'], Request::path()))) {
-
+                    //prefix
+                    self::$prefix = $route['prefix'];
 
                     //Request method check
                     if (Request::method($route['method']) == false) {
                         return self::errors(405);
                     }
 
-                    //load middlewares
+                    //load middlewares before
                     foreach ($route['middleware'] as $middleware) {
-                        App::caller($middleware, null);
+                        App::caller([$middleware, 'before'], null);
                     }
 
                     //Router callback clouser
                     if (is_callable($route['cmp'])) {
                         try {
-                            return call_user_func_array($route['cmp'], $matches);
-                        } catch (ArgumentCountError $exception) {
-                            throw new LogException($exception->getMessage(), LogException::TYPE['NOTICE'], $exception);
+                            $result = call_user_func_array($route['cmp'], $matches);
+
+                            //load middleware after
+                            foreach ($route['middleware'] as $middleware) {
+                                App::caller([$middleware, 'after'], null);
+                            }
+
+                            return $result;
+
+                        } catch (ArgumentCountError $e) {
+                            throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
                         }
                     }
 
@@ -339,14 +373,27 @@ class Router
                     self::setMethod(array_shift($cmp));
                     self::setParams($matches);
 
-                    return self::route(self::$nameSpace . self::$controller, self::$method, self::$params);
+                    $result = self::route(self::$nameSpace . self::$controller, self::$method, self::$params);
+
+                    //load middleware after
+                    foreach ($route['middleware'] as $middleware) {
+                        App::caller([$middleware, 'after'], null);
+                    }
+
+                    return $result;
                 }
             }
-        } catch (LogException $exception) {
-            $exception->debug();
+
+            throw new HttpNotFound('No match router.', E_NOTICE);
+
+        } catch (HttpNotFound $e) {
+            Exceptions::debug($e);
+            return self::errors(404);
+        }catch (Exception $e){
+            Exceptions::debug($e);
         }
 
-        return self::errors(404);
+        return false;
     }
 
 
@@ -380,14 +427,6 @@ class Router
         return false;
     }
 
-
-    /**
-     * @param $prefix
-     */
-    private static function setPrefix($prefix)
-    {
-        self::$prefix = $prefix ? trim($prefix,'/') : null;
-    }
 
     /**
      * @param null $nameSpace

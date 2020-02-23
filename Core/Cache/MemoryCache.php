@@ -5,7 +5,8 @@ namespace Core\Cache;
 
 
 use Core\Config\Config;
-use Core\Log\LogException;
+use Core\Exceptions\Exceptions;
+use Exception;
 use Memcache;
 
 
@@ -19,14 +20,14 @@ class MemoryCache implements CacheInterface
         try {
 
             if (!extension_loaded('memcache')) {
-                throw new LogException('memcache eklentisi kurulu değil.', E_ERROR);
+                throw new Exception('memcache eklentisi kurulu değil.', E_ERROR);
             }
 
             $this->memcache = new Memcache();
             $this->memcache->connect(Config::get('app.cache.memcache.host'), Config::get('app.cache.memcache.port'));
 
-        }catch (LogException $exception){
-            $exception->debug();
+        }catch (Exception $e){
+            Exceptions::debug($e);
         }
     }
 
@@ -41,7 +42,11 @@ class MemoryCache implements CacheInterface
      */
     public function add($key, $value, $compress = false, $expires = 2592000): bool
     {
-        return $this->memcache->add($key, $value, $compress, $expires);
+        if($this->memcache) {
+            return $this->memcache->add($key, $value, $compress, $expires);
+        }
+
+        return false;
     }
 
     /**
@@ -55,7 +60,11 @@ class MemoryCache implements CacheInterface
      */
     public function set($key, $value, $compress = false, $expires = 2592000): bool
     {
-        return $this->memcache->set($key, $value, $compress, $expires);
+        if($this->memcache) {
+            return $this->memcache->set($key, $value, $compress, $expires);
+        }
+
+        return false;
     }
 
     /**
@@ -66,7 +75,11 @@ class MemoryCache implements CacheInterface
      */
     public function get($key)
     {
-        return $this->memcache->get($key);
+        if($this->memcache) {
+            return $this->memcache->get($key);
+        }
+
+        return false;
     }
 
     /**
@@ -77,7 +90,11 @@ class MemoryCache implements CacheInterface
      */
     public function delete($key): bool
     {
-        return $this->memcache->delete($key);
+        if($this->memcache) {
+            return $this->memcache->delete($key);
+        }
+
+        return false;
     }
 
     /**
@@ -87,6 +104,10 @@ class MemoryCache implements CacheInterface
      */
     public function flush(): bool
     {
-        return $this->memcache->flush();
+        if($this->memcache) {
+            return $this->memcache->flush();
+        }
+
+        return false;
     }
 }

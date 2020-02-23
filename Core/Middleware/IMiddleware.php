@@ -6,5 +6,6 @@ namespace Core\Middleware;
 
 Interface IMiddleware
 {
-    function handle();
+    function before();
+    function after();
 }

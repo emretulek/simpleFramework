@@ -20,10 +20,6 @@ class AutoLoad
     public function __construct()
     {
         spl_autoload_register(array($this, "loadClass"));
-        $this->loadFunctions();
-        $this->loadAlias();
-        $this->loadServices();
-        $this->loadRoutes();
     }
 
 
@@ -45,7 +41,7 @@ class AutoLoad
     /**
      * config/autoload.php dosyasında belirtilen servis sınıflarını çağırır.
      */
-    private function loadServices()
+    public function loadServices()
     {
         foreach (Config::get('autoload.services') as $service) {
             new $service;
@@ -56,7 +52,7 @@ class AutoLoad
     /**
      * config/autoload.php dosyasında belirtilen sınıfların takma isimlerini oluşturur.
      */
-    private function loadAlias()
+    public function loadAlias()
     {
         foreach (Config::get('autoload.alias') as $alias => $orginal) {
 
@@ -67,7 +63,7 @@ class AutoLoad
     /**
      * config/autoload.php dosyasında belirtilen fonksiyon veya dosyaları çağırır.
      */
-    private function loadFunctions()
+    public function loadFunctions()
     {
         foreach (Config::get('autoload.functions') as $key => $file) {
             if (file_exists($file)) {
@@ -81,7 +77,7 @@ class AutoLoad
      * routes/ dizinindeki dosyaları a-z sıralamasıyla çağırır.
      * Tüm dosyalar çağırılınca Rototer::run methodunu çalıştırır.
      */
-    private function loadRoutes()
+    public function loadRoutes()
     {
         foreach (Config::get('autoload.routes') as $key => $file) {
             if (file_exists($file)) {

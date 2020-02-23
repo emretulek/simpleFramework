@@ -2,7 +2,7 @@
 
 namespace Core\Hook;
 
-use Core\Log\LogException;
+use Exception;
 
 class Hook
 {
@@ -35,7 +35,7 @@ class Hook
     /**
      * @param string $name
      * @param null $args
-     * @throws LogException
+     * @throws Exception
      */
     public static function exec(string $name, $args = null)
     {
@@ -48,7 +48,7 @@ class Hook
             }
         } else {
 
-            throw new LogException("Hook name -> {$name} is not found");
+            throw new Exception("Hook name -> {$name} is not found", E_USER_ERROR);
         }
     }
 

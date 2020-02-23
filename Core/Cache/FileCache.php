@@ -5,7 +5,8 @@ namespace Core\Cache;
 
 
 use Core\Config\Config;
-use Core\Log\LogException;
+use Exception;
+use Exceptions;
 
 class FileCache implements CacheInterface
 {
@@ -18,16 +19,49 @@ class FileCache implements CacheInterface
         $this->fileCacheGc();
     }
 
+
+    /**
+     * Önbelleğe yeni bir değer ekler, anahtar varsa üzerine yazar
+     *
+     * @param $key
+     * @param $value
+     * @param int $compress
+     * @param int $expires
+     * @return bool
+     */
+    public function set($key, $value, int $compress = 0, $expires = 2592000): bool
+    {
+        $fileName = $this->setFileName($key);
+
+        $value = serialize($value);
+        $value = $compress ? bzcompress($value) : $value;
+        $value .= PHP_EOL . (int)$compress;
+        $value .= PHP_EOL . $expires;
+
+        try {
+
+            if ($this->hasWritable($this->path)) {
+                return file_put_contents($fileName, $value) !== false;
+            }
+
+        } catch (Exception $e) {
+            Exceptions::debug($e);
+        }
+
+        return false;
+    }
+
+
     /**
      * Önbelleğe yeni bir değer ekler, anahtar varsa eklemez false döndürür
      *
      * @param $key
      * @param $value
-     * @param bool $compress
+     * @param int $compress
      * @param int $expires
      * @return bool
      */
-    public function add($key, $value, $compress = false, $expires = 2592000): bool
+    public function add($key, $value, int $compress = 0, $expires = 2592000): bool
     {
         $fileName = $this->setFileName($key);
 
@@ -35,54 +69,9 @@ class FileCache implements CacheInterface
             return false;
         }
 
-        $value = serialize($value);
-        $value = $compress ? bzcompress($value) : $value;
-        $value .= PHP_EOL . (int)$compress;
-        $value .= PHP_EOL . $expires;
-
-        try {
-
-            if ($this->hasWritable($this->path)) {
-                return file_put_contents($fileName, $value) !== false;
-            }
-
-        } catch (LogException $exception) {
-            $exception->debug();
-        }
-
-        return false;
+        return $this->set($key, $value, $compress, $expires);
     }
 
-    /**
-     * Önbelleğe yeni bir değer ekler, anahtar varsa üzerine yazar
-     *
-     * @param $key
-     * @param $value
-     * @param bool $compress
-     * @param int $expires
-     * @return bool
-     */
-    public function set($key, $value, $compress = false, $expires = 2592000): bool
-    {
-        $fileName = $this->setFileName($key);
-
-        $value = serialize($value);
-        $value = $compress ? bzcompress($value) : $value;
-        $value .= PHP_EOL . (int)$compress;
-        $value .= PHP_EOL . $expires;
-
-        try {
-
-            if ($this->hasWritable($this->path)) {
-                return file_put_contents($fileName, $value) !== false;
-            }
-
-        } catch (LogException $exception) {
-            $exception->debug();
-        }
-
-        return false;
-    }
 
     /**
      * Önbellekten ilgili anahtara ait değeri döndürür
@@ -118,8 +107,8 @@ class FileCache implements CacheInterface
                     return unserialize($value);
                 }
 
-            } catch (LogException $exception) {
-                $exception->debug();
+            } catch (Exception $e) {
+                Exceptions::debug($e);
             }
         }
 
@@ -144,8 +133,8 @@ class FileCache implements CacheInterface
                     return unlink($fileName);
                 }
 
-            } catch (LogException $exception) {
-                $exception->debug();
+            } catch (Exception $e) {
+                Exceptions::debug($e);
             }
         }
 
@@ -167,8 +156,8 @@ class FileCache implements CacheInterface
                     return unlink($file);
                 }
             }
-        } catch (LogException $exception) {
-            $exception->debug();
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
         return true;
     }
@@ -208,16 +197,18 @@ class FileCache implements CacheInterface
                     break;
                 }
             }
-        }catch (LogException $exception){
-            $exception->debug();
+        }catch (Exception $e){
+            Exceptions::debug($e);
         }
+
+        $files = null;
     }
 
 
     /**
      * @param $filename
      * @return bool
-     * @throws LogException
+     * @throws Exception
      */
     private function hasWritable($filename)
     {
@@ -225,13 +216,13 @@ class FileCache implements CacheInterface
             return true;
         }
 
-        throw new LogException($filename.' dosya yazılabilir değil');
+        throw new Exception($filename.' dosya yazılabilir değil', E_WARNING);
     }
 
     /**
      * @param $filename
      * @return bool
-     * @throws LogException
+     * @throws Exception
      */
     private function hasReadable($filename)
     {
@@ -239,6 +230,6 @@ class FileCache implements CacheInterface
             return true;
         }
 
-        throw new LogException($filename.' dosya okunabilir değil.');
+        throw new Exception($filename.' dosya okunabilir değil.', E_WARNING);
     }
 }

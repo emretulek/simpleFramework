@@ -1,28 +1,37 @@
 <?php
 
+
 namespace Services;
 
-use App\Model\Users;
-use Core\Services\Services;
-use Session;
+
 use Auth;
+use Core\Services\Services;
+use DB;
+use Exception;
+use Exceptions;
 
 class RememberMe extends Services
 {
-    public function boot()
+    /**
+     * @return mixed|void
+     */
+    protected function boot()
     {
-        if (!Auth::status()) {
-            // Beni hatırla seçeneğini seçenler için otomatik giriş
+        try {
             Auth::loginCookie(function ($username) {
-                if($userInfo = Users::static()->findFromUserName($username)) {
+                if ($user = DB::getRow("select * from users where userName = ?", [$username])) {
                     return [
-                        'id' => $userInfo->userID,
-                        'username' => $userInfo->userName,
-                        'level' => $userInfo->userLevel
+                        'id' => $user->userID,
+                        'username' => $user->userName,
+                        'password' => $user->userPassword,
+                        'userLevel' => $user->userLevel,
+                        'info' => []
                     ];
                 }
                 return false;
             });
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
     }
 }

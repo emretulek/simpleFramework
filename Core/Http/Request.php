@@ -2,6 +2,8 @@
 
 namespace Core\Http;
 
+use Core\Config\Config;
+
 /**
  * Class Request
  * Sunucuya yapılan isteklere erişim sağlar
@@ -17,6 +19,15 @@ class Request
         return parse_url(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT), PHP_URL_PATH);
     }
 
+    /**
+     * Yapılan isteği döndürür.
+     * @return string|string[]|null
+     */
+    public static function requestUri()
+    {
+        $path = str_replace(Config::get('app.path'), '/', self::path());
+        return rtrim(preg_replace("#/+#", "/", $path), '/');
+    }
 
     /**
      * Mevcut adres satırını döndürür.
@@ -24,7 +35,7 @@ class Request
      */
     public static function url()
     {
-        return trim(self::baseUrl(), '/') . self::path();
+        return trim(self::baseUrl(), '/') . self::requestUri();
     }
 
     /**
@@ -33,7 +44,7 @@ class Request
      */
     public static function baseUrl()
     {
-        return self::scheme() . '://' . $_SERVER['SERVER_NAME'] . '/';
+        return self::scheme() . '://' . $_SERVER['SERVER_NAME'] . rtrim(Config::get('app.path'), '/').'/';
     }
 
     /**
@@ -44,8 +55,7 @@ class Request
      */
     public static function segments(?int $key = null)
     {
-        $queryString = parse_url(self::path(), PHP_URL_PATH);
-        $queryString = preg_replace("#^(/index\.php)#i", "", $queryString);
+        $queryString = preg_replace("#^(/index\.php)#i", "", self::requestUri());
         $queryString = trim($queryString, "/");
         $segments = array_values(array_filter(explode("/", $queryString)));
 
@@ -125,9 +135,9 @@ class Request
     public static function method(string $method = null)
     {
         if (is_null($method)) {
-            return $_SERVER['REQUEST_METHOD'];
+            return $_SERVER['REQUEST_METHOD'] ?? 'GET';
         }
-        if ($_SERVER['REQUEST_METHOD'] == strtoupper($method)) {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') == strtoupper($method)) {
             return true;
         }
         return false;

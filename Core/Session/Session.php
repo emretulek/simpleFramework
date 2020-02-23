@@ -31,10 +31,10 @@ class Session
      * Yeni bir oturum verisi oluşturur.
      *
      * @param string $name nokta ile birleşitirilmiş session indexi (index1.index2)
-     * @param string $value
+     * @param $value
      * @return bool
      */
-    public static function set(string $name, string $value)
+    public static function set(string $name, $value)
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             dot_aray_set($_SESSION, $name, $value);
@@ -93,7 +93,7 @@ class Session
      */
     public static function tmpGet(string $name)
     {
-        return $_SESSION['__TEMPRORY__'][$name];
+        return $_SESSION['__TEMPRORY__'][$name] ?? null;
     }
 
 

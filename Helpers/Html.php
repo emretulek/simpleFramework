@@ -3,10 +3,12 @@
 namespace Helpers;
 
 
+use Session;
+
 class Html
 {
     public static $metaTags = [
-        'lang' => 'tr',
+        'lang' => 'tr-tr',
         'charset' => 'UTF-8',
         'title' => '',
         'description' => '',
@@ -113,9 +115,9 @@ class Html
         return $list;
     }
 
-    public static function formOpen($action = null, $method = "post", $attr = null)
+    public static function formOpen($action = null, $method = "post", $multipart = false, $attr = null)
     {
-        return '<form ' . self::attr(['action' => $action, 'method' => $method], $attr) . '>' . PHP_EOL;
+        return '<form ' . self::attr(['action' => $action, 'method' => $method, 'enctype' => $multipart ? 'multipart/form-data' : 'application/x-www-form-urlencoded'], $attr) . '>' . PHP_EOL;
     }
 
     public static function formClose()
@@ -191,6 +193,12 @@ class Html
     public static function button($text, $attr = null)
     {
         return '<button ' . self::attr(['type' => 'submit'], $attr) . '>' . $text . '</button>' . PHP_EOL;
+    }
+
+
+    public static function csrfToken()
+    {
+        return self::input("hidden", "csrf_token", Session::get("csrf_token"));
     }
 
     private static function attr(...$attrs)

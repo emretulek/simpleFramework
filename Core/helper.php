@@ -4,65 +4,20 @@ use Core\Config\Config;
 use Core\Http\Request;
 use Core\Http\Response;
 use Core\Language\Language;
-use Core\Log\LogException;
-
-if (!function_exists('error_handler')) {
-
-    /**
-     * Ölümcül hatalar dışında tüm hataları yakalar.
-     * Yakalanan hatalar LogExcepiton sınıfına gönderir.
-     *
-     * @param int $code hata kodu.
-     * @param string $message hata mesajı.
-     * @param string $file hatanın oluştuğu dosya.
-     * @param int $line hatanın oluştuğu satır numarası.
-     */
-    function error_handler(int $code, string $message, string $file, int $line)
-    {
-        try {
-            error_clear_last();
-            throw new LogException($message, $code, null, $file, $line);
-        } catch (LogException $exception) {
-            $exception->debug();
-        }
-    }
-
-    set_error_handler("error_handler");
-}
-
-
-if (!function_exists('fatal_error_handler')) {
-    /**
-     * Ölümcül hataları yakalar.
-     * Yakalanan hatalar LogException sınıfına gönderilir.
-     */
-    function fatal_error_handler()
-    {
-        try {
-            if ($last_error = error_get_last()) {
-                throw new LogException($last_error['message'], $last_error['type'], null, $last_error['file'], $last_error['line']);
-            }
-        } catch (LogException $exception) {
-            $exception->debug();
-        }
-    }
-
-    error_reporting(0);
-    register_shutdown_function("fatal_error_handler");
-}
-
 
 if (!function_exists('console_log')) {
     /**
-     * Girilen mesajı javascript konsoluna gönderir.
+     * Girilen mesajı javascript konsolunda gönderir.
      *
      * @param mixed $message
      */
     function console_log(...$message)
     {
-        echo '<script>';
-        echo 'console.log(' . json_encode($message) . ')';
-        echo '</script>';
+        register_shutdown_function(function () use ($message){
+            echo '<script>';
+            echo 'console.log(' . json_encode($message) . ')';
+            echo '</script>';
+        });
     }
 }
 
@@ -75,20 +30,22 @@ if (!function_exists('dump')) {
      */
     function dump(...$params)
     {
-        echo '<div style="padding: 5px; margin: 5px 15px; background-color: #eeeeee">' . PHP_EOL;
+        $trace = debug_backtrace();
+
+        echo '<div style="padding: 5px; margin: 5px 15px; background-color: #eeeeee; border: solid 1px #cecece">' . PHP_EOL;
 
         foreach ($params as $key => $param) {
 
-            echo '<pre style="background-color: #ffffff; padding: 10px; margin: 10px;">' . PHP_EOL;
+            echo '<pre style="background-color: #ffffff; padding: 10px; margin: 0;">' . PHP_EOL;
             echo '<h3 style="background-color: #cecece; margin: 0 0 10px 0; padding: 10px;">Dump <small>paramater(' . ($key + 1) . ')</small></h3>';
             echo '<div style="color:#a94442; padding: 10px;">';
             var_dump($param);
             echo '</div>' . PHP_EOL;
             echo '</pre>' . PHP_EOL;
         }
-        echo '<div style="background-color: #CCCCCC; padding: 5px">' . PHP_EOL;
-        echo ' <b>File:</b> ' . debug_backtrace()[0]['file'];
-        echo ' <b>Line:</b> ' . debug_backtrace()[0]['line'];
+        echo '<div style="background-color: #cecece; padding: 5px">' . PHP_EOL;
+        echo ' <b>File:</b> ' . $trace[0]['file'];
+        echo ' <b>Line:</b> ' . $trace[0]['line'];
         echo '</div>';
         echo '</div>';
     }
@@ -262,7 +219,7 @@ if (!function_exists('url')) {
         $parameters = $params ? '?' . http_build_query($params) : '';
 
         if (class_exists(Language::class)) {
-            if (Config::get('app.language') != Language::get() && Language::get() != '') {
+            if (Config::get('app.language') != Language::get() && Language::get()) {
                 return Request::baseUrl() . Language::get() . '/' . $path . $parameters;
             }
         }

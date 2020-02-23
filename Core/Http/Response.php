@@ -2,7 +2,9 @@
 
 namespace Core\Http;
 
-use Core\Log\LogException;
+
+use Core\Exceptions\Exceptions;
+use Exception;
 
 class Response
 {
@@ -55,10 +57,10 @@ class Response
             $this->headers(['Content-Type' => 'application/json']);
             $this->content(json_encode($array, JSON_FORCE_OBJECT));
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new LogException('JSON decode edilemedi.', LogException::TYPE['WARNING']);
+                throw new Exception('JSON decode edilemedi.', E_WARNING);
             }
-        } catch (LogException $exception) {
-            $exception->debug();
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
         return $this;
     }

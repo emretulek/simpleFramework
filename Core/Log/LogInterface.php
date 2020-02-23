@@ -2,7 +2,7 @@
 
 namespace Core\Log;
 
-Interface LogWriterInterface
+Interface LogInterface
 {
     /**
      * Log yazma işlemini gerçekleştiren ortak method

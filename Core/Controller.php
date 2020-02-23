@@ -3,6 +3,8 @@
 namespace Core;
 
 
+use Core\Config\Config;
+
 class Controller
 {
     /**
@@ -19,7 +21,7 @@ class Controller
      */
     protected function model(string $class)
     {
-        return App::getInstance('App\\Model\\'.$class);
+        return App::getInstance(str_replace('/', '\\',Config::get('path.model').'/'.$class));
     }
 }
 

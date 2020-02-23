@@ -11,22 +11,22 @@ Interface CacheInterface
      *
      * @param $key
      * @param $value
-     * @param bool $compress
+     * @param int $compress
      * @param int $expires
      * @return bool
      */
-    public function add($key, $value, $compress = false, $expires = 2592000):bool;
+    public function add($key, $value, int $compress = 0, $expires = 2592000):bool;
 
     /**
      * Önbelleğe yeni bir değer ekler, anahtar varsa üzerine yazar
      *
      * @param $key
      * @param $value
-     * @param bool $compress
+     * @param int $compress
      * @param int $expires
      * @return bool
      */
-    public function set($key, $value, $compress = false, $expires = 2592000):bool;
+    public function set($key, $value, int $compress = 0, $expires = 2592000):bool;
 
     /**
      * Önbellekten ilgili anahtara ait değeri döndürür

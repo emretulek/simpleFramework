@@ -2,6 +2,8 @@
 
 namespace Core\Validation;
 
+use DateTime;
+
 Class Valid
 {
 
@@ -169,7 +171,7 @@ Class Valid
      */
     public static function date($date, $format = "Y-m-d H:i:s")
     {
-        $dateTime = \DateTime::createFromFormat($format, $date);
+        $dateTime = DateTime::createFromFormat($format, $date);
 
         return $dateTime && $dateTime->format($format) == $date;
     }

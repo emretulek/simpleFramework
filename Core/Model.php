@@ -21,7 +21,7 @@ class Model
 
     public function getFirst()
     {
-        return DB::getRow("SELECT * FROM {$this->table} ORDER BY {$this->primary} ASC LIMIT 1");
+        return DB::getRow("SELECT * FROM {$this->table} ORDER BY {$this->primary} LIMIT 1");
     }
 
     public function getLast()

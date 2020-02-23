@@ -1,9 +1,8 @@
 <?php
 
-namespace Services;
+namespace Core\Services;
 
-use Core\Services\Services;
-use Session;
+use Core\Session\Session;
 
 class SessionService extends Services
 {

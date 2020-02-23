@@ -2,10 +2,12 @@
 
 namespace Core\Auth;
 
+use Closure;
+use Core\Crypt\Hash;
 use Core\Http\Request;
 use Core\Session\Session;
 use Core\Cookie\Cookie;
-use Core\Config\Config;
+use Exception;
 
 /**
  * Class Auth
@@ -15,52 +17,75 @@ use Core\Config\Config;
 class Auth
 {
 
-    public static function login(int $id, string $username, int $level = 1, array $info = null, bool $remember = false)
+    /**
+     * @param int $id
+     * @param string $username
+     * @param string $password
+     * @param int $level
+     * @param array $info
+     * @param int $remember Cookie\Cookie::set @param $lifetime
+     * @return bool
+     */
+    public static function login(int $id, string $username, string $password, int $level = 1, array $info = [], $remember = 24)
     {
-        Session::set('AUTH.LOGIN', true);
-        self::setInfo('id', $id);
-        self::setInfo('username', $username);
-        self::setInfo('level', $level);
-        self::setInfo('token', self::creatToken($id));
-        self::setInfo('ip', Request::ip());
+        try {
+            Session::set('AUTH.LOGIN', true);
+            self::setInfo('id', $id);
+            self::setInfo('username', $username);
+            self::setInfo('level', $level);
+            self::setInfo('token', self::creatToken($id, $password));
+            self::setInfo('ip', Request::ip());
 
-        if ($info) {
-            foreach ($info as $key => $value) {
-                self::setInfo($key, $value);
+            if ($info) {
+                foreach ($info as $key => $value) {
+                    self::setInfo($key, $value);
+                }
             }
-        }
 
-        if ($remember) {
-            self::remember($id, $username);
+            if ($remember) {
+                self::remember($id, $username, $password, $remember);
+            }
+        } catch (Exception $e) {
+            return false;
         }
         return true;
     }
 
     /**
      * Cookie kullanarak login methodunun üzerinden otomatik giriş yapar.
-     *
-     * @param callable $callback parametre olarak username alır.
-     * return [id][username][level][info[..]] dizisini bekler.
+     * @param Closure $closure (string $username):array $userInfo
+     * [id, username, password, level, info[]]
+     * @throws Exception
      * @return bool
+     * @todo Auth::loginCookie(function ($username){
+     *      $user = DB::getRow("select * from users where userName = ?", [$username]);
+     *       return [
+     *       'id' => $user->userID,
+     *       'username' => $user->userName,
+     *       'password' => $user->userPassword,
+     *       'userLevel' => $user->userLevel,
+     *       'info' => []
+     *       ];
+     *       });
+     *
      */
-    public static function loginCookie(callable $callback)
+    public static function loginCookie(Closure $closure)
     {
-        if (!Cookie::get('username') || !Cookie::get('user_token')) {
-            return false;
-        }
+        if (!self::status() && Cookie::get('username') && Cookie::get('user_token')) {
 
-        if ($userInfo = call_user_func($callback, Cookie::get('username'))) {
+            if($userInfo = call_user_func($closure, Cookie::get('username'))) {
 
-            $token = self::creatToken($userInfo['id']);
+                if (isset($userInfo['id']) && isset($userInfo['username']) && isset($userInfo['password']) && isset($userInfo['level']) && isset($userInfo['info'])) {
 
-            if ($token == Cookie::get('user_token')) {
-
-                $userInfo['level'] = $userInfo['level'] ?? 1;
-                $userInfo['info'] = $userInfo['info'] ?? null;
-
-                return self::login($userInfo['id'], $userInfo['username'], $userInfo['level'], $userInfo['info']);
+                    if (Cookie::get('user_token') == self::creatToken($userInfo['id'], $userInfo['password'])) {
+                        return self::login($userInfo['id'], $userInfo['username'], $userInfo['password'], $userInfo['level'], $userInfo['info']);
+                    }
+                } else {
+                    throw new Exception("Clouser [id, username, password, level, info[]] elemanlarını barındıran bir dizi döndürmelidir.", E_ERROR);
+                }
             }
         }
+
         return false;
     }
 
@@ -72,7 +97,7 @@ class Auth
     public static function status()
     {
         ///* Session hijacking  security */
-        if (Auth::info('token') != Cookie::get('user_token') && Cookie::get('user_token')) {
+        if (Cookie::get('user_token') && Auth::info('token') != Cookie::get('user_token')) {
             return false;
         }
 
@@ -143,7 +168,7 @@ class Auth
      */
     public static function guard($level = 1)
     {
-        if(self::status() && $level <= self::level()){
+        if (self::status() && $level <= self::level()) {
 
             return true;
         }
@@ -171,30 +196,29 @@ class Auth
 
 
     /**
-     * Beni hatırla seçeneği için kullanıcı bilgilerini çerezlere saklar.
+     * Beni hatırla seçeneği için cookie oluşturur.
      * @param $userID
      * @param $userName
+     * @param $userPassword
+     * @param $lifetime
      */
-    private static function remember($userID, $userName)
+    private static function remember($userID, $userName, $userPassword, $lifetime)
     {
-        Cookie::set('user_token', self::creatToken($userID));
-        Cookie::set('username', $userName);
+        Cookie::set('user_token', self::creatToken($userID, $userPassword), $lifetime);
+        Cookie::set('username', $userName, $lifetime);
     }
 
 
     /**
-     * Cookie doğrulaması için token oluşturur.
+     * Cookie doğrulaması useragent ile token oluşturur.
      * @param $userID
+     * @param $userPassword
      * @return string
      */
-    private static function creatToken($userID)
+    private static function creatToken($userID, $userPassword)
     {
-        $ip = md5(Request::ip());
         $agent = md5(Request::userAgent());
-        $appkey = Config::get('app.app_key');
-        $token = md5($ip . $agent . $appkey . $userID);
-
-        return $token;
+        return Hash::makeWithKey($userID . $userPassword . $agent);
     }
 }
 

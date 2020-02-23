@@ -5,7 +5,7 @@
  */
 return array(
     'mysql' => array(
-        'dsn'      =>  'mysql:host=localhost:3306;dbname=firma',
+        'dsn'      =>  'mysql:host=localhost:3306;dbname=phpfw',
         'user'      =>  'root',
         'password'  =>  '',
         'charset'   =>  'utf8mb4',

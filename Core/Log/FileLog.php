@@ -4,8 +4,10 @@ namespace Core\Log;
 
 
 use Core\Config\Config;
+use Core\Exceptions\Exceptions;
+use Exception;
 
-class FileLogWriter Implements LogWriterInterface
+class FileLog Implements LogInterface
 {
 
     protected $file = '/logger.log';
@@ -47,23 +49,20 @@ class FileLogWriter Implements LogWriterInterface
     public function writer($message, $data, $type)
     {
         try {
-            if (is_file($this->file)) {
 
-                $handle = fopen($this->file, 'ab+');
-                $log = $this->formatter($message, $data, $type, time());
+            $handle = fopen($this->file, 'ab+');
+            $log = $this->formatter($message, $data, $type, time());
 
-                if (is_writable($this->file)) {
-                    if(fwrite($handle, $log, strlen($log))) {
-                        return fclose($handle);
-                    }
-                }else {
-                    throw new LogException($this->file . ' dosya yazılabilir değil.', LogException::TYPE['WARNING']);
+            if (is_writable($this->file)) {
+                if(fwrite($handle, $log, strlen($log))) {
+                    return fclose($handle);
                 }
-            } else {
-                throw new LogException($this->file . ' dosya bulunamadı.', LogException::TYPE['WARNING']);
+            }else {
+                throw new Exception($this->file . ' dosya yazılabilir değil.', E_WARNING);
             }
-        }catch (LogException $exception){
-            $exception->debug();
+
+        }catch (Exception $e){
+            Exceptions::debug($e);
         }
 
         return false;

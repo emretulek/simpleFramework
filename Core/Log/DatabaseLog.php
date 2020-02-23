@@ -5,10 +5,10 @@ namespace Core\Log;
 use Core\Database\Database;
 
 
-class DatabaseLogWriter Implements LogWriterInterface
+class DatabaseLog Implements LogInterface
 {
 
-    protected $table = 'log';
+    protected $table = 'logger';
 
     /**
      * Log yazma işlemini gerçekleştirir
@@ -21,7 +21,7 @@ class DatabaseLogWriter Implements LogWriterInterface
     public function writer($message, $data, $type)
     {
         return Database::insert(
-            "insert into {$this->table} set `message` = ?, `type` = ?, `data` = ?, `time` = NOW()",
-            [$message, $type, $data]);
+            "insert into {$this->table} set `type` = ?, `message` = ?, `data` = ?",
+            [$type, $message, $data]);
     }
 }

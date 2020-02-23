@@ -2,8 +2,9 @@
 
 namespace Core\Database;
 
+use Core\Exceptions\Exceptions;
+use Exception;
 use PDO, PDOException;
-use Core\Log\LogException;
 use Core\Config\Config;
 
 /**
@@ -23,8 +24,8 @@ class Database
     {
         try {
             if (self::$pdo === null) self::$pdo = self::connect();
-        } catch (LogException $exception) {
-            $exception->debug();
+        }catch (Exception $e){
+            Exceptions::debug($e);
         }
         return self::$pdo;
     }
@@ -39,7 +40,7 @@ class Database
      * @param null $charset
      * @param null $collaction
      * @return PDO
-     * @throws LogException
+     * @throws Exception
      */
     public static function connect($driver = null, $dsn = null, $user = null, $password = null, $charset = null, $collaction = null)
     {
@@ -58,7 +59,7 @@ class Database
 
         } catch (PDOException $exception) {
             /* bağlantı başarısız olursa hata LogExcepiton sınıfına taşınır */
-            throw new LogException("Can not connect to " . $driver . " server.", E_ERROR, $exception);
+            throw new Exception("Can not connect to " . $driver . " server.", E_ERROR, $exception);
         }
         return $pdo;
     }
@@ -91,26 +92,21 @@ class Database
 
 
     /**
-     * PDO prepare ve binding işlemini gerçekleştirip sorguyu çalıştırır.
-     *
      * @param string $query
      * @param array|null $bindings
-     * @return bool| \PDOStatement
+     * @return bool|\PDOStatement
+     * @throws Exception
      */
     private static function query(string $query, array $bindings = null)
     {
-        try {
-            self::$stmt = self::instance()->prepare($query);
-            self::$stmt->execute($bindings);
-            $error = self::$stmt->errorInfo();
+        self::$stmt = self::instance()->prepare($query);
+        self::$stmt->execute($bindings);
+        $error = self::$stmt->errorInfo();
 
-            if ($error[2]) {
-                throw new LogException("Sql error code({$error[0]}/{$error[1]}) Error: {$error[2]}", E_WARNING);
-            }
-        } catch (LogException $exception) {
-            $exception->debug();
-            return false;
+        if ($error[2]) {
+            throw new Exception("Sql error code({$error[0]}/{$error[1]}) Error: {$error[2]}", E_WARNING);
         }
+
         return self::$stmt;
     }
 
@@ -124,10 +120,14 @@ class Database
      */
     public static function get(string $query, array $bindings = null)
     {
-        if (self::$stmt = self::query($query, $bindings)) {
-            $result = self::$stmt->fetchAll();
-            self::$rowCount = count($result);
-            return $result;
+        try {
+            if (self::$stmt = self::query($query, $bindings)) {
+                $result = self::$stmt->fetchAll();
+                self::$rowCount = count($result);
+                return $result;
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 1);
         }
         return false;
     }
@@ -142,8 +142,12 @@ class Database
      */
     public static function getRow(string $query, array $bindings = null)
     {
-        if (self::$stmt = self::query($query, $bindings)) {
-            return self::$stmt->fetch();
+        try {
+            if (self::$stmt = self::query($query, $bindings)) {
+                return self::$stmt->fetch();
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 1);
         }
         return false;
     }
@@ -158,8 +162,12 @@ class Database
      */
     public static function getVar(string $query, array $bindings = null)
     {
-        if (self::$stmt = self::query($query, $bindings)) {
-            return self::$stmt->fetchColumn();
+        try {
+            if (self::$stmt = self::query($query, $bindings)) {
+                return self::$stmt->fetchColumn();
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 1);
         }
         return false;
     }
@@ -174,8 +182,12 @@ class Database
      */
     public static function insert(string $query, array $bindings = null)
     {
-        if (self::query($query, $bindings)) {
-            return self::$insertId = self::instance()->lastInsertId();
+        try {
+            if (self::query($query, $bindings)) {
+                return self::$insertId = self::instance()->lastInsertId();
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 1);
         }
         return false;
     }
@@ -190,8 +202,12 @@ class Database
      */
     public static function update(string $query, array $bindings = null)
     {
-        if (self::$stmt = self::query($query, $bindings)) {
-            return self::$rowCount = self::$stmt->rowCount();
+        try {
+            if (self::$stmt = self::query($query, $bindings)) {
+                return self::$rowCount = self::$stmt->rowCount();
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 1);
         }
         return false;
     }
@@ -206,8 +222,12 @@ class Database
      */
     public static function delete(string $query, array $bindings = null)
     {
-        if (self::$stmt = self::query($query, $bindings)) {
-            return self::$rowCount = self::$stmt->rowCount();
+        try {
+            if (self::$stmt = self::query($query, $bindings)) {
+                return self::$rowCount = self::$stmt->rowCount();
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 1);
         }
         return false;
     }

@@ -10,10 +10,15 @@ Class AjaxCheck Implements IMiddleware {
     /**
      * @throws HttpNotFound
      */
-    public function handle()
+    public function before()
     {
         if(Request::isAjax() == false){
             throw new HttpNotFound();
         }
+    }
+
+    public function after()
+    {
+        // TODO: Implement after() method.
     }
 }

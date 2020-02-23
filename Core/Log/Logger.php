@@ -3,27 +3,24 @@
 namespace Core\Log;
 
 use Core\App;
-use Core\Config\Config;
 
 Class Logger
 {
 
+    private static $instance = false;
+
     /**
-     * @return LogWriterInterface|bool
+     * @param LogInterface|null logClass
+     * @return bool|mixed
      */
-    public static function init()
+    public static function init(?LogInterface $logClass)
     {
-        if (Config::get('app.log.enable')) {
-
-            if(Config::get('app.log.driver') == 'database') {
-                return App::getInstance(new DatabaseLogWriter());
-            }
-
-            return App::getInstance(new FileLogWriter());
+        if($logClass instanceof  LogInterface) {
+            return self::$instance = App::getInstance($logClass);
         }
-
-        return false;
+        return self::$instance;
     }
+
 
     /**
      * @param $message
@@ -33,7 +30,7 @@ Class Logger
      */
     public static function writer($message, $data, $type)
     {
-        if ($logger = self::init()) {
+        if ($logger = self::init(null)) {
             return $logger->writer($message, $data, $type);
         }
 

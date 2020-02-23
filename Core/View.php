@@ -4,8 +4,9 @@ namespace Core;
 
 
 use Core\Config\Config;
+use Core\Exceptions\Exceptions;
 use Core\Http\Response;
-use Core\Log\LogException;
+use Exception;
 
 /**
  * Class View
@@ -57,10 +58,10 @@ class View
                 include($page);
                 $this->buffer[$fileName] = ob_get_clean();
             } else {
-                throw new LogException("Sayfa bulunamadı. $page", LogException::TYPE['ERROR']);
+                throw new Exception("Sayfa bulunamadı. $page", E_ERROR);
             }
-        } catch (LogException $exception) {
-            $exception->debug();
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
         return $this;
     }
@@ -85,10 +86,10 @@ class View
                 include($part);
                 $this->buffer[$filePath] = ob_get_clean();
             } else {
-                throw new LogException("Sayfa bulunamadı. $part", LogException::TYPE['ERROR']);
+                throw new Exception("Sayfa bulunamadı. $part", E_ERROR);
             }
-        } catch (LogException $exception) {
-            $exception->debug();
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
         return $this;
     }
@@ -113,10 +114,10 @@ class View
                 include($template);
                 $this->buffer[] = ob_get_clean();
             } else {
-                throw new LogException("Sayfa bulunamadı. $template", LogException::TYPE['ERROR']);
+                throw new Exception("Sayfa bulunamadı. $template", E_ERROR);
             }
-        } catch (LogException $exception) {
-            $exception->debug();
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
         return $this;
     }
@@ -177,7 +178,7 @@ class View
      * @param $data
      * @return $this
      */
-    public function data($data)
+    private function data($data)
     {
         if (is_array($data)) {
             $this->data = array_merge($this->data, $data);

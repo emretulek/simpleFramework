@@ -2,7 +2,6 @@
 
 use Core\Config\Config;
 use Core\Exceptions\ExceptionHandler;
-use Core\Language\Language;
 
 define('ROOT', dirname(__DIR__).'/');
 define('EXT', '.php');
@@ -51,12 +50,6 @@ if (Config::get('app.log.enable')) {
 mb_http_output(Config::get('app.charset'));
 mb_internal_encoding(Config::get('app.charset'));
 date_default_timezone_set(Config::get('app.timezone'));
-
-/**
- * default dil yükleme
- */
-Language::add(Config::get('app.language.key'), Config::get('app.language.name'), Config::get('app.local'));
-Language::setDefault(Config::get('app.language.key'));
 
 
 /**

@@ -50,7 +50,6 @@ class Language
     public static function set(string $key)
     {
         if (self::exists($key)) {
-
             $_SESSION['lang'] = array_merge(['key' => $key], self::$languages[$key]);
             self::loadFiles($key);
 
@@ -62,13 +61,13 @@ class Language
 
 
     /**
-     * @return bool|string
+     * @return object
      *
      * Aktif dil anahtarını döndürür.
      */
     public static function get()
     {
-        return $_SESSION['lang'] ?? false;
+        return (object) $_SESSION['lang'] ?? (object) self::getDefault();
     }
 
 
@@ -124,15 +123,16 @@ class Language
      * Indexi girilen çeviriyi döndürür
      *
      * @param string $key dosya ismi ile birlikte dizi indexi örn; {lang/tr/home.php, $title} için {home.title}
+     * @param mixed ...$args
      * @return mixed
      */
-    public static function translate(string $key)
+    public static function translate(string $key, ...$args)
     {
-        if($translated = dot_aray_get(self::$translate[self::get()], $key)){
-            return $translated;
+        if($translated = dot_aray_get(self::$translate[self::get()->key], $key)){
+            return vsprintf($translated, $args);
         }
 
-        return dot_aray_get(self::$translate[self::$default['key']], $key);
+        return vsprintf(dot_aray_get(self::$translate[self::$default['key']], $key), $args);
 
     }
 
@@ -146,7 +146,7 @@ class Language
      */
     public static function newTranslate(string $key, $value)
     {
-        return dot_aray_set(self::$translate[self::get()], $key, $value);
+        return dot_aray_set(self::$translate[self::get()->key], $key, $value);
     }
 
 

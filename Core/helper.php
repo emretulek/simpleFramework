@@ -128,8 +128,20 @@ if (!function_exists('dot_array_del')) {
     }
 }
 
-if (!function_exists('counter')) {
+if (!function_exists('__')) {
+    /**
+     * Akitf dildeki çeviriyi yazdırır, aktif dilde yoksa default dil, default yoksa boş döner
+     * @param $key
+     * @param mixed ...$args
+     */
+    function __($key, ...$args)
+    {
+        array_unshift($args, $key);
+        echo call_user_func_array([Language::class, 'translate'], $args);
+    }
+}
 
+if (!function_exists('counter')) {
     /**
      * Özellikle döngü sıra numaralrında kullanılmak üzere her kullanılışta
      * başlangıç sayısnı belirtilen miktarda arttırır.

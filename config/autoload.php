@@ -31,7 +31,7 @@ return array(
     ),
     'services' => array(
         'sessions' => Core\Services\SessionService::class,
-        'language' => Core\Services\LanguageService::class,
+        //'language' => Core\Services\LanguageService::class,
         'csrf' => Core\Services\CsrfToken::class,
         //'rememberme' => Services\RememberMe::class
     ),

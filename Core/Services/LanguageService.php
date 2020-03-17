@@ -21,7 +21,7 @@ class LanguageService extends Services
         /*
          * Kullanılabilir dilleri ve ayarlarını yükle
          */
-        Language::add('en', 'English', 'en_US');
+        Language::add('en-us', 'English', 'en_US');
 
         $segments = Request::segments();
 

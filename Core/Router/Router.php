@@ -85,13 +85,11 @@ class Router
      */
     public static function prefix(string $prefix)
     {
-        if(isset(self::$routes[self::$routeID]['prefix']) && !empty(self::$routes[self::$routeID]['prefix'])) {
+        if(!empty(self::$routes[self::$routeID]['prefix'])) {
             self::$routes[self::$routeID]['prefix'] .= '/' . trim($prefix, '/');
         }else{
             self::$routes[self::$routeID]['prefix'] = trim($prefix, '/');
         }
-
-        self::$routes[self::$routeID]['requestUri'] = str_replace(self::$routes[self::$routeID]['prefix'], '', self::$routes[self::$routeID]['requestUri']);
 
         return App::getInstance(self::class);
     }
@@ -169,8 +167,6 @@ class Router
                 array_push(self::$routes[self::$routeID]['middleware'], $middleware);
             }
         }
-
-        self::$routes[self::$routeID]['requestUri'] = str_replace(self::$routes[self::$routeID]['prefix'], '', self::$routes[self::$routeID]['requestUri']);
 
         return App::getInstance(self::class);
     }
@@ -334,7 +330,7 @@ class Router
         try {
             foreach (self::$routes as $name => $route) {
 
-                if (false !== ($matches = self::rootMatch($route['pattern'], $route['requestUri']))) {
+                if (false !== ($matches = self::rootMatch($route['prefix'].$route['pattern'], $route['requestUri']))) {
 
                     //prefix
                     self::$prefix = $route['prefix'];

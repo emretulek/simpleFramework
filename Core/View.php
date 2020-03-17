@@ -16,7 +16,7 @@ class View
 {
 
     protected static $insertData = [];
-    protected static $templateName = 'template';
+    protected static $templateName = 'default';
     protected $dynamicPage = 'index';
     protected $data = [];
     protected $buffer = [];

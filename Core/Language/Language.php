@@ -38,7 +38,7 @@ class Language
      */
     public static function getDefault()
     {
-        return self::$default;
+        return (object) self::$default;
     }
 
     /**
@@ -50,7 +50,7 @@ class Language
     public static function set(string $key)
     {
         if (self::exists($key)) {
-            $_SESSION['lang'] = array_merge(['key' => $key], self::$languages[$key]);
+            $_SESSION['lang'] = (object) array_merge(['key' => $key], self::$languages[$key]);
             self::loadFiles($key);
 
             return true;
@@ -67,7 +67,7 @@ class Language
      */
     public static function get()
     {
-        return (object) $_SESSION['lang'] ?? (object) self::getDefault();
+        return $_SESSION['lang'] ?? self::getDefault();
     }
 
 
@@ -178,4 +178,3 @@ class Language
         return false;
     }
 }
-

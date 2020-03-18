@@ -231,8 +231,8 @@ if (!function_exists('url')) {
         $parameters = $params ? '?' . http_build_query($params) : '';
 
         if (class_exists(Language::class)) {
-            if (Config::get('app.language') != Language::get() && Language::get()) {
-                return Request::baseUrl() . Language::get() . '/' . $path . $parameters;
+            if (Config::get('app.language') != Language::get()->key && Language::get()->key) {
+                return Request::baseUrl() . Language::get()->key . '/' . $path . $parameters;
             }
         }
 

@@ -16,7 +16,7 @@ class Request
      */
     public static function path()
     {
-        return parse_url(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT), PHP_URL_PATH);
+        return parse_url(trim(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT), '/'), PHP_URL_PATH);
     }
 
     /**

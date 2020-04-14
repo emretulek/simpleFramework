@@ -144,7 +144,7 @@ class ExceptionHandler
             case 0:
                 // kullanıcılara önemli hatalar hakkında bilgi verme.
                 if(array_key_exists($code, self::ERROR)) {
-                    ob_clean();
+                    ob_end_clean();
                     $this->print("Yolunda gitmeyen birşeyler var. Debug modunda ayrıntılı bilgi edinebilirsiniz.", $code, $file, $line);
                     exit();
                 }

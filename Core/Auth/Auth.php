@@ -75,7 +75,7 @@ class Auth
 
             if($userInfo = call_user_func($closure, Cookie::get('username'))) {
 
-                if (isset($userInfo['id']) && isset($userInfo['username']) && isset($userInfo['password']) && isset($userInfo['level']) && isset($userInfo['info'])) {
+                if (isset($userInfo['id'], $userInfo['username'], $userInfo['password'], $userInfo['level'], $userInfo['info'])) {
 
                     if (Cookie::get('user_token') == self::creatToken($userInfo['id'], $userInfo['password'])) {
                         return self::login($userInfo['id'], $userInfo['username'], $userInfo['password'], $userInfo['level'], $userInfo['info']);

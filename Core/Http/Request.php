@@ -35,7 +35,7 @@ class Request
      */
     public static function url()
     {
-        return trim(self::baseUrl(), '/') . self::requestUri();
+        return trim(self::baseUrl(), '/') . '/' . self::requestUri();
     }
 
     /**
@@ -44,7 +44,7 @@ class Request
      */
     public static function baseUrl()
     {
-        return self::scheme() . '://' . $_SERVER['SERVER_NAME'] . rtrim(Config::get('app.path'), '/').'/';
+        return self::scheme() . '://' . $_SERVER['SERVER_NAME'] . rtrim(Config::get('app.path'), '/') . '/';
     }
 
     /**
@@ -189,9 +189,9 @@ class Request
      */
     public static function local()
     {
-        if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])){
+        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             $local = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
-            if(ctype_alpha($local)){
+            if (ctype_alpha($local)) {
                 return $local;
             }
         }
@@ -208,7 +208,7 @@ class Request
     {
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
-        if($userAgent){
+        if ($userAgent) {
             return filter_var($userAgent, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         }
 
@@ -287,7 +287,7 @@ class Request
      */
     public static function server($value)
     {
-        $serverVariable = $_SERVER[strtoupper($value)] ?? $_SERVER['HTTP_'.strtoupper($value)] ?? null;
+        $serverVariable = $_SERVER[strtoupper($value)] ?? $_SERVER['HTTP_' . strtoupper($value)] ?? null;
         return filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     }
 }

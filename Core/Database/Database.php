@@ -23,7 +23,9 @@ class Database
     private static function instance()
     {
         try {
-            if (self::$pdo === null) self::$pdo = self::connect();
+            if (self::$pdo === null) {
+                self::$pdo = self::connect();
+            }
         }catch (Exception $e){
             Exceptions::debug($e);
         }
@@ -58,7 +60,6 @@ class Database
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 
         } catch (PDOException $exception) {
-            /* bağlantı başarısız olursa hata LogExcepiton sınıfına taşınır */
             throw new Exception("Can not connect to " . $driver . " server.", E_ERROR, $exception);
         }
         return $pdo;
@@ -204,7 +205,7 @@ class Database
     {
         try {
             if (self::$stmt = self::query($query, $bindings)) {
-                return self::$rowCount = self::$stmt->rowCount();
+                return self::$rowCount = self::$stmt->rowCount() ? self::$stmt->rowCount() : true;
             }
         }catch (Exception $e){
             Exceptions::debug($e, 1);

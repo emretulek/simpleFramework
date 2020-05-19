@@ -182,6 +182,7 @@ class Router
         $segments = Request::segments();
         $segments = array_slice($segments, count(self::$methodPrefix));
         $controller = isset($segments[0]) ? array_shift($segments) : self::$controller;
+        $controller = substr($controller, 0, 2) == '__' ? self::$controller : $controller;
         $method = isset($segments[0]) ? array_shift($segments) : self::$method;
         $params = $segments ? implode('/', array_map(function ($item) {
             return '(' . $item . ')';
@@ -534,6 +535,7 @@ class Router
 
         if ($callback instanceof Closure) {
             self::$errors[$http_code] = $callback;
+            return App::getInstance(self::class);
         }
 
         if (empty(self::$errors[404])) {

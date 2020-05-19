@@ -4,9 +4,19 @@ namespace Core;
 
 
 use Core\Config\Config;
+use Core\Http\HttpNotFound;
 
 class Controller
 {
+
+    /**
+     * @throws HttpNotFound
+     */
+    public function main()
+    {
+        throw new HttpNotFound();
+    }
+
     /**
      * @return View;
      */

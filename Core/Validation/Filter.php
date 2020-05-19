@@ -62,7 +62,7 @@ class Filter
     {
         $this->required = $required;
 
-        if($required == true && empty($this->input) && $this->input != 0){
+        if($required == true && empty($this->input)){
             $this->errorMessage('required');
         }
     }
@@ -308,12 +308,12 @@ class Filter
 
     /**
      * Tüm html taglarını temizler.
-     *
+     * @param $allowed
      * @return $this
      */
-    public function toText()
+    public function toText($allowed = null)
     {
-        $this->input = strip_tags($this->input);
+        $this->input = strip_tags($this->input, $allowed);
         return $this;
     }
 

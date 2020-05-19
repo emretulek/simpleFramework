@@ -2,10 +2,9 @@
 
 namespace App\Model;
 
-use DB;
 use Core\Model;
 
-class Users extends Model
+class Index extends Model
 {
 
     protected $table = 'table';

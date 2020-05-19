@@ -5,7 +5,7 @@ namespace Core\Cache;
 
 
 use Core\Config\Config;
-use Core\Database\Database as DB;
+use Core\Database\DB;
 use Core\Exceptions\Exceptions;
 use Exception;
 
@@ -19,7 +19,7 @@ class DatabaseCache implements CacheInterface
 
             $this->table = Config::get("app.cache.database.table");
 
-            if (DB::query("select 1 from {$this->table} limit 1")) {
+            if (DB::getVar("select 1 from {$this->table} limit 1")) {
                 $this->clear();
             }else{
                 throw new Exception(Config::get("app.cache.database.table"). " belirtilen bellek tablosu bulunamadı.", E_ERROR);

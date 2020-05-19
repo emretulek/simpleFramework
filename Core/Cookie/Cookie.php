@@ -1,6 +1,8 @@
 <?php
 
 namespace Core\Cookie;
+use Core\Http\Request;
+
 /**
  * Class Cookie
  * Kolay cookie yönetimi sağlar.
@@ -16,12 +18,19 @@ class Cookie
      * @param int|string $lifetime integer hours or  string (60s, 30i, 24h, 30d, 12m, 1y)
      * @param string $path
      * @param null $domain
-     * @param bool $secure
+     * @param bool $secure true sadece https, false http, null auto
      * @param bool $http_only
+     * @param string $sameSite Strict, Lax, None
      * @return bool
      */
-    public static function set(string $name, string $value, $lifetime = 24, $path = "/", $domain = null, $secure = false, $http_only = true)
+    public static function set(string $name, string $value, $lifetime = 24, $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict')
     {
+        if($secure == null){
+            $secure = Request::scheme() === 'https';
+        }
+
+        $path .= '; samesite='.mb_convert_case($sameSite, MB_CASE_TITLE);
+
         return setcookie(self::arrayCookieName($name), $value, self::expires($lifetime), $path, $domain, $secure, $http_only);
     }
 

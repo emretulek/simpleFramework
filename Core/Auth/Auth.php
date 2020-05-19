@@ -98,6 +98,7 @@ class Auth
     {
         ///* Session hijacking  security */
         if (Cookie::get('user_token') && Auth::info('token') != Cookie::get('user_token')) {
+            self::logout();
             return false;
         }
 

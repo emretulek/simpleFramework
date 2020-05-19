@@ -1,14 +1,6 @@
 <?php
 
-use Core\Middleware\CsrfCheck;
-
-Router::group(['middleware'=>CsrfCheck::class], function (){
-    Router::any('/a', function (){
-        dump($_SESSION);
-    });
-    Router::any('/test', function (){
-        dump("test");
-    });
-});
-
+//Router::any('/', "index@main")::name("index");
+//Router::get('/test', "index@main")->name("test");
+//Router::get('/test/{string}', "index@main")->name("test.test2");
 Router::autoRute();

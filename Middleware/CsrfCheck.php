@@ -1,7 +1,8 @@
 <?php
-namespace Core\Middleware;
+namespace Middleware;
 
 use Core\Csrf\Csrf;
+use Core\Middleware\IMiddleware;
 
 Class CsrfCheck Implements IMiddleware {
 
@@ -12,6 +13,6 @@ Class CsrfCheck Implements IMiddleware {
 
     public function after()
     {
-        // TODO: Implement after() method.
+
     }
 }

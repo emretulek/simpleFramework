@@ -22,9 +22,13 @@ class View
     protected $buffer = [];
 
 
+    /**
+     * View constructor.
+     */
     public function __construct()
     {
         $this->data(self::$insertData);
+        return $this;
     }
 
 
@@ -42,26 +46,26 @@ class View
     /**
      * page/ dizini altından kullanılacak dosyayı hazırlar.
      *
-     * @param string $__fileName
-     * @param array $__data
+     * @param string $fileName
+     * @param array $data
      * @return View
      */
-    public function page(string $__fileName, array $__data = array())
+    public function page(string $fileName, array $data = array())
     {
-        $this->data($__data);
-        $__page = ROOT . Config::get('path.page') . '/' . $__fileName . EXT;
+        $this->data($data);
+        $___page = ROOT . Config::get('path.page') . '/' . $fileName . EXT;
 
         try {
-            if (file_exists($__page)) {
+            if (file_exists($___page)) {
                 ob_start();
                 extract($this->data);
-                include($__page);
-                $this->buffer[$__fileName] = ob_get_clean();
+                include($___page);
+                $this->buffer[$fileName] = ob_get_clean();
             } else {
-                throw new Exception("Sayfa bulunamadı. $__page", E_ERROR);
+                throw new Exception("Sayfa bulunamadı. $___page", E_ERROR);
             }
-        } catch (Exception $__e) {
-            Exceptions::debug($__e);
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
         return $this;
     }
@@ -69,27 +73,27 @@ class View
 
     /**
      * part/ dizini altından kullanılacak dosyayı hazırlar.
-     * 
-     * @param string $__filePath
-     * @param array $__data
-     * @param string $__ext
+     *
+     * @param string $filePath
+     * @param array $data
+     * @param string $ext
      * @return $this
      */
-    public function path(string $__filePath, $__data = array(), $__ext = EXT)
+    public function path(string $filePath, $data = array(), $ext = EXT)
     {
-        $this->data($__data);
-        $__part = ROOT . Config::get('path.view') . '/' . $__filePath . $__ext;
+        $this->data($data);
+        $___part = ROOT . Config::get('path.view') . '/' . $filePath . $ext;
         try {
-            if (file_exists($__part)) {
+            if (file_exists($___part)) {
                 ob_start();
                 extract($this->data);
-                include($__part);
-                $this->buffer[$__filePath] = ob_get_clean();
+                include($___part);
+                $this->buffer[$filePath] = ob_get_clean();
             } else {
-                throw new Exception("Sayfa bulunamadı. $__part", E_ERROR);
+                throw new Exception("Sayfa bulunamadı. $___part", E_ERROR);
             }
-        } catch (Exception $__e) {
-            Exceptions::debug($__e);
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
         return $this;
     }
@@ -98,26 +102,27 @@ class View
     /**
      * /page dizininden bir dosyayı template içine dahil ederek hazırlar.
      *
-     * @param string $__fileName
-     * @param array $__data
+     * @param string $fileName
+     * @param array $data
      * @return View
      */
-    public function template(string $__fileName, $__data = array())
+    public function template(string $fileName, $data = array())
     {
-        $this->data($__data);
-        $this->dynamicPage = $__fileName;
-        $__template = ROOT . Config::get('path.template') . '/' . self::$templateName . EXT;
+        $this->data($data);
+        $this->dynamicPage = $fileName;
+        $___template = ROOT . Config::get('path.template') . '/' . self::$templateName . EXT;
 
         try {
-            if (file_exists($__template)) {
+            if (file_exists($___template)) {
                 ob_start();
-                include($__template);
+                extract($this->data);
+                include($___template);
                 $this->buffer[] = ob_get_clean();
             } else {
-                throw new Exception("Sayfa bulunamadı. $__template", E_ERROR);
+                throw new Exception("Sayfa bulunamadı. $___template", E_ERROR);
             }
-        } catch (Exception $__e) {
-            Exceptions::debug($__e);
+        } catch (Exception $e) {
+            Exceptions::debug($e);
         }
         return $this;
     }
@@ -125,13 +130,13 @@ class View
     /**
      * Diziyi json header bilgisiyle encode edip buffera alır
      *
-     * @param $__data
+     * @param $data
      * @return $this
      */
-    public function json($__data)
+    public function json($data)
     {
         ob_start();
-        (new Response())->json($__data)->send();
+        (new Response())->json($data)->send();
         $this->buffer[] = ob_get_clean();
         return $this;
     }

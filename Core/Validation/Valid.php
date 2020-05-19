@@ -8,7 +8,7 @@ Class Valid
 {
 
     /**
-     * TODO true, yes, on, ok, evet, tamam değerlerine true aksi halde false döndürür
+     * true, yes, on, ok, evet, tamam değerlerine true aksi halde false döndürür
      *
      * @param $input [true, yes, on, ok, evet, tamam]
      * @return bool

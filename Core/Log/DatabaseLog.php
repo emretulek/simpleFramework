@@ -2,7 +2,7 @@
 
 namespace Core\Log;
 
-use Core\Database\Database;
+use Core\Database\DB;
 
 
 class DatabaseLog Implements LogInterface
@@ -20,8 +20,7 @@ class DatabaseLog Implements LogInterface
      */
     public function writer($message, $data, $type)
     {
-        return Database::insert(
-            "insert into {$this->table} set `type` = ?, `message` = ?, `data` = ?",
+        return DB::insert("insert into {$this->table} set `type` = ?, `message` = ?, `data` = ?",
             [$type, $message, $data]);
     }
 }

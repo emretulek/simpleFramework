@@ -5,6 +5,7 @@ namespace Core\Exceptions;
 
 use Core\Config\Config;
 use Core\Http\Request;
+use Core\Http\Response;
 use Exception;
 use ErrorException;
 use Throwable;
@@ -58,12 +59,13 @@ class ExceptionHandler
      * @param $message
      * @param string $file
      * @param int $line
-     * @throws ErrorException
      */
     public function handleError($code, $message, $file = '', $line = 0)
     {
-        if (error_reporting() & $code) {
+        try{
             throw new ErrorException($message, $code, 1, $file, $line);
+        }catch (Exception $e){
+            $this->handleException($e);
         }
     }
 
@@ -145,8 +147,11 @@ class ExceptionHandler
                 // kullanıcılara önemli hatalar hakkında bilgi verme.
                 if(array_key_exists($code, self::ERROR)) {
                     ob_end_clean();
+                    ob_start();
                     $this->print("Yolunda gitmeyen birşeyler var. Debug modunda ayrıntılı bilgi edinebilirsiniz.", $code, $file, $line);
-                    exit();
+                    $content = ob_get_clean();
+                    echo new Response($content, 500);
+                    exit;
                 }
                 if(!array_key_exists($code, self::NOTICE)) {
                     $trace ? $this->writeLog($message, $code, $trace['file'], $trace['line']):$this->writeLog($message, $code, $file, $line);

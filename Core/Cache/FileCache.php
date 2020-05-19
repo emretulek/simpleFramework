@@ -6,7 +6,6 @@ namespace Core\Cache;
 
 use Core\Config\Config;
 use Exception;
-use Exceptions;
 
 class FileCache implements CacheInterface
 {
@@ -28,6 +27,7 @@ class FileCache implements CacheInterface
      * @param int $compress
      * @param int $expires
      * @return bool
+     * @throws Exception
      */
     public function set($key, $value, int $compress = 0, $expires = 2592000): bool
     {
@@ -38,17 +38,11 @@ class FileCache implements CacheInterface
         $value .= PHP_EOL . (int)$compress;
         $value .= PHP_EOL . $expires;
 
-        try {
-
-            if ($this->hasWritable($this->path)) {
-                return file_put_contents($fileName, $value) !== false;
-            }
-
-        } catch (Exception $e) {
-            Exceptions::debug($e);
+        if (is_writable_dir($this->path)) {
+            return file_put_contents($fileName, $value) !== false;
+        }else{
+            throw new Exception("Dizin yazılabilir değil.", E_NOTICE);
         }
-
-        return false;
     }
 
 
@@ -65,7 +59,7 @@ class FileCache implements CacheInterface
     {
         $fileName = $this->setFileName($key);
 
-        if (file_exists($fileName)) {
+        if (is_writable_file($fileName)) {
             return false;
         }
 
@@ -75,41 +69,32 @@ class FileCache implements CacheInterface
 
     /**
      * Önbellekten ilgili anahtara ait değeri döndürür
-     *
      * @param $key
-     * @return mixed
+     * @return bool|mixed
+     * @throws Exception
      */
     public function get($key)
     {
         $fileName = $this->setFileName($key);
 
-        if (file_exists($fileName)) {
+        if (is_readable_file($fileName)) {
 
-            try {
+            $value = file_get_contents($fileName);
+            $lines = explode(PHP_EOL, $value);
+            $expires = array_pop($lines);
+            $compress = array_pop($lines);
+            $value = implode(PHP_EOL, $lines);
 
-                if ($this->hasReadable($fileName)) {
-
-                    $value = file_get_contents($fileName);
-                    $lines = explode(PHP_EOL, $value);
-                    $expires = array_pop($lines);
-                    $compress = array_pop($lines);
-                    $value = implode(PHP_EOL, $lines);
-
-                    if (filemtime($fileName) < time() - $expires) {
-                        unlink($fileName);
-                        return false;
-                    }
-
-                    if ($compress) {
-                        $value = bzdecompress($value);
-                    }
-
-                    return unserialize($value);
-                }
-
-            } catch (Exception $e) {
-                Exceptions::debug($e);
+            if (filemtime($fileName) < time() - $expires) {
+                unlink($fileName);
+                return false;
             }
+
+            if ($compress) {
+                $value = bzdecompress($value);
+            }
+
+            return unserialize($value);
         }
 
         return false;
@@ -125,41 +110,33 @@ class FileCache implements CacheInterface
     {
         $fileName = $this->setFileName($key);
 
-        if (file_exists($fileName)) {
-
-            try {
-
-                if ($this->hasWritable($fileName)) {
-                    return unlink($fileName);
-                }
-
-            } catch (Exception $e) {
-                Exceptions::debug($e);
-            }
+        if (is_writable_file($fileName)) {
+            return unlink($fileName);
         }
 
-        return true;
+        return false;
     }
 
     /**
      * Tüm önbelleği temizler
-     *
      * @return bool
+     * @throws Exception
      */
     public function flush(): bool
     {
         $files = glob($this->path . '/*.cache');
 
-        try {
+        if($files) {
             foreach ($files as $file) {
-                if ($this->hasWritable($file)) {
+                if (is_writable_file($file)) {
                     return unlink($file);
+                }else{
+                    throw new Exception($file." Dosya silinemiyor.", E_NOTICE);
                 }
             }
-        } catch (Exception $e) {
-            Exceptions::debug($e);
         }
-        return true;
+
+        return false;
     }
 
 
@@ -173,9 +150,9 @@ class FileCache implements CacheInterface
     }
 
     /**
-     *
      * @param float $gc
      * @param int $lifeTime
+     * @throws Exception
      */
     private function fileCacheGc($gc = 0.001, $lifeTime = 180)
     {
@@ -184,12 +161,14 @@ class FileCache implements CacheInterface
         $gcCount = ceil(count($files) * $gc);
         shuffle($files);
 
-        try {
+        if($files) {
             foreach ($files as $file) {
 
                 if (filemtime($file) < time() - $lifeTime) {
-                    if ($this->hasWritable($file)) {
+                    if (is_writable_file($file)) {
                         unlink($file);
+                    }else{
+                        throw new Exception("Dosya silinemiyor.", E_NOTICE);
                     }
                 }
 
@@ -197,39 +176,8 @@ class FileCache implements CacheInterface
                     break;
                 }
             }
-        }catch (Exception $e){
-            Exceptions::debug($e);
         }
 
         $files = null;
-    }
-
-
-    /**
-     * @param $filename
-     * @return bool
-     * @throws Exception
-     */
-    private function hasWritable($filename)
-    {
-        if(is_writable($filename)){
-            return true;
-        }
-
-        throw new Exception($filename.' dosya yazılabilir değil', E_WARNING);
-    }
-
-    /**
-     * @param $filename
-     * @return bool
-     * @throws Exception
-     */
-    private function hasReadable($filename)
-    {
-        if(is_readable($filename)){
-            return true;
-        }
-
-        throw new Exception($filename.' dosya okunabilir değil.', E_WARNING);
     }
 }

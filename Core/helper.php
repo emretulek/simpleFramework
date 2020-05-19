@@ -1,9 +1,11 @@
 <?php
 
+use Core\App;
 use Core\Config\Config;
 use Core\Http\Request;
 use Core\Http\Response;
 use Core\Language\Language;
+use Core\View;
 
 if (!function_exists('console_log')) {
     /**
@@ -20,7 +22,6 @@ if (!function_exists('console_log')) {
         });
     }
 }
-
 
 if (!function_exists('dump')) {
     /**
@@ -50,7 +51,6 @@ if (!function_exists('dump')) {
         echo '</div>';
     }
 }
-
 
 if (!function_exists('dot_aray_set')) {
     /**
@@ -158,13 +158,42 @@ if (!function_exists('counter')) {
     }
 }
 
+if (!function_exists('random')) {
 
-/**
- *
- * URL ile ilgili fonksiyonlar
- *
- */
+    /**
+     * Random dizge oluşturur
+     * @param int $length
+     * @param string $type [number, alpha, special, alnum]
+     * @return string|null
+     */
+    function random(int $length, string $type = null)
+    {
+        $random = null;
+        $characters = null;
 
+        $number = "0123456789";
+        $alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGIJKLMNOPQRSTUVWXYZ";
+        $special = "!^+$%&/()[]=}?*_@";
+
+        switch ($type){
+            case 'number': $characters = $number; break;
+            case 'alpha' : $characters = $alpha; break;
+            case 'special' : $characters = $special; break;
+            case 'alnum' : $characters = $number.$alpha; break;
+            default: $characters = $number.$alpha.$special;
+        }
+
+        $characterSize = strlen($characters);
+
+        for($i = 0; $i < $length; $i++){
+            $random .= $characters[rand(0,$characterSize-1)];
+        }
+
+        return $random;
+    }
+}
+
+#region URL ile ilgili fonksiyonlar
 if (!function_exists('baseUrl')) {
     /**
      * @param null $path url adresine eklenecek bölüm
@@ -172,6 +201,7 @@ if (!function_exists('baseUrl')) {
      */
     function baseUrl($path = null)
     {
+        $path = $path ? trim($path, '/') : '';
         return Request::baseUrl() . $path;
     }
 }
@@ -184,6 +214,7 @@ if (!function_exists('groupUrl')) {
      */
     function groupUrl($path = null)
     {
+        $path = $path ? trim($path, '/') : '';
         $group  = Router::getPrefix() ? Router::getPrefix().'/' : '';
         return Request::baseUrl() . $group . $path;
     }
@@ -229,9 +260,17 @@ if (!function_exists('url')) {
     function url(string $path = null, array $params = array())
     {
         $parameters = $params ? '?' . http_build_query($params) : '';
+        $path = trim($path, '/');
 
+        //http veya https varsa dış bağlantı olarak değerlendir
+        if(preg_match("#^https?://#", $path, $match)){
+            return $path.$parameters;
+        }
+
+        //dil desteği aktifse url yapısını ona göre oluştur
         if (class_exists(Language::class)) {
-            if (Config::get('app.language') != Language::get()->key && Language::get()->key) {
+            if (Language::getDefault()->key != Language::get()->key && Language::getDefault()->key) {
+
                 return Request::baseUrl() . Language::get()->key . '/' . $path . $parameters;
             }
         }
@@ -267,9 +306,9 @@ if (!function_exists('redirect')) {
     {
         if (!headers_sent()) {
             if(filter_var($url, FILTER_VALIDATE_URL)){
-                (new Response())->redirect($url, $code);
+                App::getInstance(Response::class)->redirect($url, $code);
             }else{
-                (new Response())->redirect(url($url), $code);
+                App::getInstance(Response::class)->redirect(url($url), $code);
             }
         }else {
             echo '<meta http-equiv = "refresh" content = "0; url = ' . url($url) . '" />';
@@ -279,91 +318,169 @@ if (!function_exists('redirect')) {
         exit;
     }
 }
+#endregion
+
+#region View Helpers
+if (!function_exists('page')) {
+    /**
+     * Core\View::page metodunun eş değeri
+     *
+     * @param $fileName
+     * @param array $data
+     * @return View
+     */
+    function page($fileName, $data = array())
+    {
+        $view = App::getInstance(View::class);
+        return $view->page($fileName, $data)->render();
+    }
+}
+
+if (!function_exists('viewPath')) {
+    /**
+     * Core\View::part metodunun eş değeri
+     *
+     * @param $fileName
+     * @param array $data
+     * @return View
+     */
+    function viewPath($fileName, $data = array())
+    {
+        $view = App::getInstance(View::class);
+        return $view->path($fileName, $data)->render();
+    }
+}
+
+if (!function_exists('json')) {
+    /**
+     * Core\View::json metodunun eş değeri
+     *
+     * @param array $data
+     * @return View
+     */
+    function json($data)
+    {
+        $view = App::getInstance(View::class);
+        return $view->json($data)->render();
+    }
+}
 
 
-//if (!function_exists('is_readable_file')) {
-//    /**
-//     * Dosya varsa ve okunabilirse true döndürür aksi halde exception fırlatır
-//     *
-//     * @param string $filename
-//     * @return bool
-//     * @throws Exception
-//     */
-//    function is_readable_file(string $filename)
-//    {
-//       if(is_file($filename)){
-//           if(is_readable($filename)){
-//
-//               return true;
-//           }
-//           throw new Exception($filename. ' dosya okunabilir değil.', E_ERROR);
-//       }
-//       throw  new Exception($filename. ' dosya bulunamadı.', E_ERROR);
-//    }
-//}
-//
-//
-//if (!function_exists('is_writable_file')) {
-//    /**
-//     * Dosya varsa ve yazılabilirse true döndürür aksi halde exception fırlatır
-//     *
-//     * @param string $filename
-//     * @return bool
-//     * @throws Exception
-//     */
-//    function is_writable_file(string $filename)
-//    {
-//        if(is_file($filename)){
-//            if(is_writable($filename)){
-//
-//                return true;
-//            }
-//            throw new Exception($filename. ' dosya yazılabilir değil.', E_ERROR);
-//        }
-//        throw  new Exception($filename. ' dosya bulunamadı.', E_ERROR);
-//    }
-//}
-//
-//
-//if (!function_exists('is_readable_dir')) {
-//    /**
-//     * Dizin varsa ve okunabilirse true döndürür aksi halde exception fırlatır
-//     *
-//     * @param string $filename
-//     * @return bool
-//     * @throws Exception
-//     */
-//    function is_readable_dir(string $filename)
-//    {
-//        if(is_dir($filename)){
-//            if(is_readable($filename)){
-//
-//                return true;
-//            }
-//            throw new Exception($filename. ' dizin okunabilir değil.', E_ERROR);
-//        }
-//        throw  new Exception($filename. ' dizin bulunamadı.', E_ERROR);
-//    }
-//}
-//
-//
-//if (!function_exists('is_writable_dir')) {
-//    /**
-//     * Dizin varsa ve yazılabilirse true döndürür aksi halde exception fırlatır
-//     *
-//     * @param string $filename
-//     * @return bool
-//     * @throws Exception
-//     */
-//    function is_writable_dir(string $filename)
-//    {
-//        if(is_dir($filename)){
-//            if(is_writable($filename)){
-//
-//                return true;
-//            }
-//            throw new Exception($filename. ' dizin yazılabilir değil.', E_ERROR);
-//        }
-//        throw  new Exception($filename. ' dizin bulunamadı.', E_ERROR);
-//    }
-//}
+if (!function_exists('jsonSuccess')) {
+    /**
+     * Json verisini success olarak render eder
+     *
+     * @param null $message
+     * @param null $location
+     * @param null $data
+     * @return View
+     */
+    function jsonSuccess($message = null, $location = null, $data = null)
+    {
+        $view = App::getInstance(View::class);
+        return $view->json(['type' => 'success', 'message' => $message, 'location' => $location, 'data' => $data])->render();
+    }
+}
+
+if (!function_exists('jsonError')) {
+    /**
+     * Json verisini error olarak render eder
+     *
+     * @param null $message
+     * @param null $location
+     * @param null $data
+     * @return View
+     */
+    function jsonError($message = null, $location = null, $data = null)
+    {
+        $view = App::getInstance(View::class);
+        return $view->json(['type' => 'error', 'message' => $message, 'location' => $location, 'data' => $data])->render();
+    }
+}
+
+if (!function_exists('template')) {
+    /**
+     * Core\View::template metodunun eş değeri
+     *
+     * @param $fileName
+     * @param array $data
+     * @return View
+     */
+    function template($fileName, $data = array())
+    {
+        $view = App::getInstance(View::class);
+        return $view->template($fileName, $data)->render();
+    }
+}
+
+if (!function_exists('setTemplate')) {
+    /**
+     * Core\View::setTemplate metodunun eş değeri
+     *
+     * @param $template
+     * @return View
+     */
+    function setTemplate($template)
+    {
+        $view = App::getInstance(View::class);
+        return $view->setTemplate($template);
+    }
+}
+#endregion
+
+#region File (dosya) fonksiyonları
+if (!function_exists('is_readable_file')) {
+    /**
+     * Dosya varsa ve okunabilirse true döndürür
+     *
+     * @param string $filename
+     * @return bool
+     */
+    function is_readable_file(string $filename)
+    {
+       return is_file($filename) && is_readable($filename);
+    }
+}
+
+
+if (!function_exists('is_writable_file')) {
+    /**
+     * Dosya varsa ve yazılabilirse true döndürür aksi halde exception fırlatır
+     *
+     * @param string $filename
+     * @return bool
+     */
+    function is_writable_file(string $filename)
+    {
+        return is_file($filename) && is_writable($filename);
+    }
+}
+
+
+if (!function_exists('is_readable_dir')) {
+    /**
+     * Dizin varsa ve okunabilirse true döndürür
+     *
+     * @param string $filename
+     * @return bool
+     */
+    function is_readable_dir(string $filename)
+    {
+        return is_dir($filename) && is_readable($filename);
+    }
+}
+
+
+if (!function_exists('is_writable_dir')) {
+    /**
+     * Dizin varsa ve yazılabilirse true döndürür
+     *
+     * @param string $filename
+     * @return bool
+     */
+    function is_writable_dir(string $filename)
+    {
+        return is_dir($filename) && is_writable($filename);
+    }
+}
+#endregion

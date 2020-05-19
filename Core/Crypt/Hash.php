@@ -95,7 +95,6 @@ class Hash
      */
     public static function passwordRehash(string $password, string $hashedPassword)
     {
-
         if(self::$password_hash && self::passwordCheck($password, $hashedPassword)) {
             if (password_needs_rehash($hashedPassword, PASSWORD_BCRYPT)) {
                 return password_hash($password, PASSWORD_BCRYPT);

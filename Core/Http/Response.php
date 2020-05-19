@@ -101,7 +101,6 @@ class Response
 
     public function __toString()
     {
-        // TODO: Implement __toString() method.
         http_response_code($this->response['code']);
 
         foreach ($this->response['headers'] as $header) {

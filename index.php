@@ -3,4 +3,4 @@
 
 require_once ('Core/bootstrap.php');
 
-//echo (microtime(true) * 1000) - FW_START;
+//echo round((microtime(true) * 1000) - FW_START);

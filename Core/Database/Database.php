@@ -1,256 +1,305 @@
-<?php
+<?php 
+/**
+ * @Created 18.05.2020 08:09:39
+ * @Project simpleFramework
+ * @Author Mehmet Emre Tülek <memretulek@gmail.com>
+ * @Class Database
+ * @package Core\Database
+ */
+
 
 namespace Core\Database;
 
 use Core\Exceptions\Exceptions;
 use Exception;
-use PDO, PDOException;
-use Core\Config\Config;
+use PDO;
+use PDOException;
+use PDOStatement;
 
-/**
- * Class Database
- * PDO static veritabanı sınıfı.
- */
-class Database
-{
-    private static $pdo = null;
-    private static $stmt;
+class Database {
 
-    public static $rowCount;
-    public static $insertId;
+    /**
+     * @var $pdo PDO
+     */
+    private $pdo;
+    /**
+     * @var $stm PDOStatement
+     */
+    private $stm;
+
+    private $driver;
+    private $host;
+    private $database;
+    private $user;
+    private $password;
+    private $charset;
+    private $collection;
 
 
-    private static function instance()
+    /**
+     * Database constructor.
+     * @param $driver
+     * @param $host
+     * @param $database
+     * @param $user
+     * @param $password
+     * @param string $charset
+     * @param string $collaction
+     * @throws Exception
+     */
+    public function __construct(string $driver, string $host, string $database, string $user, string $password, string $charset = 'utf8', string $collaction = 'utf8_general_ci')
+    {
+        $this->driver = $driver;
+        $this->host = $host;
+        $this->database = $database;
+        $this->user = $user;
+        $this->password = $password;
+        $this->charset = $charset;
+        $this->collection = $collaction;
+
+        $this->connect();
+    }
+
+    /**
+     * Veritabanı bağlantısı oluşturur
+     * @throws Exception
+     */
+    private function connect()
     {
         try {
-            if (self::$pdo === null) {
-                self::$pdo = self::connect();
+            $this->pdo = new PDO($this->driver.':host='.$this->host.';dbname='.$this->database, $this->user, $this->password);
+            $this->pdo->exec("SET NAMES '" . $this->charset . "' COLLATE '" . $this->collection . "'");
+            $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+
+        } catch (PDOException $e) {
+            throw new Exception($this->driver." veritabanı bağlantısı kurulamıyor.", E_ERROR, $e);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Yeniden database seçer
+     * @param $database
+     * @return $this
+     * @throws Exception
+     */
+    public function selectDB(string $database)
+    {
+        if($this->pdo->exec("USE $database") === false){
+            throw new Exception("Veritabanı seçilemedi.", E_ERROR);
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * Sorgu ve değişkenleri bağlar
+     * @param $query
+     * @param array|null $bindings
+     * @param array $options
+     * @return $this
+     * @throws Exception
+     */
+    public function bindQuery($query, array $bindings = null, array $options = [])
+    {
+        try {
+            $this->stm = $this->pdo->prepare($query, $options);
+            $this->stm->execute($bindings);
+            $sqlError = $this->stm->errorInfo();
+
+            if(isset($sqlError[1])){
+
+                throw new Exception("Sql error code({$sqlError[0]}/{$sqlError[1]}) Error: {$sqlError[2]}", E_ERROR);
             }
+        }catch (PDOException $e){
+            Exceptions::debug($e, 2);
         }catch (Exception $e){
-            Exceptions::debug($e);
+            Exceptions::debug($e, 2);
         }
-        return self::$pdo;
-    }
 
-    /**
-     * PDO bağlantı methodu
-     *
-     * @param null $driver
-     * @param null $dsn
-     * @param null $user
-     * @param null $password
-     * @param null $charset
-     * @param null $collaction
-     * @return PDO
-     * @throws Exception
-     */
-    public static function connect($driver = null, $dsn = null, $user = null, $password = null, $charset = null, $collaction = null)
-    {
-        /* Ayarlar */
-        $driver = $driver ? $driver : Config::get('app.sql_driver');
-        $dsn = $dsn ? $dsn : Config::get('database.' . $driver . '.dsn');
-        $user = $user ? $user : Config::get('database.' . $driver . '.user');
-        $password = $password ? $password : Config::get('database.' . $driver . '.password');
-        $charset = $charset ? $charset : Config::get('database.' . $driver . '.charset');
-        $collaction = $collaction ? $collaction : Config::get('database.' . $driver . '.collaction');
-
-        try {
-            $pdo = new PDO($dsn, $user, $password);
-            $pdo->exec("SET NAMES '" . $charset . "' COLLATE '" . $collaction . "'");
-            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
-
-        } catch (PDOException $exception) {
-            throw new Exception("Can not connect to " . $driver . " server.", E_ERROR, $exception);
-        }
-        return $pdo;
+        return $this;
     }
 
 
     /**
-     * config/database.php dosyasında tanımlı farkı drivera geçiş yapar.
-     *
-     * @param string $driver
-     */
-    public static function selectDriver(string $driver)
-    {
-        Config::set('app.sqlDriver', $driver);
-        self::close();
-    }
-
-
-    /**
-     * Aynı sql sunucusunda farklı bir veritabanına geçiş yapar.
-     * @param string $databaseName
-     * @return bool
-     */
-    public static function selectDatabase(string $databaseName)
-    {
-        if (self::instance()->exec("USE $databaseName") === false) {
-            return false;
-        }
-        return true;
-    }
-
-
-    /**
+     * Eşleşen tüm satırları döndürür
      * @param string $query
      * @param array|null $bindings
-     * @return bool|\PDOStatement
-     * @throws Exception
-     */
-    private static function query(string $query, array $bindings = null)
-    {
-        self::$stmt = self::instance()->prepare($query);
-        self::$stmt->execute($bindings);
-        $error = self::$stmt->errorInfo();
-
-        if ($error[2]) {
-            throw new Exception("Sql error code({$error[0]}/{$error[1]}) Error: {$error[2]}", E_WARNING);
-        }
-
-        return self::$stmt;
-    }
-
-
-    /**
-     * Sorgudan dönen tüm sonuçları object olarak döndürür.
-     *
-     * @param string $query
-     * @param array|null $bindings
+     * @param int $fetchStyle
      * @return array|bool
      */
-    public static function get(string $query, array $bindings = null)
+    public function get(string $query, array $bindings = null, $fetchStyle = PDO::FETCH_OBJ)
     {
         try {
-            if (self::$stmt = self::query($query, $bindings)) {
-                $result = self::$stmt->fetchAll();
-                self::$rowCount = count($result);
-                return $result;
-            }
+            $this->bindQuery($query, $bindings);
+            return $this->stm->fetchAll($fetchStyle);
         }catch (Exception $e){
-            Exceptions::debug($e, 1);
+            Exceptions::debug($e, 2);
         }
         return false;
     }
 
 
     /**
-     * Sorgudan dönen ilk satırı object olarak döndürür
-     *
+     * Eşleşen ilk satırı döndürür
+     * @param string $query
+     * @param array|null $bindings
+     * @param int $fetchStyle
+     * @return bool|mixed
+     */
+    public function getRow(string $query, array $bindings = null, $fetchStyle = PDO::FETCH_OBJ)
+    {
+        try {
+            $this->bindQuery($query, $bindings);
+            return $this->stm->fetch($fetchStyle);
+        }catch (Exception $e){
+            Exceptions::debug($e, 2);
+        }
+        return false;
+    }
+
+
+    /**
+     * Sorgu sonucu dönen ilk stunun tamanını döndürür
+     * @param string $query
+     * @param array|null $bindings
+     * @param int $fetchStyle
+     * @return array|bool
+     */
+    public function getCol(string $query, array $bindings = null, $fetchStyle = PDO::FETCH_COLUMN)
+    {
+        try {
+            $this->bindQuery($query, $bindings);
+            return $this->stm->fetchAll($fetchStyle);
+        }catch (Exception $e){
+            Exceptions::debug($e, 2);
+        }
+        return false;
+    }
+
+
+    /**
+     * Eşleşen ilk satırdan belirtilen stunu döndürür
      * @param string $query
      * @param array|null $bindings
      * @return bool|mixed
      */
-    public static function getRow(string $query, array $bindings = null)
+    public function getVar(string $query, array $bindings = null)
     {
         try {
-            if (self::$stmt = self::query($query, $bindings)) {
-                return self::$stmt->fetch();
-            }
+            $this->bindQuery($query, $bindings);
+            return $this->stm->fetchColumn();
         }catch (Exception $e){
-            Exceptions::debug($e, 1);
+            Exceptions::debug($e, 2);
         }
         return false;
     }
 
 
     /**
-     * Sorgudan dönen ilk satırın ilk stununu string olarak döndürür.
-     *
-     * @param string $query
-     * @param array|null $bindings
-     * @return bool|mixed
-     */
-    public static function getVar(string $query, array $bindings = null)
-    {
-        try {
-            if (self::$stmt = self::query($query, $bindings)) {
-                return self::$stmt->fetchColumn();
-            }
-        }catch (Exception $e){
-            Exceptions::debug($e, 1);
-        }
-        return false;
-    }
-
-
-    /**
-     * Sorgu başarılı ise eklenen son id'yi döndürür.
-     *
+     * İnsert edilen son satırın autoincrement değerini döndürür
      * @param string $query
      * @param array|null $bindings
      * @return bool|string
      */
-    public static function insert(string $query, array $bindings = null)
+    public function insert(string $query, array $bindings = null)
     {
         try {
-            if (self::query($query, $bindings)) {
-                return self::$insertId = self::instance()->lastInsertId();
-            }
+            $this->bindQuery($query, $bindings);
+            return $this->pdo->lastInsertId();
         }catch (Exception $e){
-            Exceptions::debug($e, 1);
+            Exceptions::debug($e, 2);
         }
         return false;
     }
 
 
     /**
-     * Sorgudan etkilenen satır sayısını döndürür.
-     *
+     * Update işleminden etkilenen satır sayısını döndürür,
+     * etkilenen satır yoksa true, hata oluşursa false döndürür
      * @param string $query
      * @param array|null $bindings
      * @return bool|int
      */
-    public static function update(string $query, array $bindings = null)
+    public function update(string $query, array $bindings = null)
     {
         try {
-            if (self::$stmt = self::query($query, $bindings)) {
-                return self::$rowCount = self::$stmt->rowCount() ? self::$stmt->rowCount() : true;
-            }
+            $this->bindQuery($query, $bindings);
+            return $this->stm->rowCount() ? $this->stm->rowCount() : true;
         }catch (Exception $e){
-            Exceptions::debug($e, 1);
+            Exceptions::debug($e, 2);
         }
         return false;
     }
 
 
     /**
-     * Sorgudan etkilenen satır sayısını döndürür. update methodu ile eşdeğerdir.
-     *
+     * Silme işleminden etkilenen satır sayısını döndürür
      * @param string $query
      * @param array|null $bindings
      * @return bool|int
      */
-    public static function delete(string $query, array $bindings = null)
+    public function delete(string $query, array $bindings = null)
     {
         try {
-            if (self::$stmt = self::query($query, $bindings)) {
-                return self::$rowCount = self::$stmt->rowCount();
-            }
+            $this->bindQuery($query, $bindings);
+            return $this->stm->rowCount();
         }catch (Exception $e){
-            Exceptions::debug($e, 1);
+            Exceptions::debug($e, 2);
         }
         return false;
     }
 
     /**
-     * DB sınıfında bulunmayan diğer PDO methodlarına erişim sağlar.
-     *
-     * @param string $name çağırılan methodun adı.
-     * @param array $arguments methodun alacağı parametreler.
-     * @return mixed başarılı ise sorgu sonucunu değilse false döndürür.
+     * Aktif veritabanı bağlantısını sonlandırır
      */
-    public static function __callStatic(string $name, $arguments = array())
+    public function close()
     {
-        return call_user_func_array([self::instance(), $name], $arguments);
+        $this->pdo = null;
+        $this->stm = null;
     }
 
+    /**
+     * PDO::beginTransaction()
+     */
+    public function transaction()
+    {
+        $this->pdo->beginTransaction();
+    }
 
     /**
-     * Veritabanı sınıfını sonlandırır.
+     * PDO::commit()
      */
-    public static function close()
+    public function commit()
     {
-        self::$pdo = null;
+        $this->pdo->commit();
+    }
+
+    /**
+     * PDO::rollBack()
+     */
+    public function rollBack()
+    {
+        $this->pdo->rollBack();
+    }
+
+    /**
+     * Aktif PDO nesnesi
+     * @return PDO
+     */
+    public function pdo()
+    {
+        return $this->pdo;
+    }
+
+    /**
+     * Aktif PDOStatement nesnesi
+     * @return PDOStatement
+     */
+    public function stm()
+    {
+        return $this->stm;
     }
 }

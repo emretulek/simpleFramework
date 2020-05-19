@@ -32,7 +32,7 @@ class AutoLoad
         $classPath = '/' . implode('/', array_map('ucfirst', $nameSpaces));
         $filePath = ROOT . $classPath . EXT;
 
-        if (file_exists($filePath)) {
+        if (is_file($filePath)) {
             require_once($filePath);
         }
     }
@@ -66,7 +66,7 @@ class AutoLoad
     public function loadFunctions()
     {
         foreach (Config::get('autoload.functions') as $key => $file) {
-            if (file_exists($file)) {
+            if (is_file($file)) {
                 require_once($file);
             }
         }
@@ -80,7 +80,7 @@ class AutoLoad
     public function loadRoutes()
     {
         foreach (Config::get('autoload.routes') as $key => $file) {
-            if (file_exists($file)) {
+            if (is_file($file)) {
                 require_once($file);
             }
         }

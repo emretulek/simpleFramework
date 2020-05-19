@@ -20,33 +20,6 @@ return  array(
     'debug' => 2,
 
     /**
-     * enable [true or false]
-     * driver [file or database]
-     */
-    'log' => [
-        'enable' => true,
-        'driver' => 'file'
-    ],
-
-    /**
-     * Cache ayarları
-     * enable [true or false]
-     * driver [file, memcache, database]
-     * memcache [host, port]
-     */
-    'cache' => [
-        'enable' => true,
-        'driver' => 'file',
-        'memcache' => [
-            'host' => 'localhost',
-            'port' => 11211
-        ],
-        'database' => [
-            'table' => 'cache'
-        ]
-    ],
-
-    /**
      * {sql_driver} database.php ayarlarında kullanılacak driver
      */
     'sql_driver' => 'mysql',
@@ -84,5 +57,32 @@ return  array(
      * true php password_hash DEFUALT_HASH yöntemi kullanılır, aksi halde hash algo ile belirtilen yöntem kullanılır
      * true , false
      */
-    'password_hash' => true
+    'password_hash' => true,
+
+    /**
+     * enable [true or false]
+     * driver [file or database]
+     */
+    'log' => [
+        'enable' => true,
+        'driver' => 'file'
+    ],
+
+    /**
+     * Cache ayarları
+     * enable [true or false]
+     * driver [file, memcache, database]
+     * memcache [host, port]
+     */
+    'cache' => [
+        'enable' => true,
+        'driver' => 'file',
+        'memcache' => [
+            'host' => 'localhost',
+            'port' => 11211
+        ],
+        'database' => [
+            'table' => 'cache'
+        ]
+    ]
 );

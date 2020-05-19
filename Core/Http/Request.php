@@ -16,7 +16,8 @@ class Request
      */
     public static function path()
     {
-        return parse_url(trim(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT), '/'), PHP_URL_PATH);
+        $request_uri = urldecode(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT));
+        return parse_url(trim($request_uri, '/'), PHP_URL_PATH);
     }
 
     /**
@@ -29,13 +30,26 @@ class Request
         return rtrim(preg_replace("#/+#", "/", $path), '/');
     }
 
+
+    /**
+     * Girilen string yada regex requestUri ile eşleşirse true aksi halde false döndürür
+     * @param $uri
+     * @return false
+     */
+    public static function matchUri($uri)
+    {
+        $uri = trim($uri, '/');
+        return (bool) preg_match('#^'.$uri.'$#', self::requestUri());
+    }
+
     /**
      * Mevcut adres satırını döndürür.
      * @return string
      */
-    public static function url()
+    public static function currentUrl()
     {
-        return trim(self::baseUrl(), '/') . '/' . self::requestUri();
+        $queryString = $_SERVER['QUERY_STRING'] ? '?'.urldecode($_SERVER['QUERY_STRING']) : "";
+        return trim(self::baseUrl(), '/') . '/' . self::requestUri() . $queryString;
     }
 
     /**
@@ -44,7 +58,7 @@ class Request
      */
     public static function baseUrl()
     {
-        return self::scheme() . '://' . $_SERVER['SERVER_NAME'] . rtrim(Config::get('app.path'), '/') . '/';
+        return self::scheme() . '://' .self::host() . rtrim(Config::get('app.path'), '/') . '/';
     }
 
     /**
@@ -70,6 +84,21 @@ class Request
 
 
     /**
+     * Global $_REQUEST değişkenine erişim sağlar.
+     *
+     * @param string|null $name nokta ile birleşitirilmiş index (index1.index2) değeri alır,
+     * belirtilmezse tüm diziyi döndürür. GET yoksa yada index yoksa false döner.
+     * @return null|mixed
+     */
+    public static function request(string $name = null)
+    {
+        if (!isset($_REQUEST)) return [];
+        if (is_null($name)) return $_REQUEST;
+        return dot_aray_get($_REQUEST, $name);
+    }
+
+
+    /**
      * Global $_GET değişkenine erişim sağlar.
      *
      * @param string|null $name nokta ile birleşitirilmiş index (index1.index2) değeri alır,
@@ -78,6 +107,7 @@ class Request
      */
     public static function get(string $name = null)
     {
+        if (!isset($_GET)) return [];
         if (is_null($name)) return $_GET;
         return dot_aray_get($_GET, $name);
     }
@@ -92,6 +122,7 @@ class Request
      */
     public static function post(string $name = null)
     {
+        if (!isset($_POST)) return [];
         if (is_null($name)) return $_POST;
         return dot_aray_get($_POST, $name);
     }
@@ -128,6 +159,7 @@ class Request
 
     /**
      * İstek methodunu kontrol eder doğrusa true değilse false döner.
+     * $method girilmezse header bilgisinden methodu döndürür.
      *
      * @param string $method kontrol edilecek method [POST, GET, PUT, PATCH, DELETE]
      * @return bool

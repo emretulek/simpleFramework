@@ -2,16 +2,26 @@
 
 namespace Core;
 
-use Core\Database\Database as DB;
+use Core\Database\DB as DB;
 
 class Model
 {
+    /**
+     * @var DB
+     */
+    public $DB;
+
     protected static $instance;
     protected $table, $primary, $error;
 
     public static function static()
     {
         return isset(self::$instance[static::class]) ? self::$instance[static::class] : self::$instance[static::class] = new static;
+    }
+
+    public function __construct()
+    {
+        $this->DB = App::getInstance(DB::class);
     }
 
     public function getAll()

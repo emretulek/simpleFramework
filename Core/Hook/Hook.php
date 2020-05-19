@@ -2,7 +2,7 @@
 
 namespace Core\Hook;
 
-use Exception;
+use Core\App;
 
 class Hook
 {
@@ -32,44 +32,40 @@ class Hook
         }
     }
 
+
+    /**
+     * @param $name
+     * @return bool
+     */
+    public static function exists($name)
+    {
+        return isset(self::$storages[$name]);
+    }
+
+    /**
+     * @return mixed
+     */
+    public static function list()
+    {
+        return self::$storages;
+    }
+
     /**
      * @param string $name
-     * @param null $args
-     * @throws Exception
+     * @param mixed $output
+     * @return mixed|null
      */
-    public static function exec(string $name, $args = null)
+    public static function exec(string $name, $output)
     {
-        if (isset(self::$storages[$name])) {
+        if (self::exists($name)) {
 
             asort(self::$storages[$name]);
 
             foreach (self::$storages[$name] as $storage) {
-                self::call($storage['callable'], $args);
-            }
-        } else {
-
-            throw new Exception("Hook name -> {$name} is not found", E_USER_ERROR);
-        }
-    }
-
-    /**
-     * @param $callable
-     * @param $args
-     * @return mixed
-     */
-    private static function call($callable, $args)
-    {
-        $args = is_array($args) ? $args : [$args];
-
-        if (is_array($callable)) {
-
-            if(is_callable($callable[0])) {
-                return call_user_func_array([$callable[0], $callable[1]], $args);
-            }else{
-                return call_user_func_array([new $callable[0], $callable[1]], $args);
+                $output = App::caller($storage['callable'],  [$output]);
             }
         }
 
-        return call_user_func_array($callable, $args);
+        return $output;
     }
 }

@@ -1,17 +1,17 @@
 <?php
 
-namespace Core\Services;
+namespace Services;
 
 use Core\Config\Config;
 use Core\Http\Request;
 use Core\Language\Language;
+use Core\Services\Services;
 
 
 class LanguageService extends Services
 {
     public function boot()
     {
-
         /**
          * default dil yükleme
          */
@@ -28,9 +28,9 @@ class LanguageService extends Services
         if(isset($segments[0])) {
 
             Language::set($segments[0]);
-            $default = Language::getDefault();
 
-            if (array_shift($segments) == $default['key']) {
+            //default dil ise adres satırında gösterme
+            if (array_shift($segments) == Language::getDefault()->key) {
                 redirect(Request::baseUrl().implode('/', $segments));
             }
         }

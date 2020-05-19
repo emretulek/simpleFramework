@@ -61,9 +61,9 @@ class Language
 
 
     /**
-     * @return object
+     * @return object [key,name,local]
      *
-     * Aktif dil anahtarını döndürür.
+     * Aktif dil özelliklerini döndürür
      */
     public static function get()
     {
@@ -82,7 +82,7 @@ class Language
     {
         $fullPath = ROOT . Config::get('path.lang') . '/' . $key . '/' . $file . EXT;
 
-        if (file_exists($fullPath)) {
+        if (is_readable_file($fullPath)) {
             self::$translate[$key][basename($file)] = require($fullPath);
             return self::$translate[$key][basename($file)];
         }else {
@@ -105,15 +105,18 @@ class Language
     public static function loadFiles($key)
     {
         $fullPath = ROOT . Config::get('path.lang') . '/' . $key;
-        $files = array_map(function($file) {
 
-            return  pathinfo($file, PATHINFO_FILENAME);
-        },
-            array_diff(scandir($fullPath), array('..', '.'))
-        );
+        if(is_readable_dir($fullPath)) {
+            $files = array_map(function ($file) {
 
-        foreach ($files as $file){
-            self::loadFile($key, $file);
+                return pathinfo($file, PATHINFO_FILENAME);
+            },
+                array_diff(scandir($fullPath), ['..', '.'])
+            );
+
+            foreach ($files as $file) {
+                self::loadFile($key, $file);
+            }
         }
     }
 
@@ -132,8 +135,11 @@ class Language
             return vsprintf($translated, $args);
         }
 
-        return vsprintf(dot_aray_get(self::$translate[self::$default['key']], $key), $args);
+        if($default = dot_aray_get(self::$translate[self::$default['key']], $key)){
+            return vsprintf($default, $args);
+        }
 
+        return vsprintf($key, $args);
     }
 
 

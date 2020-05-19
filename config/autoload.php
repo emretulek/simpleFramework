@@ -8,17 +8,15 @@
  */
 
 
-return array(
-    'functions' => array(
-        'View' => ROOT . 'Helpers/functions/view_helper' . EXT,
-        'Admin' => ROOT . 'Helpers/functions/admin_helper' . EXT,
-    ),
-    'alias' => array(
+return [
+    'functions' => [
+
+    ],
+    'alias' => [
         'Router' => Core\Router\Router::class,
         'Request' => Core\Http\Request::class,
         'View' => Core\View::class,
-        'Html' => Helpers\Html::class,
-        'DB' => Core\Database\Database::class,
+        'DB' => Core\Database\DB::class,
         'Lang' => Core\Language\Language::class,
         'Exceptions' => Core\Exceptions\Exceptions::class,
         'Config' => Core\Config\Config::class,
@@ -27,16 +25,17 @@ return array(
         'Session' => Core\Session\Session::class,
         'Cookie' => Core\Cookie\Cookie::class,
         'Cache' => Core\Cache\Cache::class,
-        'Logger' => Core\Log\Logger::class
-    ),
-    'services' => array(
-        'sessions' => Core\Services\SessionService::class,
-        //'language' => Core\Services\LanguageService::class,
-        'csrf' => Core\Services\CsrfToken::class,
+        'Logger' => Core\Log\Logger::class,
+        'Tag' => Helpers\Html\Tag::class,
+        'Meta' => Helpers\Html\Meta::class,
+        'Html' => Helpers\Html\Html::class,
+    ],
+    'services' => [
+        'default' => Services\DefaultServices::class,
+        'language' => Services\LanguageService::class,
         //'rememberme' => Services\RememberMe::class
-    ),
-    'routes' => array(
-        ROOT . 'routes/adminRouting' . EXT,
+    ],
+    'routes' => [
         ROOT . 'routes/routing' . EXT,
-    )
-);
+    ]
+];

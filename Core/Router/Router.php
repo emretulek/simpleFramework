@@ -4,6 +4,7 @@ namespace Core\Router;
 
 use Core\App;
 use Core\Exceptions\Exceptions;
+use Core\Http\HttpMethodNotAllowed;
 use Core\Http\HttpNotFound;
 use Core\Http\Request;
 use Core\Config\Config;
@@ -23,7 +24,7 @@ class Router
 {
     private static $routeID = 0;
     private static $routes = [];
-
+    private static $currentRoute;
 
     private static $methodPrefix = [];
     private static $methodNamespace = [];
@@ -44,12 +45,10 @@ class Router
         '#\{id\?}#' => '?([0-9]+)?',
         '#\{int\}#' => '([0-9\-]+)',
         '#\{int\?}#' => '?([0-9\-]+)?',
-        '#\{string\}#' => '([\w\._-]+)',
-        '#\{string\?}#' => '?([\w\._-]+)?',
-        '#\{.*\}#' => '([\w\._-]+)',
-        '#\{.*\?}#' => '?([\w\._-]+)?',
-        '#/main#' => '/',
-        '#/index#' => '/'
+        '#\{string\}#' => '([\s\w\._-]+)',
+        '#\{string\?}#' => '?([\s\w\._-]+)?',
+        '#\{\*\}#' => '(.+)',
+        '#\{\*\?}#' => '?(.*)?'
     ];
 
 
@@ -181,18 +180,32 @@ class Router
     {
         $segments = Request::segments();
         $segments = array_slice($segments, count(self::$methodPrefix));
-        $controller = isset($segments[0]) ? array_shift($segments) : self::$controller;
-        $controller = substr($controller, 0, 2) == '__' ? self::$controller : $controller;
-        $method = isset($segments[0]) ? array_shift($segments) : self::$method;
+        $controller = isset($segments[0]) ? array_shift($segments) : null;
+        $controller = substr($controller, 0, 2) == '__' ? null : $controller;
+        $method = isset($segments[0]) ? array_shift($segments) : null;
         $params = $segments ? implode('/', array_map(function ($item) {
-            return '(' . $item . ')';
+            return '{*}';
         }, $segments)) : '';
 
-        return self::addRoute('/' . $controller . '/' . $method . '/' . $params, $controller . '@' . $method, null);
+        return self::any('/' . $controller . '/' . $method . '/' . $params, $controller . '@' . $method);
+    }
+
+
+    /**
+     * @method Router::addRoute belirtilen tüm istek türlerini kabul eder
+     *
+     * @param $pattern
+     * @param $cmp
+     * @param array|string[] $methods ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'] biri veya birkaçı
+     * @return Router
+     */
+    public static function useMethod($pattern, $cmp, array $methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'])
+    {
+        return self::addRoute($pattern, $cmp, $methods);
     }
 
     /**
-     * @method Router::addRoute GET, POST tüm istek türlerini kabul eder
+     * @method Router::addRoute 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS' tüm istek türlerini kabul eder
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
@@ -200,7 +213,7 @@ class Router
      */
     public static function any($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, NULL);
+        return self::addRoute($pattern, $cmp, ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']);
     }
 
     /**
@@ -212,7 +225,7 @@ class Router
      */
     public static function get($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'GET');
+        return self::addRoute($pattern, $cmp, ['GET']);
     }
 
     /**
@@ -224,7 +237,7 @@ class Router
      */
     public static function post($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'POST');
+        return self::addRoute($pattern, $cmp, ['POST']);
     }
 
     /**
@@ -236,7 +249,7 @@ class Router
      */
     public static function put($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'PUT');
+        return self::addRoute($pattern, $cmp, ['PUT']);
     }
 
     /**
@@ -248,7 +261,7 @@ class Router
      */
     public static function delete($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'DELETE');
+        return self::addRoute($pattern, $cmp, ['DELETE']);
     }
 
     /**
@@ -260,7 +273,7 @@ class Router
      */
     public static function patch($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'PATCH');
+        return self::addRoute($pattern, $cmp, ['PATCH']);
     }
 
     /**
@@ -272,7 +285,7 @@ class Router
      */
     public static function head($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'HEAD');
+        return self::addRoute($pattern, $cmp, ['HEAD']);
     }
 
     /**
@@ -284,7 +297,7 @@ class Router
      */
     public static function options($pattern, $cmp)
     {
-        return self::addRoute($pattern, $cmp, 'OPTIONS');
+        return self::addRoute($pattern, $cmp, ['OPTIONS']);
     }
 
 
@@ -329,34 +342,38 @@ class Router
     public static function start()
     {
         try {
+
             foreach (self::$routes as $name => $route) {
 
                 if (false !== ($matches = self::rootMatch($route['prefix'].$route['pattern'], $route['requestUri']))) {
+
+                    //current router
+                    self::$currentRoute = $route;
 
                     //prefix
                     self::$prefix = $route['prefix'];
 
                     //Request method check
-                    if (Request::method($route['method']) == false) {
-                        return self::errors(405);
+                    if (in_array(Request::method(), $route['method']) == false) {
+                        throw new HttpMethodNotAllowed("Http method allowed ".implode(",", $route['method']));
                     }
 
                     //load middlewares before
                     foreach ($route['middleware'] as $middleware) {
-                        App::caller([$middleware, 'before'], null);
+                        App::caller([$middleware, 'before']);
                     }
 
                     //Router callback clouser
                     if (is_callable($route['cmp'])) {
                         try {
-                            $result = call_user_func_array($route['cmp'], $matches);
+                            $response = call_user_func_array($route['cmp'], $matches);
 
                             //load middleware after
                             foreach ($route['middleware'] as $middleware) {
-                                App::caller([$middleware, 'after'], null);
+                                $response = App::caller([$middleware, 'after', [$response]]);
                             }
 
-                            return $result;
+                            return $response;
 
                         } catch (ArgumentCountError $e) {
                             throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
@@ -368,16 +385,16 @@ class Router
                     self::setNameSpace($route['namespace']);
                     self::setController(array_shift($cmp));
                     self::setMethod(array_shift($cmp));
-                    self::setParams($matches);
+                    self::setParams(array_merge($matches, $cmp));
 
-                    $result = self::route(self::$nameSpace . self::$controller, self::$method, self::$params);
+                    $response = self::route(self::$nameSpace . self::$controller, self::$method, self::$params);
 
                     //load middleware after
                     foreach ($route['middleware'] as $middleware) {
-                        App::caller([$middleware, 'after'], null);
+                        $response = App::caller([$middleware, 'after'], [$response]);
                     }
 
-                    return $result;
+                    return $response;
                 }
             }
 
@@ -386,11 +403,13 @@ class Router
         } catch (HttpNotFound $e) {
             Exceptions::debug($e);
             return self::errors(404);
+        } catch (HttpMethodNotAllowed $e) {
+            Exceptions::debug($e);
+            return self::errors(405);
         }catch (Exception $e){
             Exceptions::debug($e);
+            return self::errors(500);
         }
-
-        return false;
     }
 
 
@@ -406,18 +425,8 @@ class Router
         $pattern = preg_replace(array_keys(self::$matchPatterns), self::$matchPatterns, $pattern);
         $pattern = '/' . trim($pattern, '/');
         $requestUri = '/' . trim($requestUri, '/');
-        $segments = array_values(array_filter(explode("/", $requestUri)));
 
-        if (end($segments) == 'main') {
-            $segments = array_slice($segments, 0, -1);
-            $requestUri = '/' . implode('/', $segments);
-        }
-        if (end($segments) == 'index') {
-            $segments = array_slice($segments, 0, -1);
-            $requestUri = '/' . implode('/', $segments);
-        }
-
-        if (preg_match('#^' . $pattern . '$#', $requestUri, $matches)) {
+        if (preg_match('#^' . $pattern . '$#u', $requestUri, $matches)) {
             return count($matches) > 1 ? array_slice($matches, 1) : array();
         }
 
@@ -432,7 +441,9 @@ class Router
     {
         $controllerPath = str_replace('/', '\\', Config::get('path.controller')) . '\\';
         $subPath = $nameSpace ? str_replace('/', '\\', $nameSpace) . '\\' : '';
-        self::$nameSpace = $controllerPath . $subPath;
+        $nameSpace = $controllerPath . $subPath;
+        $nameSpace = preg_replace('/[^\w\d\\\_]{1,256}/u', '', $nameSpace);
+        self::$nameSpace = $nameSpace;
     }
 
     /**
@@ -441,7 +452,7 @@ class Router
      */
     private static function setController($className)
     {
-        $className = preg_replace('#[^a-z0-9_/]#i', '', $className);
+        $className = preg_replace('/[^\w\d_]{1,256}/u', '', $className);
         self::$controller = $className ? str_replace('/', '\\', $className) : self::$controller;
     }
 
@@ -452,7 +463,7 @@ class Router
      */
     private static function setMethod($methodName)
     {
-        $methodName = preg_replace('#[^a-z0-9_]#i', '', $methodName);
+        $methodName = preg_replace('/[^\w\d_]{1,256}/u', '', $methodName);
         self::$method = $methodName ? $methodName : self::$method;
     }
 
@@ -522,6 +533,37 @@ class Router
         return trim(self::$prefix, '/');
     }
 
+
+    /**
+     * İsmi aranan routerları getirir
+     * @param string $searchName name or regex
+     * @return array
+     */
+    public static function getNames(string $searchName)
+    {
+        $routes = self::$routes;
+        $matchedRoutes = [];
+        array_walk($routes, function ($item, $key) use ($searchName, &$matchedRoutes){
+
+            if(preg_match('#'.$searchName.'#', $item['name'])){
+                $matchedRoutes[] = $item;
+            }
+        });
+
+        return $matchedRoutes;
+    }
+
+
+    /**
+     *
+     * @param string $routerName name or regex
+     * @return bool
+     */
+    public static function matchName(string $routerName)
+    {
+        return preg_match('#^'.$routerName.'$#', self::$currentRoute['name']);
+    }
+
     /**
      * Router custom errors
      *
@@ -531,21 +573,15 @@ class Router
      */
     public static function errors($http_code, callable $callback = null)
     {
-        $view = new View();
-
+        $view = App::getInstance(View::class);
         if ($callback instanceof Closure) {
             self::$errors[$http_code] = $callback;
             return App::getInstance(self::class);
         }
 
-        if (empty(self::$errors[404])) {
-            self::$errors[404] = function () use ($view){
-                $view->path('errors/404.html', null, null)->render(404);
-            };
-        }
-        if (empty(self::$errors[405])) {
-            self::$errors[405] = function () use ($view){
-                $view->path('errors/405.html', null, null)->render(405);
+        if (empty(self::$errors[$http_code])) {
+            self::$errors[$http_code] = function () use ($view, $http_code){
+                $view->path('errors/'.$http_code.'.html', null, null)->render($http_code);
             };
         }
 

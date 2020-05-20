@@ -19,7 +19,7 @@ class Html {
      * @param string $text
      * @return Tag
      */
-    public static function tag(string $tagName, string $text)
+    public static function tag(string $tagName, string $text = null)
     {
         $tag = new Tag($tagName);
         $tag->text($text);

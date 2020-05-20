@@ -19,7 +19,7 @@ class Meta {
 
     /**
      * Değer girilirse title değiştirilir, boş bırakılırsa title değerini döndürür
-     * Değer değiştirmek yerine ekleme yaplılmak istenirse appen ve prepen kullanılabilir
+     * Değer değiştirmek yerine ekleme yaplılmak istenirse append ve prepend kullanılabilir
      * @param string $text
      * @return Tag
      */
@@ -320,7 +320,7 @@ class Meta {
 
             foreach (self::$metaTags[$property] as $metaTag){
 
-                if($metaTag->attr('name') == $property){
+                if($metaTag->attr('property') == $property){
 
                     $metaTags[] = $metaTag;
                 }

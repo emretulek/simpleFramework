@@ -255,7 +255,7 @@ class Html {
         $img = self::img($src, $alt);
 
         foreach ($datasets as $key => $dataset){
-            $source = new Tag('source');
+            $source = new Tag('source', false);
             $source->attr('media', '('.$key.')')
                 ->attr('srcset', $dataset);
             $tag->append($source);

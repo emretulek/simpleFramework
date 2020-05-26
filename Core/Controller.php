@@ -4,18 +4,12 @@ namespace Core;
 
 
 use Core\Config\Config;
-use Core\Http\HttpNotFound;
 
-class Controller
+
+Abstract class Controller
 {
 
-    /**
-     * @throws HttpNotFound
-     */
-    public function main()
-    {
-        throw new HttpNotFound();
-    }
+    abstract public function main();
 
     /**
      * @return View;

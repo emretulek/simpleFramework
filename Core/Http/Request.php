@@ -319,6 +319,7 @@ class Request
      */
     public static function server($value)
     {
+        $value = str_replace('-', '_', $value);
         $serverVariable = $_SERVER[strtoupper($value)] ?? $_SERVER['HTTP_' . strtoupper($value)] ?? null;
         return filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     }

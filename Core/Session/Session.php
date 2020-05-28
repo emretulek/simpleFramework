@@ -88,7 +88,7 @@ class Session
     /**
      * Session::get methodu ile benzer çalışır, farkı sadece Session::tmpSet ile oluşturulan verileri erişmesidir.
      *
-     * @param string $name nokta ile birleşitirilmiş session indexi (index1.index2)
+     * @param string $name
      * @return mixed
      */
     public static function tmpGet(string $name)

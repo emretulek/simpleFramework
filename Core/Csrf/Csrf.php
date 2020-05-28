@@ -29,6 +29,8 @@ class Csrf
      */
     public static function check()
     {
+        Session::tmpSet('csrf', false);
+
         // post token kontrolü
         if(Request::post('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(),Request::host())){
             Session::tmpSet('csrf', true);
@@ -43,7 +45,9 @@ class Csrf
 
         //cookie token kontrolü
         if(Cookie::get('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(),Request::host())){
-            Session::tmpSet('csrf', true);
+            if(Request::server('cache-control') != 'max-age=0') {
+                Session::tmpSet('csrf', true);
+            }
             return true;
         }
         return false;

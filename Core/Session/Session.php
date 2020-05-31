@@ -72,10 +72,10 @@ class Session
      * Session::set gibi dizi derinlik özelliği yoktur.
      *
      * @param string $name oluşturulan oturum verisinin adı
-     * @param string $value
+     * @param $value
      * @return bool
      */
-    public static function tmpSet(string $name, string $value)
+    public static function tmpSet(string $name, $value)
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             $_SESSION['__TEMPRORY__']['__TIMES__'][$name] = 0;

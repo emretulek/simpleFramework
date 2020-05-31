@@ -2,21 +2,26 @@
 
 namespace Core\Log;
 
-use Core\App;
+use Core\Config\Config;
 
 Class Logger
 {
 
-    private static $instance = false;
+    private static ?LogInterface $instance = null;
+
 
     /**
-     * @param LogInterface|null logClass
-     * @return bool|mixed
+     * @return DatabaseLog|FileLog|LogInterface
      */
-    public static function init(?LogInterface $logClass)
+    public static function init()
     {
-        if($logClass instanceof  LogInterface) {
-            return self::$instance = App::getInstance($logClass);
+        if (self::$instance == null && Config::get('app.log.enable')) {
+
+            if(Config::get('app.log.driver') == 'database') {
+                self::$instance = new DatabaseLog();
+            }else{
+                self::$instance = new FileLog();
+            }
         }
         return self::$instance;
     }
@@ -30,7 +35,7 @@ Class Logger
      */
     public static function writer($message, $data, $type)
     {
-        if ($logger = self::init(null)) {
+        if ($logger = self::init()) {
             return $logger->writer($message, $data, $type);
         }
 

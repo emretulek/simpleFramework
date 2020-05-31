@@ -9,7 +9,7 @@ use InvalidArgumentException;
 
 class App
 {
-    private static $instanceStorage = [];
+    private static array $instanceStorage = [];
 
     /**
      * Bir sınıfı method olarak çağırmayı dener
@@ -53,37 +53,18 @@ class App
      * caller("funcName", [$arg1, $arg2])
      * caller(["className"], [$arg1, $arg2])
      * caller(["className", "methodName"], [$arg1, $arg2])
-     * caller(new ClassName($arg1, $arg2))
      * @param $callable string|array|object
      * @param array $args
      * @return mixed
      */
     public static function caller($callable, array $args = [])
     {
-        if(is_object($callable)){
-
-            if($callable instanceof Closure){
-                return call_user_func_array($callable, $args);
-            }
-
-            if($className = get_class($callable)){
-                return $callable;
-            }
+        if($callable instanceof Closure){
+            return call_user_func_array($callable, $args);
         }
 
-        if(is_array($callable)){
-
-            if(is_callable($callable)){
-                if(is_object($callable[0])) {
-                    return call_user_func_array([$callable[0], $callable[1]], $args);
-                }else{
-                    return call_user_func_array([new $callable[0], $callable[1]], $args);
-                }
-            }
-
-            if(class_exists($callable[0])){
-                return  new $callable[0](...$args);
-            }
+        if(is_array($callable) && is_callable($callable)){
+            return call_user_func_array([new $callable[0], $callable[1]], $args);
         }
 
         if(is_string($callable)){
@@ -107,30 +88,12 @@ class App
      */
     public static function getInstanceName($callable)
     {
-        if(is_object($callable)){
-            //TODO @deprecated php 7.2 spl_object_id
-            if($callable instanceof Closure){
-                return spl_object_hash($callable);
-            }
-
-            if($className = get_class($callable)){
-                return $className;
-            }
+        if($callable instanceof Closure){
+            return spl_object_id($callable);
         }
 
-        if(is_array($callable)){
-
-            if(is_callable($callable)){
-                if(is_object($callable[0])) {
-                    return spl_object_hash($callable[0]);
-                }else{
-                    return $callable[0];
-                }
-            }
-
-            if(class_exists($callable[0])){
-                return $callable[0];
-            }
+        if(is_array($callable) && is_callable($callable)){
+            return $callable[0];
         }
 
         if(is_string($callable)){

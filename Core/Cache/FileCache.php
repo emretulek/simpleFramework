@@ -71,7 +71,6 @@ class FileCache implements CacheInterface
      * Önbellekten ilgili anahtara ait değeri döndürür
      * @param $key
      * @return bool|mixed
-     * @throws Exception
      */
     public function get($key)
     {

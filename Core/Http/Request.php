@@ -107,9 +107,15 @@ class Request
      */
     public static function get(string $name = null)
     {
-        if (!isset($_GET)) return [];
-        if (is_null($name)) return $_GET;
-        return dot_aray_get($_GET, $name);
+        if(empty($_GET)){
+            return [];
+        }
+
+        $get = array_map("strip_tags", $_GET);
+        $get = array_map("trim", $get);
+
+        if (is_null($name)) return $get;
+        return dot_aray_get($get, $name);
     }
 
 
@@ -122,40 +128,70 @@ class Request
      */
     public static function post(string $name = null)
     {
-        if (!isset($_POST)) return [];
-        if (is_null($name)) return $_POST;
-        return dot_aray_get($_POST, $name);
+        if(empty($_POST)){
+            return [];
+        }
+
+        $post = array_map("trim", $_POST);
+
+        if (is_null($name)) return $post;
+        return dot_aray_get($post, $name);
     }
 
 
     /**
-     * Global $_FILES değişkenine erişim sağlar. $_FILES[name][0], $_FILES[name][1] yapısını,
+     * Global $_FILES değişkenine erişim sağlar. $_FILES[name][0] yapısını,
      * $_FILES[0][name] şeklinde değiştirir.
      *
      * @param string|null $name nokta ile birleşitirilmiş index (index1.index2) değeri alır,
      * belirtilmezse tüm diziyi döndürür. FILES yoksa yada index yoksa false döner.
-     * @return null
+     * @return array
      */
     public static function files(string $name = null)
     {
-        if (!isset($_FILES)) return false;
-        if (is_null($name)) return $_FILES;
-        $files = dot_aray_get($_FILES, $name);
         $sort_files = [];
 
-        if (isset($files['name']) && is_array($files['name'])) {
-            foreach ($files['name'] as $name => $file_name) {
-                $sort_files[$name]['name'] = $file_name;
-                $sort_files[$name]['type'] = $files['type'][$name];
-                $sort_files[$name]['tmp_name'] = $files['tmp_name'][$name];;
-                $sort_files[$name]['error'] = $files['error'][$name];;
-                $sort_files[$name]['size'] = $files['size'][$name];;
-            }
-            return $sort_files;
+        if(empty($_FILES)){
+            return [];
         }
-        return $files;
+
+        // her resim için yeni dizi oluşturur
+        foreach ($_FILES as $input_name => $inputs){
+            if(is_array($inputs['name'])) {
+                foreach ($inputs['name'] as $key => $file_name) {
+                    $sort_files[$input_name][] = [
+                        'name' => $file_name,
+                        'type' => $inputs['type'][$key],
+                        'tmp_name' => $inputs['tmp_name'][$key],
+                        'error' => $inputs['error'][$key],
+                        'size' => $inputs['size'][$key],
+                    ];
+                }
+            }else{
+                $sort_files[$input_name][] = $inputs;
+            }
+        }
+
+        if($name){
+            return dot_aray_get($sort_files, $name);
+        }
+
+        return $sort_files;
     }
 
+
+    /**
+     * request raw data
+     * @return false|string|null
+     */
+    public static function raw()
+    {
+        if($data = file_get_contents('php://input')){
+            return $data;
+        }
+
+        return null;
+    }
 
     /**
      * İstek methodunu kontrol eder doğrusa true değilse false döner.

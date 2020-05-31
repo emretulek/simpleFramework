@@ -4,22 +4,32 @@
 namespace Core\Cache;
 
 
-use Core\App;
+use Core\Config\Config;
+use Core\Exceptions\Exceptions;
+use Exception;
 
 class Cache
 {
 
-    private static $instance = false;
+    private static ?CacheInterface $instance = null;
+
 
     /**
-     * @param CacheInterface|null $cacheClass
-     * @return bool|mixed
+     * @return CacheInterface|DatabaseCache|FileCache|MemoryCache
      */
-    public static function init(?CacheInterface $cacheClass)
+    public static function init()
     {
-        if($cacheClass instanceof  CacheInterface) {
-            return self::$instance = App::getInstance($cacheClass);
+        if (self::$instance == null && Config::get('app.cache.enable')) {
+
+            if(Config::get('app.cache.driver') == 'memcache') {
+                self::$instance = new MemoryCache();
+            }elseif(Config::get('app.cache.driver') == 'database'){
+                self::$instance = new DatabaseCache();
+            }else{
+                self::$instance = new FileCache();
+            }
         }
+
         return self::$instance;
     }
 
@@ -33,7 +43,7 @@ class Cache
      */
     public static function add($key, $value, $compress = false, $expires = 2592000)
     {
-        if($cache = self::init(null)) {
+        if($cache = self::init()) {
             return $cache->add($key, $value, $compress, $expires);
         }
 
@@ -50,8 +60,12 @@ class Cache
      */
     public static function set($key, $value, $compress = false, $expires = 2592000)
     {
-        if($cache = self::init(null)){
-            return $cache->set($key, $value, $compress, $expires);
+        try {
+            if ($cache = self::init()) {
+                return $cache->set($key, $value, $compress, $expires);
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e);
         }
 
         return false;
@@ -64,7 +78,7 @@ class Cache
      */
     public static function get($key)
     {
-        if($cache = self::init(null)){
+        if($cache = self::init()){
             return $cache->get($key);
         }
 
@@ -78,7 +92,7 @@ class Cache
      */
     public static function delete($key)
     {
-        if($cache = self::init(null)){
+        if($cache = self::init()){
             return $cache->delete($key);
         }
 
@@ -91,8 +105,12 @@ class Cache
      */
     public static function flush()
     {
-        if($cache = self::init(null)){
-            return $cache->flush();
+        try {
+            if ($cache = self::init()) {
+                return $cache->flush();
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e);
         }
 
         return false;

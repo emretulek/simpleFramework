@@ -16,31 +16,6 @@ $autoLoad = new Core\Autoload\AutoLoad();
 $exceptions = new ExceptionHandler();
 $exceptions->bootstrap();
 
-/**
- * Cache
- */
-if (Config::get('app.cache.enable')) {
-
-    if(Config::get('app.cache.driver') == 'memcache') {
-        Core\Cache\Cache::init(new Core\Cache\MemoryCache());
-    }elseif(Config::get('app.cache.driver') == 'database'){
-        Core\Cache\Cache::init(new Core\Cache\DatabaseCache());
-    }else{
-        Core\Cache\Cache::init(new Core\Cache\FileCache());
-    }
-}
-
-/**
- * Log
- */
-if (Config::get('app.log.enable')) {
-
-    if(Config::get('app.log.driver') == 'database') {
-        Core\Log\Logger::init(new Core\Log\DatabaseLog());
-    }else{
-        Core\Log\Logger::init(new Core\Log\FileLog());
-    }
-}
 
 /**
  * başlangıç yerel ayarlar

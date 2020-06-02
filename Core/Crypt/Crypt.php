@@ -11,7 +11,6 @@ class Crypt
 {
     private static $secretKey;
     private static $algorithm;
-    private static $iv;
 
     /**
      * Crypt constructor.

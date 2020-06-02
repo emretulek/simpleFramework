@@ -29,9 +29,16 @@ class Cookie
             $secure = Request::scheme() === 'https';
         }
 
-        $path .= '; samesite='.mb_convert_case($sameSite, MB_CASE_TITLE);
+        $options = [
+            'expires' => self::expires($lifetime),
+            'path' => $path,
+            'domain' => $domain,
+            'secure' => $secure,
+            'httponly' => $http_only,
+            'samesite' => mb_convert_case($sameSite, MB_CASE_TITLE)
+        ];
 
-        return setcookie(self::arrayCookieName($name), $value, self::expires($lifetime), $path, $domain, $secure, $http_only);
+        return setcookie(self::arrayCookieName($name), $value, $options);
     }
 
     /**

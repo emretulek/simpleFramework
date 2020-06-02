@@ -8,7 +8,7 @@
  */
 
 
-namespace Helpers\HTML;
+namespace Helpers\Html;
 
 
 class Meta {

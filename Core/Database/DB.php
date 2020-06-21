@@ -66,15 +66,12 @@ use PDOStatement;
  */
 class DB {
 
-    /**
-     * @var Database
-     */
-    private static $instance;
+    private static ?Database $instance;
 
     /**
      * @param $name
      * @param $arguments
-     * @return Database
+     * @return Database|null
      */
     public static function __callStatic($name, $arguments)
     {

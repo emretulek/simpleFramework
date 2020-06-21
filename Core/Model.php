@@ -2,17 +2,18 @@
 
 namespace Core;
 
-use Core\Database\DB as DB;
+use Core\Database\DB;
 
 class Model
 {
-    /**
-     * @var DB
-     */
-    public $DB;
 
-    protected static $instance;
-    protected $table, $primary, $error;
+
+    protected static array $instance;
+    protected string $table;
+    protected string $primary;
+    protected string $error;
+
+    public DB $DB;
 
     public static function static()
     {
@@ -21,7 +22,7 @@ class Model
 
     public function __construct()
     {
-        $this->DB = App::getInstance(DB::class);
+        $this->DB = new DB;
     }
 
     public function getAll()

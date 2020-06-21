@@ -18,22 +18,16 @@ use PDOStatement;
 
 class Database {
 
-    /**
-     * @var $pdo PDO
-     */
-    private $pdo;
-    /**
-     * @var $stm PDOStatement
-     */
-    private $stm;
+    private ?PDO $pdo;
+    private ?PDOStatement $stm;
 
-    private $driver;
-    private $host;
-    private $database;
-    private $user;
-    private $password;
-    private $charset;
-    private $collection;
+    private string $driver;
+    private string $host;
+    private string $database;
+    private string $user;
+    private string $password;
+    private string $charset;
+    private string $collection;
 
 
     /**

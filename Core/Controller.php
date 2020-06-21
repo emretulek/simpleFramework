@@ -6,10 +6,13 @@ namespace Core;
 use Core\Config\Config;
 
 
-Abstract class Controller
+class Controller
 {
 
-    abstract public function main();
+    public function main()
+    {
+
+    }
 
     /**
      * @return View;

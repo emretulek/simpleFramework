@@ -10,7 +10,7 @@ namespace Core\Config;
 class Config
 {
 
-    private static $configs = [];
+    private static array $configs = [];
     const PATH = ROOT . 'config';
 
 

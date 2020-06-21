@@ -4,6 +4,7 @@
 namespace Core\Cache;
 
 
+use Closure;
 use Core\Config\Config;
 use Core\Exceptions\Exceptions;
 use Exception;
@@ -111,6 +112,29 @@ class Cache
             }
         }catch (Exception $e){
             Exceptions::debug($e);
+        }
+
+        return false;
+    }
+
+    /**
+     * 
+     * @param $key
+     * @param Closure $closure
+     * @param bool $compress
+     * @param int $expires
+     * @return bool|mixed
+     */
+    public function use($key, Closure $closure, $compress = false, $expires = 2592000)
+    {
+        if($cache = self::get($key)){
+            return $cache;
+        }
+
+        $cache = call_user_func($closure);
+
+        if(self::set($key, $cache, $compress, $expires)){
+            return $cache;
         }
 
         return false;

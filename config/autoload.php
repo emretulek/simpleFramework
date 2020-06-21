@@ -1,12 +1,10 @@
 <?php
 /**
  * Uygulama başlatılmadan önce yüklenecek çıktı üretmeyen bileşenler.
- * Yükleme sırası function, alias, services şeklindedir.
  * {functions} fonksiyon veya php dosyalarını dahil eder.
  * {alias} uzun namespace veya sınıfların takma isimle çağırılmasını sağlar.
  * {services} ilgili services sınıfının boot methodunu çağırır. (bkz. Core\Services )
  */
-
 
 return [
     'functions' => [
@@ -17,6 +15,7 @@ return [
         'Request' => Core\Http\Request::class,
         'View' => Core\View::class,
         'DB' => Core\Database\DB::class,
+        'Valid' => Core\Validation\Valid::class,
         'Lang' => Core\Language\Language::class,
         'Exceptions' => Core\Exceptions\Exceptions::class,
         'Config' => Core\Config\Config::class,

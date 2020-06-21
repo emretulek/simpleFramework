@@ -13,7 +13,7 @@ use Memcache;
 class MemoryCache implements CacheInterface
 {
 
-    protected $memcache;
+    protected Memcache $memcache;
 
     public function __construct()
     {

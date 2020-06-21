@@ -49,7 +49,9 @@ class Cookie
      */
     public static function get(string $name)
     {
-        return dot_aray_get($_COOKIE, $name);
+        $cookie = array_map("strip_tags", $_COOKIE);
+        $cookie = array_map("trim", $cookie);
+        return dot_aray_get($cookie, $name);
     }
 
     /**

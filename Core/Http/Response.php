@@ -8,7 +8,7 @@ use Exception;
 
 class Response
 {
-    protected $response = [
+    protected array $response = [
         'headers' => [],
         'content' => null,
         'code' => null

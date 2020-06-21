@@ -26,7 +26,7 @@ class Request
      */
     public static function requestUri()
     {
-        $path = str_replace(Config::get('app.path'), '/', self::path());
+        $path = preg_replace("@^".trim(Config::get('app.path'), '/')."/@i", '/', self::path().'/', 1);
         return rtrim(preg_replace("#/+#", "/", $path), '/');
     }
 
@@ -253,11 +253,16 @@ class Request
     /**
      * İstek üst bilgisinde varsa dil anahtarını yoksa ön tanımlı dili anahtarını döndürür.
      *
+     * @param bool $basic
      * @return bool|null|string
      */
-    public static function local()
+    public static function local($basic = false)
     {
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+            $local = preg_split("/[,;]/", $_SERVER['HTTP_ACCEPT_LANGUAGE']);
+            if (array_key_exists(0, $local) && ctype_alpha($local) && $basic == false) {
+                return $local;
+            }
             $local = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
             if (ctype_alpha($local)) {
                 return $local;

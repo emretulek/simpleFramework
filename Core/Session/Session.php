@@ -23,7 +23,7 @@ class Session
         session_set_cookie_params($lifetime, $path, $domain, $secure, $httponly);
         session_name("SID");
         session_start();
-        self::tmpClear();
+        self::tempClear();
     }
 
 
@@ -52,7 +52,10 @@ class Session
      */
     public static function get(string $name)
     {
-        return dot_aray_get($_SESSION, $name);
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return dot_aray_get($_SESSION, $name);
+        }
+        return false;
     }
 
 
@@ -63,7 +66,10 @@ class Session
      */
     public static function remove(string $name)
     {
-        return dot_array_del($_SESSION, $name);
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return dot_array_del($_SESSION, $name);
+        }
+        return false;
     }
 
 
@@ -73,12 +79,14 @@ class Session
      *
      * @param string $name oluşturulan oturum verisinin adı
      * @param $value
+     * @param int $lifecycle
      * @return bool
      */
-    public static function tmpSet(string $name, $value)
+    public static function tempSet(string $name, $value, int $lifecycle = 1)
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             $_SESSION['__TEMPRORY__']['__TIMES__'][$name] = 0;
+            $_SESSION['__TEMPRORY__']['__LIFECYCLE__'][$name] = $lifecycle;
             $_SESSION['__TEMPRORY__'][$name] = $value;
             return true;
         }
@@ -91,7 +99,7 @@ class Session
      * @param string $name
      * @return mixed
      */
-    public static function tmpGet(string $name)
+    public static function tempGet(string $name)
     {
         return $_SESSION['__TEMPRORY__'][$name] ?? null;
     }
@@ -100,17 +108,18 @@ class Session
     /**
      * Session::tmpSet medhoduyla oluşturulan verileri bir sonraki sayfada siler.
      */
-    public static function tmpClear()
+    public static function tempClear()
     {
         if (isset($_SESSION['__TEMPRORY__'])) {
 
             foreach ($_SESSION['__TEMPRORY__']['__TIMES__'] as $key => $val) {
 
-                if ($val == 1) {
+                if ($val == $_SESSION['__TEMPRORY__']['__LIFECYCLE__'][$key]) {
+                    unset($_SESSION['__TEMPRORY__']['__LIFECYCLE__'][$key]);
                     unset($_SESSION['__TEMPRORY__']['__TIMES__'][$key]);
                     unset($_SESSION['__TEMPRORY__'][$key]);
                 } else {
-                    $_SESSION['__TEMPRORY__']['__TIMES__'][$key] = 1;
+                    $_SESSION['__TEMPRORY__']['__TIMES__'][$key]++;
                 }
             }
         }

@@ -12,9 +12,9 @@ use Exception;
  */
 class Language
 {
-    private static $default = array('key' => null, 'name' => null, 'local' => null);
-    private static $languages = array();
-    private static $translate = array();
+    private static array $default = ['key' => null, 'name' => null, 'local' => null];
+    private static array $languages;
+    private static array $translate;
 
 
     /**
@@ -76,7 +76,7 @@ class Language
      *
      * @param string $key dosyanın kullanılacağı dil anahtarı.
      * @param string $file yüklenecek dosya adı, uzantı olmadan örn; {settings, admin/settings}
-     * @return bool
+     * @return bool|array
      */
     public static function loadFile(string $key, string $file)
     {

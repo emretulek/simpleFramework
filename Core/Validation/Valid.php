@@ -16,34 +16,33 @@ Class Valid
     public static function bool($input)
     {
         return filter_var($input, FILTER_VALIDATE_BOOLEAN) ||
-            strtolower($input) == 'ok' ||
-            strtolower($input) == 'evet' ||
-            strtolower($input) == 'tamam';
+            mb_strtolower($input) == 'ok' ||
+            mb_strtolower($input) == 'evet' ||
+            mb_strtolower($input) == 'tamam';
     }
 
     /**
-     * Float ise sayıyı değilse false döndürür
-     *
+     * Float ise ve istenen aralıkta ise sayıyı aksi halde false döndürür
      * @param $input
      * @param int $min
      * @param int $max
-     * @return bool
+     * @return false|float
      */
     public static function float($input, $min = null, $max = null)
     {
         if (($input = filter_var($input, FILTER_VALIDATE_FLOAT)) !== false) {
 
             if ($min === null && $max === null) {
-                return true;
+                return (float) $input;
             }
             if ($min !== null && $max === null && $input >= $min) {
-                return true;
+                return (float) $input;
             }
             if ($max !== null && $min === null && $input <= $max) {
-                return true;
+                return (float) $input;
             }
             if ($min !== null && $max !== null && $input >= $min && $input <= $max) {
-                return true;
+                return (float) $input;
             }
         }
 
@@ -52,27 +51,26 @@ Class Valid
 
     /**
      * Integer ise ve istenen aralıkta ise sayıyı aksi halde false döndürür
-     *
      * @param $input
      * @param int $min
      * @param int $max
-     * @return bool
+     * @return false|int
      */
     public static function int($input, $min = null, $max = null)
     {
         if (($input = filter_var($input, FILTER_VALIDATE_INT)) !== false) {
 
             if ($min === null && $max === null) {
-                return true;
+                return (int) $input;
             }
             if ($min !== null && $max === null && $input >= $min) {
-                return true;
+                return (int) $input;
             }
             if ($max !== null && $min === null && $input <= $max) {
-                return true;
+                return (int) $input;
             }
             if ($min !== null && $max !== null && $input >= $min && $input <= $max) {
-                return true;
+                return (int) $input;
             }
         }
 
@@ -80,160 +78,167 @@ Class Valid
     }
 
     /**
-     * IPv4 ise true aksi halde false döndürür
+     * IPv4 ise ip adresini aksi halde false döndürür
      *
      * @param $input
-     * @return mixed
+     * @return false|string
      */
     public static function ipv4($input)
     {
-        return filter_var($input, FILTER_VALIDATE_IP) !== false;
+        return filter_var($input, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
     }
 
     /**
-     * IPv6 ise true aksi halde false döndürür
+     * IPv6 ise ip adresini aksi halde false döndürür
      *
      * @param $input
-     * @return bool
+     * @return false|string
      */
     public static function ipv6($input)
     {
-        return filter_var($input, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
+        return filter_var($input, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
     }
 
     /**
-     * Mac adresi geçerli ise true aksi halde false döndürür
+     * IP ise ip adresini aksi halde false döndürür
      *
      * @param $input
-     * @return bool
+     * @return false|string
+     */
+    public static function ip($input)
+    {
+        return filter_var($input, FILTER_VALIDATE_IP);
+    }
+
+    /**
+     * Mac adresi geçerli ise mac adresini aksi halde false döndürür
+     *
+     * @param $input
+     * @return false|string
      */
     public static function mac($input)
     {
-        return filter_var($input, FILTER_VALIDATE_MAC) !== false;
+        return filter_var($input, FILTER_VALIDATE_MAC);
     }
 
     /**
-     * Url geçerli ise true aksi halde false döndürür
+     * Url geçerli ise url aksi halde false döndürür
      *
      * @param $input
-     * @return bool
+     * @return false|string
      */
     public static function url($input)
     {
-        return filter_var($input, FILTER_VALIDATE_URL) !== false;
+        return filter_var($input, FILTER_VALIDATE_URL);
     }
 
     /**
-     * Domain ise true aksi halde false döndürür
+     * Domain geçerli ise domain aksi halde false döndürür
      *
      * @param $input
-     * @return bool
+     * @return false|string
      */
     public static function domain($input)
     {
-        return filter_var($input, FILTER_VALIDATE_DOMAIN) !== false;
+        return filter_var($input, FILTER_VALIDATE_DOMAIN);
     }
 
     /**
-     * Email adresi geçerli ise true aksi halde false döndürür
+     * Email adresi geçerli ise email aksi halde false döndürür
      *
      * @param $input
-     * @return bool
+     * @return false|string
      */
     public static function email($input)
     {
-        return filter_var($input, FILTER_VALIDATE_EMAIL) !== false;
+        return filter_var($input, FILTER_VALIDATE_EMAIL);
     }
 
     /**
-     * Telefon numarası geçerli ise true aksi halde false döndürür
+     * Telefon numarası geçerli ise numarayı aksi halde false döndürür
      *
-     * @param $phonNumber
-     * @return bool
+     * @param $input
+     * @return false|string
      */
-    public static function phone($phonNumber)
+    public static function phone($input)
     {
-        $input = preg_replace('#[^0-9]#', '', $phonNumber);
+        $phonNumber = preg_replace('#[^0-9]#', '', $input);
 
-        if (9 < strlen($input) && strlen($input) < 15) {
-
-            return true;
-        }
-        return false;
+        return self::length($input, 9, 15) ? $phonNumber : false;
     }
 
     /**
-     * Girilen tarih format ile uyuşursa true aksi halde false döndürür
+     * Girilen tarih format ile uyuşursa tarihi aksi halde false döndürür
      *
      * @param $date
      * @param string $format
-     * @return bool
+     * @return false|string
      */
     public static function date($date, $format = "Y-m-d H:i:s")
     {
         $dateTime = DateTime::createFromFormat($format, $date);
 
-        return $dateTime && $dateTime->format($format) == $date;
+        return $dateTime && $dateTime->format($format) == $date ? $date : false;
     }
 
     /**
-     * Kullanıcı adı geçerli ise true aksi halde false döndürür
+     * Kullanıcı adı geçerli ise kullanıcı adı aksi halde false döndürür
      *
      * @param $username
      * @param string $pattern
-     * @return false|int
+     * @return false|string
      */
     public static function username($username, $pattern = '/^[\w]{4,32}$/i')
     {
-        return preg_match($pattern, $username);
+        return preg_match($pattern, $username) ? (string) $username : false;
     }
 
 
     /**
-     * Gerçek bir isim ise true aksi halde false döndürür
+     * Gerçek bir isim ise ismi aksi halde false döndürür
      *
      * @param $name
      * @param string $pattern
-     * @return false|int
+     * @return false|string
      */
     public static function name($name, $pattern = '/^[\w\s]{2,64}$/iu')
     {
-        return preg_match($pattern, $name);
+        return preg_match($pattern, $name) ? (string) $name : false;
     }
 
     /**
-     * Geçerli bir dosya adı ise true aksi halde false döndürür
+     * Geçerli bir dosya adı ise dosya adı aksi halde false döndürür
      *
      * @param $filename
      * @param string $pattern
-     * @return false|int
+     * @return false|string
      */
-    public static function filename($filename, $pattern = '/^[\w\-\.]{4,255}$/iu')
+    public static function filename($filename, $pattern = '/^[^\s\.][\w\-\.\s]{4,255}$/iu')
     {
-        return preg_match($pattern, $filename);
+        return preg_match($pattern, $filename) ? (string) $filename : false;
     }
 
 
     /**
-     * Uzunluk istenen değerler arasında ise true aksi halde false döndürür
+     * Uzunluk istenen değerler arasında ise uzunluğu aksi halde false döndürür
      *
      * @param $input
      * @param int $min
      * @param int|null $max
-     * @return bool
+     * @return false|int
      */
     public static function length($input, $min = 1, $max = null)
     {
-        $length = mb_strlen($input);
+        $length = (int) mb_strlen($input);
 
         if ($min != null && $max == null && $length >= $min) {
-            return true;
+            return $length;
         }
         if ($max != null && $min == null && $length <= $max) {
-            return true;
+            return $length;
         }
         if ($min != null && $max != null && $length >= $min && $length <= $max) {
-            return true;
+            return $length;
         }
 
         return false;
@@ -241,44 +246,100 @@ Class Valid
 
 
     /**
-     * Yazı karakteri dışında karakter içermiyorsa true aksi halde false döndürür
+     * Yazı karakteri dışında karakter içermiyorsa değeri aksi halde false döndürür
      * @param $input
      * @param bool $unicode
-     * @return false
+     * @return false|string
      */
     public static function alpha($input, $unicode = false)
     {
         $pattern = '/^[\w\s]+$/';
         $pattern .= $unicode ? 'u' : '';
 
-        return preg_match($pattern, $input) > 0;
+        return preg_match($pattern, $input) ? $input : false;
     }
 
 
     /**
-     * Rakam dışında karakter içermiyorsa true aksi halde false döndürür
+     * Rakam dışında karakter içermiyorsa sayıyı aksi halde false döndürür
      *
      * @param $input
-     * @return false
+     * @return false|string
      */
     public static function number($input)
     {
-        return preg_match('/^[0-9]+$/', $input) > 0;
+        return preg_match('/^[0-9]+$/', $input) ? $input : false;
     }
 
 
     /**
-     * Yazı karakteri ve rakam dışında karakter içermiyorsa true aksi halde false döndürür
-     *
+     * Yazı karakteri ve rakam dışında karakter içermiyorsa değeri aksi halde false döndürür
      * @param $input
      * @param bool $unicode
-     * @return false
+     * @return false|string
      */
-    public function alnum($input, $unicode = false)
+    public static function alnum($input, $unicode = false)
     {
         $pattern = '/[^0-9\w\s]/';
         $pattern .= $unicode ? 'u' : '';
 
-        return preg_match($pattern, '', $input) > 0;
+        return preg_match($pattern, $input) ? $input : false;
+    }
+
+
+    /**
+     * Kredi kart numarasının geçerli olup olmadığını denetler geçerli ise kart numarası aksi halde false döndürür
+     * @param string $cardNumber
+     * @return false|string
+     */
+    public static function creditCard($cardNumber)
+    {
+        $cleanNumbers = str_split(preg_replace("/[^\d]/", "",$cardNumber));
+        $numbers = $cleanNumbers;
+        $lastNumber = array_pop($numbers);
+        $numbersDesc = array_reverse($numbers);
+        $numbersDescDouble = [];
+
+        foreach ($numbersDesc as $key => $item){
+            if($key % 2 == 0){
+                $newItem = $item * 2;
+                $numbersDescDouble[] = $newItem > 9 ? $newItem - 9 : $newItem;
+            }else{
+                $numbersDescDouble[] = $item;
+            }
+        }
+
+        $sum = array_sum($numbersDescDouble);
+
+        return 10 - ($sum % 10) == $lastNumber ? implode($cleanNumbers) : false;
+    }
+
+
+    /**
+     * TC kimlik no algoritma kontrol
+     * @param string $input
+     * @return false|string
+     */
+    public static function tcNo($input)
+    {
+        if(strlen($input) == 11 && $input[0] != 0) {
+
+            $tcno = str_split($input);
+            $no11 = array_pop($tcno);
+            $no10 = array_pop($tcno);
+
+            $no10_base = ($tcno[0] + $tcno[2] + $tcno[4] + $tcno[6] + $tcno[8]) * 7 - ($tcno[1] + $tcno[3] + $tcno[5] + $tcno[7]);
+            $no10_will = substr($no10_base, -1);
+
+            $no11_base = array_sum($tcno) + $no10_will;
+            $no11_will = substr($no11_base, -1);
+
+            if ($no10 == $no10_will && $no11 == $no11_will) {
+
+                return $input;
+            }
+        }
+
+        return false;
     }
 }

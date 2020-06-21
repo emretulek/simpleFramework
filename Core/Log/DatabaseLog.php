@@ -8,7 +8,7 @@ use Core\Database\DB;
 class DatabaseLog Implements LogInterface
 {
 
-    protected $table = 'logger';
+    protected string $table = 'logger';
 
     /**
      * Log yazma işlemini gerçekleştirir

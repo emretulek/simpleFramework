@@ -2,6 +2,7 @@
 class Router extends Core\Router\Router {}
 class Request extends Core\Http\Request {}
 class DB extends Core\Database\DB {}
+class Valid extends Core\Validation\Valid {}
 class Lang extends Core\Language\Language {}
 
 class View extends  Core\View {}

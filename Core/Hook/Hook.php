@@ -7,7 +7,7 @@ use Core\App;
 class Hook
 {
 
-    protected static $storages;
+    protected static array $storages;
 
     /**
      * @param string $name

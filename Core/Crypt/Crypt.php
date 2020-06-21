@@ -9,8 +9,8 @@ use Exception;
 
 class Crypt
 {
-    private static $secretKey;
-    private static $algorithm;
+    private static string $secretKey;
+    private static string $algorithm;
 
     /**
      * Crypt constructor.

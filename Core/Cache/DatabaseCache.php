@@ -19,10 +19,10 @@ class DatabaseCache implements CacheInterface
 
             $this->table = Config::get("app.cache.database.table");
 
-            if (DB::getVar("select 1 from {$this->table} limit 1")) {
+            if (DB::getVar("Select COUNT(1) from INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{$this->table}'")) {
                 $this->clear();
             }else{
-                throw new Exception(Config::get("app.cache.database.table"). " belirtilen bellek tablosu bulunamadı.", E_ERROR);
+                throw new Exception("{$this->table} belirtilen bellek tablosu bulunamadı.", E_ERROR);
             }
 
         }catch (Exception $e){

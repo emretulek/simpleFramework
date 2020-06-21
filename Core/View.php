@@ -15,11 +15,12 @@ use Exception;
 class View
 {
 
-    protected static $insertData = [];
-    protected static $templateName = 'default';
-    protected $dynamicPage = 'index';
-    protected $data = [];
-    protected $buffer = [];
+    public static string $templateName = 'default';
+    public static string $dynamicPage = 'index';
+
+    protected static array $insertData = [];
+    protected array $data = [];
+    protected array $buffer = [];
 
 
     /**
@@ -109,7 +110,7 @@ class View
     public function template(string $fileName, $data = array())
     {
         $this->data($data);
-        $this->dynamicPage = $fileName;
+        self::$dynamicPage = $fileName;
         $___template = ROOT . Config::get('path.template') . '/' . self::$templateName . EXT;
 
         try {

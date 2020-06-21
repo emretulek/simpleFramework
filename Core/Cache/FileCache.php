@@ -10,7 +10,7 @@ use Exception;
 class FileCache implements CacheInterface
 {
 
-    protected $path;
+    protected string $path;
 
     public function __construct()
     {
@@ -54,6 +54,7 @@ class FileCache implements CacheInterface
      * @param int $compress
      * @param int $expires
      * @return bool
+     * @throws Exception
      */
     public function add($key, $value, int $compress = 0, $expires = 2592000): bool
     {

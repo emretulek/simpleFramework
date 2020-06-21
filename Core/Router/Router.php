@@ -22,24 +22,24 @@ use ReflectionMethod;
  */
 class Router
 {
-    private static $routeID = 0;
-    private static $routes = [];
-    private static $currentRoute;
+    private static int $routeID = 0;
+    private static array $routes;
+    private static array $currentRoute;
 
-    private static $methodPrefix = [];
-    private static $methodNamespace = [];
-    private static $methodMidleware = [];
+    private static array $methodPrefix = [];
+    private static array $methodNamespace = [];
+    private static array $methodMidleware = [];
 
-    private static $prefix = '';
-    private static $nameSpace = '';
+    private static string $prefix;
+    private static string $nameSpace;
 
-    private static $controller = 'index';
-    private static $method = 'main';
-    private static $params = [];
+    private static string $controller = 'index';
+    private static string $method = 'main';
+    private static array $params;
 
-    private static $errors = [];
+    private static array $errors;
 
-    private static $matchPatterns = [
+    private static array $matchPatterns = [
         '#/\*#' => '/(.*)',
         '#\{id\}#' => '([0-9]+)',
         '#\{id\?}#' => '?([0-9]+)?',
@@ -183,9 +183,7 @@ class Router
         $controller = isset($segments[0]) ? array_shift($segments) : null;
         $controller = substr($controller, 0, 2) == '__' ? null : $controller;
         $method = isset($segments[0]) ? array_shift($segments) : null;
-        $params = $segments ? implode('/', array_map(function ($item) {
-            return '{*}';
-        }, $segments)) : '';
+        $params = $segments ? implode('/', array_map(fn($item) => '{*}', $segments)) : '';
 
         return self::any('/' . $controller . '/' . $method . '/' . $params, $controller . '@' . $method);
     }
@@ -435,15 +433,15 @@ class Router
 
 
     /**
-     * @param null $nameSpace
+     * @param string $nameSpace
      */
-    private static function setNameSpace($nameSpace = null)
+    private static function setNameSpace(string $nameSpace)
     {
         $controllerPath = str_replace('/', '\\', Config::get('path.controller')) . '\\';
         $subPath = $nameSpace ? str_replace('/', '\\', $nameSpace) . '\\' : '';
         $nameSpace = $controllerPath . $subPath;
         $nameSpace = preg_replace('/[^\w\d\\\_]{1,256}/u', '', $nameSpace);
-        self::$nameSpace = $nameSpace;
+        self::$nameSpace = (string) $nameSpace;
     }
 
     /**
@@ -543,9 +541,9 @@ class Router
     {
         $routes = self::$routes;
         $matchedRoutes = [];
-        array_walk($routes, function ($item, $key) use ($searchName, &$matchedRoutes){
+        array_walk($routes, function ($item) use ($searchName, &$matchedRoutes){
 
-            if(preg_match('#'.$searchName.'#', $item['name'])){
+            if(preg_match('#^'.$searchName.'$#', $item['name'])){
                 $matchedRoutes[] = $item;
             }
         });

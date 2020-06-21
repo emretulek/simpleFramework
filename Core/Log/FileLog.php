@@ -10,7 +10,7 @@ use Exception;
 class FileLog Implements LogInterface
 {
 
-    protected $file = '/logger.log';
+    protected string $file = '/logger.log';
 
     /**
      * FileLogWriter constructor.

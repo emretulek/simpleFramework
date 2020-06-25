@@ -1,5 +1,15 @@
 # SIMPLE FRAMEWORK
 
+## Gereksinimler
+
+- PHP >= 7.4
+- Fileinfo PHP extension
+- Mbstring PHP Extension
+- OpenSSL PHP Extension
+- PDO PHP Extension
+
+
+
 [Configuration](https://github.com/emretulek/doctest/blob/master/configuration.md)
 
 [Routing](https://github.com/emretulek/doctest/blob/master/routing.md)

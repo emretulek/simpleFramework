@@ -125,7 +125,7 @@ class Cache
      * @param int $expires
      * @return bool|mixed
      */
-    public function use($key, Closure $closure, $compress = false, $expires = 2592000)
+    public static function use($key, Closure $closure, $compress = false, $expires = 2592000)
     {
         if($cache = self::get($key)){
             return $cache;

@@ -15,5 +15,6 @@ return  array(
     'routes' => 'routes',
     'services' => 'Services',
     'logs' => 'storage/logs',
-    'cache' => 'storage/cache'
+    'cache' => 'storage/cache',
+    'error_log' => 'storage/error_log'
 );

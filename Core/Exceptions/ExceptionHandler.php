@@ -190,6 +190,6 @@ class ExceptionHandler
     {
 
         $error_message = "[{$this->codeToString($code)}]\t[" . date("H:i:s d.m.Y") . "]\t{$message}\t{$file}\t{$line}\t" . Request::forwardedIp() . PHP_EOL;
-        error_log($error_message, 3, ROOT . Config::get('path.logs') . '/' . $this->codeToString($code).'.log');
+        error_log($error_message, 3, ROOT . Config::get('path.error_log') . '/' . $this->codeToString($code).'.log');
     }
 }

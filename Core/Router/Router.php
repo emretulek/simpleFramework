@@ -10,6 +10,7 @@ use Core\Http\Request;
 use Core\Config\Config;
 use ArgumentCountError;
 use Closure;
+use Core\Http\Response;
 use Core\View;
 use Exception;
 use ReflectionException;
@@ -335,7 +336,7 @@ class Router
     /**
      * Eklenen yönlendirmeleri çalıştırır. İlk eşleşmede durur.
      *
-     * @return bool|null
+     * @return void
      */
     public static function start()
     {
@@ -371,7 +372,11 @@ class Router
                                 $response = App::caller([$middleware, 'after', [$response]]);
                             }
 
-                            return $response;
+                            if($response instanceof View || $response instanceof Response){
+                                echo $response;
+                            }
+
+                            return;
 
                         } catch (ArgumentCountError $e) {
                             throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
@@ -392,7 +397,11 @@ class Router
                         $response = App::caller([$middleware, 'after'], [$response]);
                     }
 
-                    return $response;
+                    if($response instanceof View || $response instanceof Response){
+                        echo $response;
+                    }
+
+                    return;
                 }
             }
 

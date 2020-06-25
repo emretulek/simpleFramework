@@ -332,7 +332,7 @@ if (!function_exists('page')) {
     function page($fileName, $data = array())
     {
         $view = App::getInstance(View::class);
-        return $view->page($fileName, $data)->render();
+        return $view->page($fileName, $data);
     }
 }
 
@@ -347,7 +347,7 @@ if (!function_exists('viewPath')) {
     function viewPath($fileName, $data = array())
     {
         $view = App::getInstance(View::class);
-        return $view->path($fileName, $data)->render();
+        return $view->path($fileName, $data);
     }
 }
 
@@ -361,7 +361,7 @@ if (!function_exists('json')) {
     function json($data)
     {
         $view = App::getInstance(View::class);
-        return $view->json($data)->render();
+        return $view->json($data);
     }
 }
 
@@ -378,7 +378,7 @@ if (!function_exists('jsonSuccess')) {
     function jsonSuccess($message = null, $location = null, $data = null)
     {
         $view = App::getInstance(View::class);
-        return $view->json(['type' => 'success', 'message' => $message, 'location' => $location, 'data' => $data])->render();
+        return $view->json(['type' => 'success', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
 }
 
@@ -394,7 +394,7 @@ if (!function_exists('jsonError')) {
     function jsonError($message = null, $location = null, $data = null)
     {
         $view = App::getInstance(View::class);
-        return $view->json(['type' => 'error', 'message' => $message, 'location' => $location, 'data' => $data])->render();
+        return $view->json(['type' => 'error', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
 }
 
@@ -409,7 +409,7 @@ if (!function_exists('template')) {
     function template($fileName, $data = array())
     {
         $view = App::getInstance(View::class);
-        return $view->template($fileName, $data)->render();
+        return $view->template($fileName, $data);
     }
 }
 

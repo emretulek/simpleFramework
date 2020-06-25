@@ -7,7 +7,7 @@ use Core\Model;
 class Index extends Model
 {
 
-    protected $table = 'table';
-    protected $primary = 'primary';
+    protected string $table = 'table';
+    protected string $primary = 'primary';
 
 }

@@ -9,9 +9,9 @@
 </head>
 <body>
 <?php
-viewPath('part/header');
-page(View::$dynamicPage);
-viewPath('part/footer');
+viewPath('part/header')->render();
+page(View::$dynamicPage)->render();
+viewPath('part/footer')->render();
 ?>
 </body>
 </html>

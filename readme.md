@@ -7,7 +7,7 @@
 - Mbstring PHP Extension
 - OpenSSL PHP Extension
 - PDO PHP Extension
-- Bzip2
+- Bzip2 PHP Extension
 
 
 [Configuration](https://github.com/emretulek/doctest/blob/master/configuration.md)

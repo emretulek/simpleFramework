@@ -137,7 +137,7 @@ if (!function_exists('__')) {
     function __($key, ...$args)
     {
         array_unshift($args, $key);
-        echo call_user_func_array([Language::class, 'translate'], $args);
+        echo App::getInstance([Language::class, 'translate'], $args);
     }
 }
 

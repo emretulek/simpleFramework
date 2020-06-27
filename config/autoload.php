@@ -32,7 +32,7 @@ return [
     'services' => [
         'default' => Services\DefaultServices::class,
         'language' => Services\LanguageService::class,
-        //'rememberme' => Services\RememberMe::class
+        //'auth' => Services\AuthServices::class
     ],
     'routes' => [
         ROOT . 'routes/routing' . EXT,

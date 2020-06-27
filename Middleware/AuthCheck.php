@@ -8,7 +8,7 @@ Class AuthCheck Implements IMiddleware {
 
     public function before()
     {
-        if(!Auth::guard(1)){
+        if(!Auth::status()){
             redirect('login');
         }
     }

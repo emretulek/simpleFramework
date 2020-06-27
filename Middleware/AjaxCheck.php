@@ -1,19 +1,19 @@
 <?php
 namespace Middleware;
 
-use Core\Http\HttpNotFound;
+use Core\Http\HttpMethodNotAllowed;
 use Core\Middleware\IMiddleware;
 use Request;
 
 Class AjaxCheck Implements IMiddleware {
 
     /**
-     * @throws HttpNotFound
+     * @throws HttpMethodNotAllowed
      */
     public function before()
     {
         if(Request::isAjax() == false){
-            throw new HttpNotFound();
+            throw new HttpMethodNotAllowed();
         }
     }
 

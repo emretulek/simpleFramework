@@ -8,8 +8,8 @@ Class AuthAdminCheck Implements IMiddleware {
 
     public function before()
     {
-        if(!Auth::guard(3)){
-            redirect('login');
+        if(!Auth::guard("admin")){
+            redirect('403');
         }
     }
 

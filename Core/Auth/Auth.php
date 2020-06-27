@@ -10,78 +10,66 @@ use Core\Cookie\Cookie;
 use Exception;
 
 /**
- * Class Auth
+ * Class AuthServices
  *
  * Güvenilir ve hızlı kimlik doğrulama araçları sunar.
  */
 class Auth
 {
+    //izinler ve isimleri
+    public static array $permissionList = [
+        //"permName" => permID
+        "login" => 1
+    ];
 
-    /**
-     * @param int $id
-     * @param string $username
-     * @param string $password
-     * @param int $level
-     * @param array $info
-     * @param int $remember Cookie\Cookie::set @param $lifetime
-     * @return bool
-     */
-    public static function login(int $id, string $username, string $password, int $level = 1, array $info = [], $remember = 24)
+    //grouplar ve yetkileri
+    public static array $groups = [
+        'user' => [0],
+        'admin' => [1]
+        ];
+
+    public static function login(User $user, $remember = 24)
     {
-        try {
-            Session::set('AUTH.LOGIN', true);
-            self::setInfo('id', $id);
-            self::setInfo('username', $username);
-            self::setInfo('level', $level);
-            self::setInfo('token', self::creatToken($id, $password));
-            self::setInfo('ip', Request::ip());
+        Session::set('AUTH.LOGIN', true);
+        self::setInfo('id', $user->id);
+        self::setInfo('username', $user->username);
+        self::setInfo('group', $user->group);
+        self::setInfo('token', self::creatToken($user->id, $user->password));
+        self::setInfo('ip', Request::ip());
 
-            if ($info) {
-                foreach ($info as $key => $value) {
-                    self::setInfo($key, $value);
-                }
+        if ($user->info) {
+            foreach ($user->info as $key => $value) {
+                self::setInfo($key, $value);
             }
-
-            if ($remember) {
-                self::remember($id, $username, $password, $remember);
-            }
-        } catch (Exception $e) {
-            return false;
         }
+
+        if ($remember) {
+            self::remember($user->id, $user->username, $user->password, $remember);
+        }
+
         return true;
     }
 
     /**
      * Cookie kullanarak login methodunun üzerinden otomatik giriş yapar.
-     * @param Closure $closure (string $username):array $userInfo
-     * [id, username, password, level, info[]]
+     * @param Closure $closure parametre olarak username alır, Auth\User sınıfını return etmelidir.
      * @throws Exception
      * @return bool
-     * @todo Auth::loginCookie(function ($username){
-     *      $user = DB::getRow("select * from users where userName = ?", [$username]);
-     *       return [
-     *       'id' => $user->userID,
-     *       'username' => $user->userName,
-     *       'password' => $user->userPassword,
-     *       'userLevel' => $user->userLevel,
-     *       'info' => []
-     *       ];
-     *       });
      *
      */
     public static function loginCookie(Closure $closure)
     {
         if (!self::status() && Cookie::get('username') && Cookie::get('user_token')) {
 
-            if($userInfo = call_user_func($closure, Cookie::get('username'))) {
+            if($user = call_user_func($closure, Cookie::get('username'))) {
 
-                if (isset($userInfo['id'], $userInfo['username'], $userInfo['password'], $userInfo['level'], $userInfo['info'])) {
+                if ($user instanceof User) {
 
-                    if (Cookie::get('user_token') == self::creatToken($userInfo['id'], $userInfo['password'])) {
-                        return self::login($userInfo['id'], $userInfo['username'], $userInfo['password'], $userInfo['level'], $userInfo['info']);
+                    if (Cookie::get('user_token') == self::creatToken($user->id, $user->password)) {
+                        return self::login($user);
                     }
                 } else {
-                    throw new Exception("Clouser [id, username, password, level, info[]] elemanlarını barındıran bir dizi döndürmelidir.", E_ERROR);
+                    throw new Exception("Callback User sınıfını return etmelidir.", E_ERROR);
                 }
             }
         }
@@ -91,7 +79,7 @@ class Auth
 
 
     /**
-     * Auth oturumunun başlatılıp başlatılmadığını kontrol eder.
+     * AuthServices oturumunun başlatılıp başlatılmadığını kontrol eder.
      * @return bool
      */
     public static function status()
@@ -137,7 +125,7 @@ class Auth
      * Sessiondan username değerini döndürür
      * @return bool|mixed
      */
-    public static function user()
+    public static function userName()
     {
         return Session::get('AUTH.USER.username');
     }
@@ -155,24 +143,51 @@ class Auth
      * Sessiondan yetki seviyesini döndürür.
      * @return bool|mixed Sessiona ulaşamazsa false döndürür.
      */
-    public static function level()
+    public static function userGroup()
     {
-        return Session::get('AUTH.USER.level');
+        return Session::get('AUTH.USER.group');
     }
 
 
     /**
-     * Girilen yetki seviyesi ve üzeri dışında erişime kapatır.
-     * Örnek 2 girilirse alana sadece yetkisi 2 ve üzeri olanlar erişebilir.
-     * @param int $level
+     * $gruopName group ismi veya group isimlerinden oluşan bir dizi olabilir.
+     * KUllanıcı bu gruoplardan birine aitse true aksi halde false döner.
+     * @param string|array $groupName
      * @return bool
      */
-    public static function guard($level = 1)
+    public static function guard($groupName)
     {
-        if (self::status() && $level <= self::level()) {
-
-            return true;
+        if(is_array($groupName)) {
+            if (self::status() && in_array(self::userGroup(), $groupName)) {
+                return true;
+            }
+        }else{
+            if (self::status() && strcasecmp(self::userGroup(), $groupName) == 0) {
+                return true;
+            }
         }
+        return false;
+    }
+
+
+    /**
+     * $permissions bir izin adı veya izinlerden oluşan bir dizi
+     * Belirtilen tüm izinlere sahipse true aksi ahalde false döner
+     * @param string|array $permissions
+     * @return bool
+     */
+    public static function permission($permissions)
+    {
+        $permissions = is_array($permissions) ? $permissions : [$permissions];
+
+        if(self::status() && is_array($permissions) && !empty($permissions)) {
+            $perm = array_intersect_key(self::$permissionList, array_flip($permissions));
+            $intersect = array_intersect($perm, self::$groups[self::userGroup()]);
+            if($perm == $intersect){
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -218,8 +233,7 @@ class Auth
      */
     private static function creatToken($userID, $userPassword)
     {
-        $agent = md5(Request::userAgent());
-        return Hash::makeWithKey($userID . $userPassword . $agent);
+        return Hash::makeWithKey($userID . $userPassword . Request::userAgent());
     }
 }
 

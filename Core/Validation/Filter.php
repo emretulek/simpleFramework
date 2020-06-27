@@ -464,6 +464,16 @@ class Filter
 
 
     /**
+     * Maksimum 1 boşluk karakteri
+     * @return $this
+     */
+    public function spaceOne()
+    {
+        $this->input = preg_replace("/\s+/u", " ", $this->input);
+        return $this;
+    }
+
+    /**
      * Html taglarını ASCII kodlarına dönüştürür.
      *
      * @return $this

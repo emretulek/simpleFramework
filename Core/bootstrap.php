@@ -20,6 +20,7 @@ $exceptions->bootstrap();
 /**
  * başlangıç yerel ayarlar
  */
+//setlocale(LC_ALL, Config::get('app.language.local').".".Config::get('app.charset'));
 mb_http_output(Config::get('app.charset'));
 mb_internal_encoding(Config::get('app.charset'));
 date_default_timezone_set(Config::get('app.timezone'));

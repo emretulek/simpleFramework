@@ -66,7 +66,7 @@ use PDOStatement;
  */
 class DB {
 
-    private static ?Database $instance;
+    private static ?Database $instance = null;
 
     /**
      * @param $name

@@ -201,7 +201,7 @@ Class Valid
      * @param string $pattern
      * @return false|string
      */
-    public static function name($name, $pattern = '/^[\w\s]{2,64}$/iu')
+    public static function name($name, $pattern = '/^(?:\w\s?){2,64}$/iu')
     {
         return preg_match($pattern, $name) ? (string) $name : false;
     }
@@ -253,7 +253,7 @@ Class Valid
      */
     public static function alpha($input, $unicode = false)
     {
-        $pattern = '/^[\w\s]+$/';
+        $pattern = '/^[\w]+$/';
         $pattern .= $unicode ? 'u' : '';
 
         return preg_match($pattern, $input) ? $input : false;
@@ -280,7 +280,7 @@ Class Valid
      */
     public static function alnum($input, $unicode = false)
     {
-        $pattern = '/[^0-9\w\s]/';
+        $pattern = '/[^\d\w]/';
         $pattern .= $unicode ? 'u' : '';
 
         return preg_match($pattern, $input) ? $input : false;

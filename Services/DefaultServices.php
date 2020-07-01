@@ -10,7 +10,7 @@ class DefaultServices extends Services
 {
     public function boot()
     {
-        Session::start(60 * 60);
+        Session::start();
         Csrf::generateToken();
     }
 }

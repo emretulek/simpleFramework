@@ -7,7 +7,7 @@ use Core\App;
 class Hook
 {
 
-    protected static array $storages;
+    protected static array $storages = [];
 
     /**
      * @param string $name
@@ -16,10 +16,13 @@ class Hook
      */
     public static function add(string $name, callable $callable, int $priority = 50)
     {
-        self::$storages[$name][] = [
-            'priority' => $priority,
-            'callable' => $callable
-        ];
+        if(isset(self::$storages[$name][$priority])) {
+            self::$storages[$name][] = $callable;
+        }else{
+            self::$storages[$name][$priority] = $callable;
+        }
+
+        ksort(self::$storages[$name]);
     }
 
     /**
@@ -59,10 +62,8 @@ class Hook
     {
         if (self::exists($name)) {
 
-            asort(self::$storages[$name]);
-
-            foreach (self::$storages[$name] as $storage) {
-                $output = App::caller($storage['callable'],  [$output]);
+            foreach (self::$storages[$name] as $callable) {
+                $output = App::caller($callable,  [$output]);
             }
         }
 

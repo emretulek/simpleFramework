@@ -2,6 +2,7 @@
 
 namespace Core\Validation;
 
+use Core\Config\Config;
 use Core\Language\Language;
 use Core\Crypt\Hash;
 
@@ -48,12 +49,12 @@ class Filter
     /**
      * Filter constructor.
      * @param array $params elemanları filtrelenecek dizi
-     * @param string $lang hataların döndürüleceği dil.
+     * @param bool $lang hataların döndürüleceği dil otomatik belirlenir
      */
-    public function __construct(array $params, string $lang = "")
+    public function __construct(array $params, bool $lang = true)
     {
         $this->params = $params;
-        $this->messages = Language::exists($lang) ? Language::loadFile($lang, 'validation') : $this->messages;
+        $this->messages = $lang ? Language::translate("validation") : $this->messages;
     }
 
     /**
@@ -462,6 +463,16 @@ class Filter
         return $this;
     }
 
+
+    /**
+     * Maksimum 1 boşluk karakteri
+     * @return $this
+     */
+    public function spaceOne()
+    {
+        $this->input = preg_replace("/\s+/u", " ", $this->input);
+        return $this;
+    }
 
     /**
      * Html taglarını ASCII kodlarına dönüştürür.

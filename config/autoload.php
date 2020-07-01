@@ -31,7 +31,7 @@ return [
     ],
     'services' => [
         'default' => Services\DefaultServices::class,
-        'language' => Services\LanguageService::class,
+        //'language' => Services\LanguageService::class,
         //'auth' => Services\AuthServices::class
     ],
     'routes' => [

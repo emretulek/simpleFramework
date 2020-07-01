@@ -4,22 +4,56 @@ namespace Core\Language;
 
 use Core\Config\Config;
 use Core\Exceptions\Exceptions;
+use Core\Http\Request;
 use Exception;
 
 /**
  * Class Language
- * Uygulamaya url kullanarak çoklu dil desteği kazandırır.
+ * Uygulamaya session üzerinden çoklu dil desteği kazandırır.
  */
 class Language
 {
-    private static array $default = ['key' => null, 'name' => null, 'local' => null];
+    private static array $default = [];
     private static array $languages;
     private static array $translate;
 
 
+    public static function init()
+    {
+        $default = [
+            'key' => Config::get('app.language.key'),
+            'name' => Config::get('app.language.name'),
+            'local' => Config::get('app.language.local')
+        ];
+
+        self::add($default['key'], $default['name'], $default['local']);
+        self::setDefault($default['key']);
+        self::setActive($default['key']);
+    }
+
     /**
-     * Öntanımlı dili ayarlar
+     * Url üzerinden aktif dili belirler, aktif dil default dil ile aynı ise url yapısında gösterilmez.
+     * @TODO site.com/en-us/contact
+     */
+    public static function useUrl()
+    {
+        $segments = Request::segments();
+
+        if(isset($segments[0])) {
+
+            Language::setActive($segments[0]);
+
+            //default dil ise adres satırında gösterme
+            if (array_shift($segments) == Language::getDefault()->key) {
+                redirect(Request::baseUrl().implode('/', $segments));
+            }
+        }
+    }
+
+    /**
+     * Ön tanımlı dili ayarlar
      * @param $key
+     * @return bool
      */
     public static function setDefault($key)
     {
@@ -29,8 +63,11 @@ class Language
                 'name' => self::$languages[$key]['name'],
                 'local' => self::$languages[$key]['local'],
             ];
-            self::set($key);
+
+            return true;
         }
+
+        return false;
     }
 
     /**
@@ -38,7 +75,7 @@ class Language
      */
     public static function getDefault()
     {
-        return (object) self::$default;
+        return self::$default ? (object) self::$default : self::$default;
     }
 
     /**
@@ -47,7 +84,7 @@ class Language
      * @param string $key
      * @return bool
      */
-    public static function set(string $key)
+    public static function setActive(string $key)
     {
         if (self::exists($key)) {
             $_SESSION['lang'] = (object) array_merge(['key' => $key], self::$languages[$key]);
@@ -65,7 +102,7 @@ class Language
      *
      * Aktif dil özelliklerini döndürür
      */
-    public static function get()
+    public static function getActive()
     {
         return $_SESSION['lang'] ?? self::getDefault();
     }
@@ -75,20 +112,16 @@ class Language
      * Kullanılacak dil dosyasını yükler.
      *
      * @param string $key dosyanın kullanılacağı dil anahtarı.
-     * @param string $file yüklenecek dosya adı, uzantı olmadan örn; {settings, admin/settings}
+     * @param string $file_path yüklenecek dosya yolu
      * @return bool|array
      */
-    public static function loadFile(string $key, string $file)
+    public static function loadFile(string $key, string $file_path)
     {
-        $fullPath = ROOT . Config::get('path.lang') . '/' . $key . '/' . $file . EXT;
-
-        if (is_readable_file($fullPath)) {
-            self::$translate[$key][basename($file)] = require($fullPath);
-            return self::$translate[$key][basename($file)];
+        if (is_readable_file($file_path)) {
+            return self::$translate[$key][pathinfo($file_path,  PATHINFO_FILENAME)] = require($file_path);
         }else {
-
             try {
-                throw  new Exception('Dil dosyası bulunamadı. ' . $fullPath, E_NOTICE);
+                throw  new Exception('Dil dosyası bulunamadı. ' . $file_path, E_NOTICE);
             } catch (Exception $e) {
                 Exceptions::debug($e);
             }
@@ -102,20 +135,15 @@ class Language
      *
      * @param $key
      */
-    public static function loadFiles($key)
+    private static function loadFiles($key)
     {
         $fullPath = ROOT . Config::get('path.lang') . '/' . $key;
 
         if(is_readable_dir($fullPath)) {
-            $files = array_map(function ($file) {
-
-                return pathinfo($file, PATHINFO_FILENAME);
-            },
-                array_diff(scandir($fullPath), ['..', '.'])
-            );
+            $files = array_diff(scandir($fullPath), ['..', '.']);
 
             foreach ($files as $file) {
-                self::loadFile($key, $file);
+                self::loadFile($key, $fullPath.'/'.$file);
             }
         }
     }
@@ -131,12 +159,12 @@ class Language
      */
     public static function translate(string $key, ...$args)
     {
-        if($translated = dot_aray_get(self::$translate[self::get()->key], $key)){
-            return vsprintf($translated, $args);
+        if($translated = dot_aray_get(self::$translate, self::getDefault()->key.".".$key)){
+            return is_array($translated) ? $translated : vsprintf($translated, $args);
         }
 
-        if($default = dot_aray_get(self::$translate[self::$default['key']], $key)){
-            return vsprintf($default, $args);
+        if(self::getDefault() && $default = dot_aray_get(self::$translate, self::getDefault()->key.".".$key)){
+            return is_array($translated) ? $translated : vsprintf($translated, $args);
         }
 
         return vsprintf($key, $args);
@@ -152,21 +180,7 @@ class Language
      */
     public static function newTranslate(string $key, $value)
     {
-        return dot_aray_set(self::$translate[self::get()->key], $key, $value);
-    }
-
-
-    /**
-     * Kullanılabilir dilleri ve ayarlarını ekler.
-     *
-     * @param $key
-     * @param $name
-     * @param $local
-     */
-    public static function add($key, $name, $local)
-    {
-        self::$languages[$key]['name'] = $name;
-        self::$languages[$key]['local'] = $local;
+        return dot_aray_set(self::$translate[self::getActive()->key], $key, $value);
     }
 
 
@@ -182,5 +196,41 @@ class Language
             return true;
         }
         return false;
+    }
+
+    /**
+     * Kullanılabilir dillere yenir bir dil ekler
+     * @param string $key
+     * @param string $name
+     * @param string $local
+     */
+    public static function add(string $key, string $name, string $local)
+    {
+        self::$languages[$key]['name'] = $name;
+        self::$languages[$key]['local'] = $local;
+    }
+
+    /**
+     * Kullanılabilir dillerden keyi girileni kaldırır
+     * @param string $lang_key
+     */
+    public static function remove(string $lang_key)
+    {
+        unset(self::$languages[$lang_key]);
+    }
+
+
+    /**
+     * Dilin adres satırında gösterilecek formu.
+     * Seçili dil default dil ile aynı ise boş dönecektir.
+     * @return string
+     */
+    public static function prefix()
+    {
+        if(self::getDefault()) {
+            return self::getActive()->key == self::getDefault()->key ? '' : self::getActive()->key;
+        }
+
+        return '';
     }
 }

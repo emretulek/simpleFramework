@@ -1,7 +1,4 @@
 <?php
-/**
- * Helper/Validation::class tükçe dil dosyası
- */
 return [
     'no_index' => 'Geçersiz index',
     'required' => 'Zorunlu alan.',

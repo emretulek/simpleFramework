@@ -23,30 +23,72 @@ class Csrf
         Cookie::set('csrf_token', $token, 1, '/', null, false, false);
     }
 
+
     /**
-     * Csrf tokenlerini kontrol eder. Csrf varsa true yoksa false döner
+     * Input için kullanılacak token değerini döndürür
+     * @return bool|mixed
+     */
+    public static function token()
+    {
+        return Session::get('csrf_token');
+    }
+
+    /**
+     * POST veya GET işlemlerinde CSRF yoksa false, varsa true döner
+     * @return bool
      */
     public static function check()
     {
-        // post token kontrolü
+        if (Request::request('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(), Request::host())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * POST işlemlerinde CSRF yoksa false, varsa true döner
+     * @return bool
+     */
+    public static function checkPost()
+    {
         if(Request::method('post')) {
             if (Request::post('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(), Request::host())) {
-                Session::tempSet('csrf_post', true, 0);
+                return false;
             }
         }
 
-        // get token kontrolü
+        return true;
+    }
+
+
+    /**
+     * GET işlemlerinde CSRF yoksa false, varsa true döner
+     * @return bool
+     */
+    public static function checkGet()
+    {
         if(Request::method('get')) {
             if (Request::get('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(), Request::host())) {
-                Session::tempSet('csrf_get', true, 0);
+                return false;
             }
         }
 
-        //cookie token kontrolü
+        return true;
+    }
+
+
+    /**
+     * GET, POST işlemlerinde Cookie üzerinden kontrol eder CSRF yoksa false, varsa true döner
+     */
+    public static function checkCookie()
+    {
         if(Cookie::get('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(),Request::host())){
             if(Request::server('cache-control') != 'max-age=0') {
-                Session::tempSet('csrf_cookie', true, 0);
+                return false;
             }
         }
+
+        return true;
     }
 }

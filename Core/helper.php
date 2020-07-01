@@ -136,8 +136,7 @@ if (!function_exists('__')) {
      */
     function __($key, ...$args)
     {
-        array_unshift($args, $key);
-        echo App::getInstance([Language::class, 'translate'], $args);
+        echo Language::translate($key, $args);
     }
 }
 
@@ -268,10 +267,10 @@ if (!function_exists('url')) {
         }
 
         //dil desteği aktifse url yapısını ona göre oluştur
-        if (class_exists(Language::class)) {
-            if (Language::getDefault()->key != Language::get()->key && Language::getDefault()->key) {
+        if (Language::getDefault()) {
+            if (Language::getDefault()->key != Language::getActive()->key) {
 
-                return Request::baseUrl() . Language::get()->key . '/' . $path . $parameters;
+                return Request::baseUrl() . Language::getActive()->key . '/' . $path . $parameters;
             }
         }
 

@@ -23,7 +23,6 @@ class Database {
 
     private string $driver;
     private string $dsn;
-    private string $database;
     private string $user;
     private string $password;
     private string $charset;

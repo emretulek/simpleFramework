@@ -102,8 +102,7 @@ class DB {
         try {
             return self::$instance = new Database(
                 Config::get('database.' . $driverName . '.driver'),
-                Config::get('database.' . $driverName . '.host'),
-                Config::get('database.' . $driverName . '.database'),
+                Config::get('database.' . $driverName . '.dsn'),
                 Config::get('database.' . $driverName . '.user'),
                 Config::get('database.' . $driverName . '.password'),
                 Config::get('database.' . $driverName . '.charset'),

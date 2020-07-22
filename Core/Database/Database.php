@@ -22,7 +22,7 @@ class Database {
     private ?PDOStatement $stm;
 
     private string $driver;
-    private string $host;
+    private string $dsn;
     private string $database;
     private string $user;
     private string $password;
@@ -33,19 +33,17 @@ class Database {
     /**
      * Database constructor.
      * @param $driver
-     * @param $host
-     * @param $database
+     * @param $dsn
      * @param $user
      * @param $password
      * @param string $charset
      * @param string $collaction
      * @throws Exception
      */
-    public function __construct(string $driver, string $host, string $database, string $user, string $password, string $charset = 'utf8', string $collaction = 'utf8_general_ci')
+    public function __construct(string $driver, string $dsn, string $user = '', string $password = '', string $charset = 'utf8', string $collaction = 'utf8_general_ci')
     {
         $this->driver = $driver;
-        $this->host = $host;
-        $this->database = $database;
+        $this->dsn = $dsn;
         $this->user = $user;
         $this->password = $password;
         $this->charset = $charset;
@@ -61,7 +59,7 @@ class Database {
     private function connect()
     {
         try {
-            $this->pdo = new PDO($this->driver.':host='.$this->host.';dbname='.$this->database, $this->user, $this->password);
+            $this->pdo = new PDO($this->driver.':'.$this->dsn, $this->user, $this->password);
             $this->pdo->exec("SET NAMES '" . $this->charset . "' COLLATE '" . $this->collection . "'");
             $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 

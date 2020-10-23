@@ -24,8 +24,8 @@ Class Valid
     /**
      * Float ise ve istenen aralıkta ise sayıyı aksi halde false döndürür
      * @param $input
-     * @param int $min
-     * @param int $max
+     * @param ?int $min
+     * @param ?int $max
      * @return false|float
      */
     public static function float($input, $min = null, $max = null)
@@ -52,8 +52,8 @@ Class Valid
     /**
      * Integer ise ve istenen aralıkta ise sayıyı aksi halde false döndürür
      * @param $input
-     * @param int $min
-     * @param int $max
+     * @param ?int $min
+     * @param ?int $max
      * @return false|int
      */
     public static function int($input, $min = null, $max = null)
@@ -188,7 +188,7 @@ Class Valid
      * @param string $pattern
      * @return false|string
      */
-    public static function username($username, $pattern = '/^[\w]{4,32}$/i')
+    public static function username($username, $pattern = '/^[\w]{4,64}$/i')
     {
         return preg_match($pattern, $username) ? (string) $username : false;
     }
@@ -201,7 +201,7 @@ Class Valid
      * @param string $pattern
      * @return false|string
      */
-    public static function name($name, $pattern = '/^(?:\w\s?){2,64}$/iu')
+    public static function name($name, $pattern = '/^(?:\p{L}\s?){2,64}$/iu')
     {
         return preg_match($pattern, $name) ? (string) $name : false;
     }
@@ -223,11 +223,11 @@ Class Valid
      * Uzunluk istenen değerler arasında ise uzunluğu aksi halde false döndürür
      *
      * @param $input
-     * @param int $min
+     * @param int|null $min
      * @param int|null $max
      * @return false|int
      */
-    public static function length($input, $min = 1, $max = null)
+    public static function length($input, int $min = 1, int $max = null)
     {
         $length = (int) mb_strlen($input);
 
@@ -253,8 +253,8 @@ Class Valid
      */
     public static function alpha($input, $unicode = false)
     {
-        $pattern = '/^[\w]+$/';
-        $pattern .= $unicode ? 'u' : '';
+        $pattern = '/^[a-z]+$/i';
+        $pattern = $unicode ? '/^[\p{L}]+$/i' : $pattern;
 
         return preg_match($pattern, $input) ? $input : false;
     }
@@ -280,8 +280,8 @@ Class Valid
      */
     public static function alnum($input, $unicode = false)
     {
-        $pattern = '/[^\d\w]/';
-        $pattern .= $unicode ? 'u' : '';
+        $pattern = '/[^a-z0-9]/i';
+        $pattern = $unicode ? '/^[\p{L}0-9]+$/i' : $pattern;
 
         return preg_match($pattern, $input) ? $input : false;
     }
@@ -292,7 +292,7 @@ Class Valid
      * @param string $cardNumber
      * @return false|string
      */
-    public static function creditCard($cardNumber)
+    public static function creditCard(string $cardNumber)
     {
         $cleanNumbers = str_split(preg_replace("/[^\d]/", "",$cardNumber));
         $numbers = $cleanNumbers;
@@ -320,7 +320,7 @@ Class Valid
      * @param string $input
      * @return false|string
      */
-    public static function tcNo($input)
+    public static function tcNo(string $input)
     {
         if(strlen($input) == 11 && $input[0] != 0) {
 

@@ -14,11 +14,11 @@ namespace Helpers\Html;
 class Tag
 {
 
-    private $virtualTag;
+    private ?array $virtualTag;
 
-    private $tag;
+    private string $tag;
 
-    private $attributes;
+    private string $attributes;
 
 
     public function __construct(string $tagName, bool $closed = true)
@@ -46,7 +46,7 @@ class Tag
     /**
      * Element taglari arasındaki içeriği text olarak oluşturur,
      * değer girilmemiş ise içeriği döndürür
-     * @param string $text
+     * @param string|null $text
      * @return $this|string
      */
     public function text(string $text = null)
@@ -64,7 +64,7 @@ class Tag
     /**
      * Element taglari arasındaki içeriği html taglari ile birlikte oluşturur,
      * değer girilmemiş ise içeriği döndürür
-     * @param string $html
+     * @param string|null $html
      * @return $this
      */
     public function html(string $html = null)
@@ -229,7 +229,7 @@ class Tag
             $attributes[] = $attr . '="' . str_replace("\"", "&quot;", $value) . '"';
         }
 
-        $this->attributes = implode(" ", $attributes);
+        $this->attributes = $attributes ? " ".implode(" ", $attributes) : '';
     }
 
 
@@ -239,7 +239,7 @@ class Tag
     private function closedTagCreator()
     {
         $this->saveAttributes();
-        $this->tag = '<' . $this->virtualTag['name'] . ' ' . $this->attributes . '>' . $this->virtualTag['content'] . '</' . $this->virtualTag['name'] . '>';
+        $this->tag = '<' . $this->virtualTag['name'] . $this->attributes . '>' . $this->virtualTag['content'] . '</' . $this->virtualTag['name'] . '>'.PHP_EOL;
 
     }
 
@@ -250,7 +250,7 @@ class Tag
     private function singleTagCreator()
     {
         $this->saveAttributes();
-        $this->tag = '<' . $this->virtualTag['name'] . ' ' . $this->attributes . '/>';
+        $this->tag = '<' . $this->virtualTag['name'] . $this->attributes . '/>'.PHP_EOL;
     }
 
 

@@ -16,9 +16,4 @@ Class AjaxCheck Implements IMiddleware {
             throw new HttpMethodNotAllowed();
         }
     }
-
-    public function after()
-    {
-        // TODO: Implement after() method.
-    }
 }

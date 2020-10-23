@@ -2,9 +2,8 @@
 
 namespace Core\Validation;
 
-use Core\Config\Config;
-use Core\Language\Language;
 use Core\Crypt\Hash;
+use Core\Language\Language;
 
 /**
  * Class Filter
@@ -19,7 +18,7 @@ class Filter
     private array $error = [];
 
     private array $messages = [
-        'no_index' => 'Geçersiz index',
+        'no_index' => 'Zorunlu alan.',
         'required' => 'Zorunlu alan.',
         'email' => 'Geçersiz E-posta adresi.',
         'url' => 'Hatalı web adresi.',
@@ -44,17 +43,25 @@ class Filter
         'dateFormat' => 'Geçersiz tarih formatı.',
         'creditCard' => 'Geçersiz kredi kartı numarası.',
         'tcNo' => 'Geçersiz TC kimlik numarası.',
+        'equal' => 'Girilen değer istenen ile uyuşmuyor.'
     ];
 
     /**
      * Filter constructor.
      * @param array $params elemanları filtrelenecek dizi
-     * @param bool $lang hataların döndürüleceği dil otomatik belirlenir
+     * @param array $messages hataların döndürüleceği dil dizisi
      */
-    public function __construct(array $params, bool $lang = true)
+    public function __construct(array $params, array $messages = [])
     {
         $this->params = $params;
-        $this->messages = $lang ? Language::translate("validation") : $this->messages;
+
+        if($messages) {
+            $this->messages = $messages;
+        }elseif($messages = Language::translate('validation')){
+            $this->messages = $messages;
+        }else{
+            $this->messages;
+        }
     }
 
     /**
@@ -73,6 +80,7 @@ class Filter
             $this->is_required($required);
         } else {
             $this->input = null;
+            $this->is_required($required);
             $this->errorMessage('no_index');
         }
 
@@ -275,7 +283,7 @@ class Filter
     public function username()
     {
         if (!Valid::username($this->input)) {
-            $this->errorMessage('username', 4, 32);
+            $this->errorMessage('username', 4, 64);
         }
 
         return $this;
@@ -318,7 +326,7 @@ class Filter
      * Geçerli bir şifre olup olmadığını kontrol eder, repassword belirtilmişse şifre uyumunuda kontrol eder.
      * Hata varsa mesaj oluşturur.
      *
-     * @param string $repassword şifre uyumunun kontrol edileceği index.
+     * @param string|null $repassword şifre uyumunun kontrol edileceği index.
      * @return $this
      */
     public function password(string $repassword = null)
@@ -370,11 +378,11 @@ class Filter
     /**
      * İstenen uzunluk aralığında değilse hata döndürür
      *
-     * @param null $min
-     * @param null $max
+     * @param ?int $min
+     * @param ?int $max
      * @return $this
      */
-    public function length($min = null, $max = null)
+    public function length(int $min = null, int $max = null)
     {
         if (!Valid::length($this->input, $min, $max) && $max === null) {
             $this->errorMessage('min_len', $min);
@@ -414,8 +422,8 @@ class Filter
      */
     public function toAlpha($unicode = false)
     {
-        $pattern = '/[^\w]/';
-        $pattern .= $unicode ? 'u' : '';
+        $pattern = '/[^a-z]/i';
+        $pattern = $unicode ? '/[^\p{L}]/i' : $pattern;
 
         $this->input = preg_replace($pattern, '', $this->input);
 
@@ -444,8 +452,8 @@ class Filter
      */
     public function toAlnum($unicode = false)
     {
-        $pattern = '/[^0-9\w]/';
-        $pattern .= $unicode ? 'u' : '';
+        $pattern = '/[^a-z0-9]/i';
+        $pattern = $unicode ? '/[^\p{L}0-9]/i' : $pattern;
 
         $this->input = preg_replace($pattern, '', $this->input);
 
@@ -542,6 +550,21 @@ class Filter
         $this->input = preg_replace("/[^\w" . preg_quote($allowed) . "]/", "-", $this->input);
         $this->input = preg_replace("/[\-]{1,}/", "-", $this->input);
         $this->input = trim($this->input, "-");
+
+        return $this;
+    }
+
+
+    /**
+     * İnput değeri girilen değer ile anı değilse hata üretir.
+     * @param $param
+     * @return $this
+     */
+    public function equal($param)
+    {
+        if($this->input !== $param){
+            $this->errorMessage('equal');
+        }
 
         return $this;
     }

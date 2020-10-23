@@ -20,17 +20,19 @@ class Auth
      * Bilgileri girilen kullanıcı için oturum verilerini ayarlar.
      * @param int $id
      * @param string $username
+     * @param string $email
      * @param string $password
      * @param int $group
      * @param array $userInfo
      * @param int $remember
      * @return int
      */
-    public static function login(int $id, string $username, string $password, int $group, $userInfo = [], $remember = 0)
+    public static function login(int $id, string $username, string $email, string $password, int $group, $userInfo = [], $remember = 0)
     {
         Session::set('AUTH.LOGIN', true);
         self::setInfo('id', $id);
         self::setInfo('username', $username);
+        self::setInfo('email', $email);
         self::setInfo('group', $group);
         self::setInfo('permissions', self::userPermissions($group));
         self::setInfo('token', self::creatToken($id, $password));
@@ -55,13 +57,13 @@ class Auth
      */
     public static function rememberMe()
     {
-        if (!self::check()) {
+        if (Cookie::get('username') && Cookie::get('user_token') && Session::get('AUTH.LOGIN') == false) {
 
-            if($user = DB::getRow("Select * from users where userName = ?", [Cookie::get('username')])){
+            if($user = DB::getRow("Select * from users where userName = ? and rememberToken = ? and status = ?", [Cookie::get('username'),Cookie::get('user_token'), 1])){
 
                 if(Cookie::get('user_token') == self::creatToken($user->userID, $user->userPassword)) {
 
-                    return self::login($user->userID, $user->userName, $user->userPassword, $user->userGroup);
+                    return self::login($user->userID, $user->userName, $user->userEmail, $user->userPassword, $user->userGroup);
                 }
             }
         }

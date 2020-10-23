@@ -20,7 +20,7 @@ class Csrf
         $token = md5(uniqid());
         Session::set('old_csrf_token', Session::get('csrf_token'));
         Session::set('csrf_token', $token);
-        Cookie::set('csrf_token', $token, 1, '/', null, false, false);
+        Cookie::set('csrf_token', $token, 60 * 60, '/', null, false, false);
     }
 
 

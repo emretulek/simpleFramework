@@ -1,0 +1,20 @@
+{
+  "name": "emretulek/simple-framework",
+  "description": "Basit ve kullanisli php framework",
+  "type": "project",
+  "require": {
+    "php": ">=7.4",
+    "ext-bz2": "*",
+    "ext-pdo": "*",
+    "ext-json": "*",
+    "ext-ctype": "*",
+    "ext-mbstring": "*"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Mehmet Emre Tulek",
+      "email": "memretulek@gmail.com"
+    }
+  ]
+}

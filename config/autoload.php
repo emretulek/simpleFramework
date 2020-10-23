@@ -13,7 +13,7 @@ return [
     'alias' => [
         'Router' => Core\Router\Router::class,
         'Request' => Core\Http\Request::class,
-        'View' => Core\View::class,
+        'View' => Core\View\View::class,
         'DB' => Core\Database\DB::class,
         'Valid' => Core\Validation\Valid::class,
         'Lang' => Core\Language\Language::class,
@@ -31,7 +31,7 @@ return [
     ],
     'services' => [
         'default' => Services\DefaultServices::class,
-        //'language' => Services\LanguageService::class,
+        'language' => Services\LanguageService::class,
         //'auth' => Services\AuthServices::class
     ],
     'routes' => [

@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * @Created 18.05.2020 22:40:39
  * @Project simpleFramework
@@ -18,6 +18,7 @@ use PDO;
 use PDOStatement;
 
 /**
+ * -------------------------------------------------------------------------------------------
  * @see Database::selectDB()
  * @method static Database selectDB(string $database)
  * --------------------------------------------------------------------------------------------

@@ -20,6 +20,8 @@ class DatabaseLog Implements LogInterface
      */
     public function writer($message, $data, $type)
     {
+        $data = is_array($data) || is_object($data) ? json_encode($data) : $data;
+
         return DB::insert("insert into {$this->table} set `type` = ?, `message` = ?, `data` = ?",
             [$type, $message, $data]);
     }

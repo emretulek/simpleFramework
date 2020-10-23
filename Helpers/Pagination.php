@@ -15,7 +15,7 @@ class Pagination {
 
     const PATTERN = "{num}";
 
-    public $language = [
+    public array $language = [
         'prev' => 'Önceki',
         'next' => 'Sonraki',
         'first' => 'İlk Sayfa',
@@ -23,23 +23,23 @@ class Pagination {
     ];
 
 
-    public $totalRecord;
-    public $totalPage;
-    public $perPage;
+    public int $totalRecord = 0;
+    public int $totalPage;
+    public int $perPage;
     public $currentPage;
 
-    public $start;
-    public $limit;
+    public int $start;
+    public int $limit;
 
-    public $prevNext = true;
-    public $firstLast = true;
-    public $maxNavigationItems = 4;
-    public $jumpNavigationItems = 10;
+    public bool $prevNext = true;
+    public bool $firstLast = true;
+    public int $maxNavigationItems = 4;
+    public int $jumpNavigationItems = 10;
 
 
-    private $urlPattern;
-    private $items = [];
-    private $itemNumber = 0;
+    private string $urlPattern;
+    private array $items = [];
+    private int $itemNumber = 0;
 
     public function __construct(int $totalRecord, int $currentPage = 1, int $perPage = 20, string $urlPattern = "?page={num}")
     {

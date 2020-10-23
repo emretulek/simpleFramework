@@ -1,9 +1,11 @@
 <?php
 
-namespace Core;
+namespace Core\Controller;
 
 
+use Core\App;
 use Core\Config\Config;
+use Core\View\View;
 
 
 class Controller

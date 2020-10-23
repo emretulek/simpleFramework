@@ -18,12 +18,12 @@ class Cookie
      * @param int|string $lifetime integer hours or  string (60s, 30i, 24h, 30d, 12m, 1y)
      * @param string $path
      * @param null $domain
-     * @param bool $secure true sadece https, false http, null auto
+     * @param bool|null $secure true sadece https, false http, null auto
      * @param bool $http_only
      * @param string $sameSite Strict, Lax, None
      * @return bool
      */
-    public static function set(string $name, string $value, $lifetime = 24, $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict')
+    public static function set(string $name, string $value, $lifetime = "+1 Day", $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict')
     {
         if($secure == null){
             $secure = Request::scheme() === 'https';
@@ -105,27 +105,15 @@ class Cookie
     /**
      * Cookie için bitiş tarihi oluşturur.
      *
-     * @param string|int $time (int saat) (string 1d = 1gün, 1i = 1dk) php date() fonksiyonuna benzer çalışır.
+     * @param string|int $time (int saniye) veya php strtotime
      * @return float|int|string
      */
     private static function expires($time)
     {
-        if ($integer_time = mb_stristr("s", $time)) {
-            $expires = $integer_time;
-        } elseif ($integer_time = mb_stristr("i", $time)) {
-            $expires = $integer_time * 60;
-        } elseif ($integer_time = mb_stristr("h", $time)) {
-            $expires = $integer_time * 60 * 60;
-        } elseif ($integer_time = mb_stristr("d", $time)) {
-            $expires = $integer_time * 60 * 60 * 24;
-        } elseif ($integer_time = mb_stristr("m", $time)) {
-            $expires = $integer_time * 60 * 60 * 24 * 30;
-        } elseif ($integer_time = mb_stristr("y", $time)) {
-            $expires = $integer_time * 60 * 60 * 24 * 30 * 12;
-        } else {
-            $expires = intval($time) * 60 * 60;
+        if(is_numeric($time)){
+            return time() + $time;
         }
 
-        return time() + $expires;
+        return strtotime($time);
     }
 }

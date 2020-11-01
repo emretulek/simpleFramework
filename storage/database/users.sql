@@ -1,22 +1,27 @@
-CREATE TABLE IF NOT EXISTS `users` (
-  `userID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `userName` varchar(256) NOT NULL,
-  `userEmail` varchar(256) NOT NULL,
-  `userPassword` varchar(256) NOT NULL,
-  `userGroup` int(11) unsigned DEFAULT NULL,
-  `userIP` varchar(50) DEFAULT NULL,
-  `activate` enum('0','1') NOT NULL DEFAULT '0',
-  `nameSurname` varchar(256) NOT NULL,
-  `registerIP` varchar(50) DEFAULT NULL,
-  `registerDate` datetime DEFAULT CURRENT_TIMESTAMP,
-  `lastLogin` datetime DEFAULT CURRENT_TIMESTAMP,
-  `sessionID` varchar(64) DEFAULT NULL,
-  PRIMARY KEY (`userID`),
-  UNIQUE KEY `userName` (`userName`),
-  UNIQUE KEY `userEmail` (`userEmail`),
-  KEY `FK_users_user_groups` (`userGroup`),
-  CONSTRAINT `FK_users_user_groups` FOREIGN KEY (`userGroup`) REFERENCES `user_groups` (`groupID`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
-
-INSERT INTO `users` (`userID`, `userName`, `userEmail`, `userPassword`, `userGroup`, `userIP`, `activate`, `nameSurname`, `registerIP`, `registerDate`, `lastLogin`, `sessionID`) VALUES
-	(1, 'admin', 'admin@admin.com', '', 1, NULL, '0', '', NULL, '2020-06-29 12:11:12', '2020-06-29 12:11:12', NULL);
+CREATE TABLE `users`
+(
+    `userID`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `userName`       VARCHAR(256)     NOT NULL,
+    `userEmail`      VARCHAR(256)     NOT NULL,
+    `userPassword`   VARCHAR(256)     NOT NULL,
+    `userGroup`      INT(11) UNSIGNED NULL     DEFAULT NULL,
+    `userIP`         VARCHAR(50)      NULL     DEFAULT NULL,
+    `status`         ENUM ('0','1')   NOT NULL DEFAULT '0',
+    `nameSurname`    VARCHAR(256)     NOT NULL,
+    `registerIP`     VARCHAR(50)      NULL     DEFAULT NULL,
+    `created_at`     DATETIME         NULL     DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     DATETIME         NULL     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at`     DATETIME         NULL     DEFAULT NULL,
+    `lastLogin`      DATETIME         NULL     DEFAULT CURRENT_TIMESTAMP,
+    `activationCode` VARCHAR(256)     NULL     DEFAULT NULL,
+    `sessionID`      VARCHAR(64)      NULL     DEFAULT NULL,
+    PRIMARY KEY (`userID`),
+    UNIQUE INDEX `userName` (`userName`),
+    UNIQUE INDEX `userEmail` (`userEmail`),
+    INDEX `FK_users_user_groups` (`userGroup`),
+    CONSTRAINT `FK_users_user_groups` FOREIGN KEY (`userGroup`) REFERENCES `user_groups` (`groupID`) ON DELETE SET NULL
+)
+    COLLATE = 'utf8mb4_general_ci'
+    ENGINE = InnoDB
+    AUTO_INCREMENT = 2
+;

@@ -13,25 +13,29 @@ namespace Helpers\Html;
 
 class Meta {
 
-    private static $metaTags = [];
-    private static $selected = 0;
+    private static array $metaTags = [];
+    private static int $selected = 0;
 
+    const TOP = "TOP";
+    const BOTTOM = "BOTTOM";
 
     /**
      * Değer girilirse title değiştirilir, boş bırakılırsa title değerini döndürür
      * Değer değiştirmek yerine ekleme yaplılmak istenirse append ve prepend kullanılabilir
-     * @param string $text
+     * @param ?string $text
      * @return Tag
      */
     public static function title(string $text = null)
     {
-        if($text){
-            $tag = new Tag('title');
-            $tag->text($text);
-            self::$metaTags['title'][0] = $tag;
+        if(isset(self::$metaTags['title'][0]) && $text == null){
+
+            return self::$metaTags['title'][0];
         }
 
-        return self::$metaTags['title'][0] ?? null;
+        $tag = new Tag('title');
+        $tag->text($text);
+
+        return self::$metaTags['title'][0] = $tag;
     }
 
 
@@ -39,18 +43,15 @@ class Meta {
      * Yeni bir link tagi oluşturur, rel değeri anahtar olarak atanır
      * @param string $href
      * @param string $rel
-     * @param null $type
+     * @param string $type
      * @return Tag
      */
-    public static function link(string $href, string $rel, $type = null)
+    public static function link(string $href, string $rel = "stylesheet", $type = "text/css")
     {
         $tag = new Tag('link', false);
         $tag->attr('href', $href)
-            ->attr('rel', $rel);
-
-        if($type){
-            $tag->attr('type', $type);
-        }
+            ->attr('rel', $rel)
+            ->attr('type', $type);
 
         isset(self::$metaTags[$rel]) ? self::$selected++ : self::$selected;
 
@@ -59,14 +60,16 @@ class Meta {
 
 
     /**
-     * Yeni bir script tagi oluşturur, link gibi anahtar değer içermez
+     * * Yeni bir script tagi oluşturur, link gibi anahtar değer içermez
      * script tagleri sadece toplu olarak çağırılabilir
+     *
      * @param string|null $src
      * @param string|null $script
      * @param string|null $type
+     * @param string $POS
      * @return Tag
      */
-    public static function script(string $src = null, string $script = null, string $type = null)
+    public static function script(string $src = null, string $script = null, string $type = null, $POS = self::BOTTOM)
     {
         $tag = new Tag('script');
 
@@ -82,7 +85,7 @@ class Meta {
 
         isset(self::$metaTags['_script']) ? self::$selected++ : self::$selected;
 
-        return self::$metaTags['_script'][self::$selected] = $tag;
+        return self::$metaTags['_script'][$POS][self::$selected] = $tag;
     }
 
     /**
@@ -93,7 +96,7 @@ class Meta {
      * @param string $property og:description şeklinde belirtilirse meta tag için property özelliği eklenir
      * @return Tag|null
      */
-    public static function setName(string $name, string $content, string $property = null)
+    public static function setName(string $name, string $content, string $property = '')
     {
         $tag = new Tag('meta', false);
         $tag->attr('name', $name)
@@ -116,7 +119,7 @@ class Meta {
      * @param string $property og:description şeklinde belirtilirse meta tag için property özelliği eklenir
      * @return Tag|null
      */
-    public static function addName(string $name, string $content, string $property = null)
+    public static function addName(string $name, string $content, string $property = '')
     {
         $tag = new Tag('meta', false);
         $tag->attr('name', $name)
@@ -220,7 +223,7 @@ class Meta {
      * @param string $rel Meta::link methodundaki rel değeri
      * @return Tag|string
      */
-    public static function getLinks(string $rel = null)
+    public static function getLinks(string $rel = "stylesheet")
     {
         $metaTags = [];
 
@@ -251,18 +254,21 @@ class Meta {
     }
 
 
-
     /**
      * Tüm script taglerini döndürür
-     * @return Tag|string
+     *
+     * @param string $POS
+     * @return mixed|string
      */
-    public static function getScripts()
+    public static function getScripts($POS = self::BOTTOM)
     {
         $metaTags = [];
 
-        foreach (self::$metaTags['_script'] as $metaTag){
+        if(isset(self::$metaTags['_script'][$POS])) {
+            foreach (self::$metaTags['_script'][$POS] as $metaTag) {
 
-            $metaTags[] = $metaTag;
+                $metaTags[] = $metaTag;
+            }
         }
 
         return count($metaTags) === 1 ? $metaTags[0] : implode(PHP_EOL, $metaTags);
@@ -312,7 +318,7 @@ class Meta {
      * @param string $property Meta:setProperty veya Meta::addProperty methodundaki $property değeri
      * @return string|null
      */
-    public static function getProperties(string $property = null)
+    public static function getProperties(string $property = '')
     {
         $metaTags = [];
 
@@ -350,7 +356,7 @@ class Meta {
      * @param string $value Meta::setequiv veya Meta::addequiv methodundaki $value değeri
      * @return string|null
      */
-    public static function getEquivs(string $value = null)
+    public static function getEquivs(string $value = '')
     {
         $metaTags = [];
 

@@ -55,7 +55,7 @@ class Response
     {
         try {
             $this->headers(['Content-Type' => 'application/json']);
-            $this->content(json_encode($array, JSON_FORCE_OBJECT));
+            $this->content(json_encode($array));
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new Exception('JSON decode edilemedi.', E_WARNING);
             }

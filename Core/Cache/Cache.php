@@ -137,6 +137,6 @@ class Cache
             return $cache;
         }
 
-        return false;
+        return $cache;
     }
 }

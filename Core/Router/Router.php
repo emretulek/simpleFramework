@@ -11,7 +11,7 @@ use Core\Config\Config;
 use ArgumentCountError;
 use Closure;
 use Core\Http\Response;
-use Core\View;
+use Core\View\View;
 use Exception;
 use ReflectionException;
 use ReflectionMethod;
@@ -55,6 +55,25 @@ class Router
 
     /**
      * @param array $options
+     */
+    public static function global(array $options)
+    {
+        if(array_key_exists('middleware', $options)){
+            self::$methodMidleware[] = $options['middleware'];
+        }
+
+        if(array_key_exists('namespace', $options)){
+            self::$methodNamespace[] = $options['namespace'];
+        }
+
+        if(array_key_exists('prefix', $options)){
+            self::$methodPrefix[] = $options['prefix'];
+        }
+    }
+
+
+    /**
+     * @param array $options
      * @param callable $callback
      */
     public static function group(array $options, callable $callback)
@@ -73,9 +92,17 @@ class Router
 
         call_user_func($callback);
 
-        array_pop(self::$methodMidleware);
-        array_pop(self::$methodNamespace);
-        array_pop(self::$methodPrefix);
+        if(array_key_exists('middleware', $options)){
+            array_pop(self::$methodMidleware);
+        }
+
+        if(array_key_exists('namespace', $options)){
+            array_pop(self::$methodNamespace);
+        }
+
+        if(array_key_exists('prefix', $options)){
+            array_pop(self::$methodPrefix);
+        }
     }
 
 
@@ -146,7 +173,7 @@ class Router
      * @param null $method zorlanacak istek türü POST, GET
      * @return self
      */
-    private static function addRoute($pattern, $cmp, $method)
+    private static function addRoute(string $pattern, $cmp, $method)
     {
         self::$routeID++;
 
@@ -186,7 +213,11 @@ class Router
         $method = isset($segments[0]) ? array_shift($segments) : null;
         $params = $segments ? implode('/', array_map(fn($item) => '{*}', $segments)) : '';
 
-        return self::any('/' . $controller . '/' . $method . '/' . $params, $controller . '@' . $method);
+        $pattern = '/' . $controller . '/' . $method . '/' . $params;
+        $pattern = preg_replace("#[^\w\d/]#iu","", $pattern);
+        $pattern = preg_quote($pattern);
+
+        return self::any($pattern.$params, $controller . '@' . $method);
     }
 
 
@@ -210,7 +241,7 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function any($pattern, $cmp)
+    public static function any(string $pattern, $cmp)
     {
         return self::addRoute($pattern, $cmp, ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']);
     }
@@ -222,7 +253,7 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function get($pattern, $cmp)
+    public static function get(string $pattern, $cmp)
     {
         return self::addRoute($pattern, $cmp, ['GET']);
     }
@@ -234,7 +265,7 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function post($pattern, $cmp)
+    public static function post(string $pattern, $cmp)
     {
         return self::addRoute($pattern, $cmp, ['POST']);
     }
@@ -246,7 +277,7 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function put($pattern, $cmp)
+    public static function put(string $pattern, $cmp)
     {
         return self::addRoute($pattern, $cmp, ['PUT']);
     }
@@ -258,7 +289,7 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function delete($pattern, $cmp)
+    public static function delete(string $pattern, $cmp)
     {
         return self::addRoute($pattern, $cmp, ['DELETE']);
     }
@@ -270,7 +301,7 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function patch($pattern, $cmp)
+    public static function patch(string $pattern, $cmp)
     {
         return self::addRoute($pattern, $cmp, ['PATCH']);
     }
@@ -282,7 +313,7 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function head($pattern, $cmp)
+    public static function head(string $pattern, $cmp)
     {
         return self::addRoute($pattern, $cmp, ['HEAD']);
     }
@@ -294,7 +325,7 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function options($pattern, $cmp)
+    public static function options(string $pattern, $cmp)
     {
         return self::addRoute($pattern, $cmp, ['OPTIONS']);
     }
@@ -366,11 +397,13 @@ class Router
                     if (is_callable($route['cmp'])) {
                         try {
                             $response = call_user_func_array($route['cmp'], $matches);
-
+                            /**
+                             * @deprecated
+                             */
                             //load middleware after
-                            foreach ($route['middleware'] as $middleware) {
-                                $response = App::caller([$middleware, 'after', [$response]]);
-                            }
+//                            foreach ($route['middleware'] as $middleware) {
+//                                $response = App::caller([$middleware, 'after', [$response]]);
+//                            }
 
                             if($response instanceof View || $response instanceof Response){
                                 echo $response;
@@ -392,10 +425,12 @@ class Router
 
                     $response = self::route(self::$nameSpace . self::$controller, self::$method, self::$params);
 
-                    //load middleware after
-                    foreach ($route['middleware'] as $middleware) {
-                        $response = App::caller([$middleware, 'after'], [$response]);
-                    }
+                    /**
+                     * @deprecated
+                     */
+//                    foreach ($route['middleware'] as $middleware) {
+//                        $response = App::caller([$middleware, 'after'], [$response]);
+//                    }
 
                     if($response instanceof View || $response instanceof Response){
                         echo $response;
@@ -449,7 +484,7 @@ class Router
         $controllerPath = str_replace('/', '\\', Config::get('path.controller')) . '\\';
         $subPath = $nameSpace ? str_replace('/', '\\', $nameSpace) . '\\' : '';
         $nameSpace = $controllerPath . $subPath;
-        $nameSpace = preg_replace('/[^\w\d\\\_]{1,256}/u', '', $nameSpace);
+        $nameSpace = preg_replace('/[^\w\d\\\]{1,256}/u', '', $nameSpace);
         self::$nameSpace = (string) $nameSpace;
     }
 
@@ -459,7 +494,7 @@ class Router
      */
     private static function setController($className)
     {
-        $className = preg_replace('/[^\w\d_]{1,256}/u', '', $className);
+        $className = preg_replace('/[^\w\d\/\\\]{1,256}/u', '', $className);
         self::$controller = $className ? str_replace('/', '\\', $className) : self::$controller;
     }
 
@@ -470,7 +505,7 @@ class Router
      */
     private static function setMethod($methodName)
     {
-        $methodName = preg_replace('/[^\w\d_]{1,256}/u', '', $methodName);
+        $methodName = preg_replace('/[^\w\d]{1,256}/u', '', $methodName);
         self::$method = $methodName ? $methodName : self::$method;
     }
 
@@ -580,6 +615,9 @@ class Router
      */
     public static function errors($http_code, callable $callback = null)
     {
+        /**
+         * @var $view View
+         **/
         $view = App::getInstance(View::class);
         if ($callback instanceof Closure) {
             self::$errors[$http_code] = $callback;
@@ -588,7 +626,7 @@ class Router
 
         if (empty(self::$errors[$http_code])) {
             self::$errors[$http_code] = function () use ($view, $http_code){
-                $view->path('errors/'.$http_code.'.html', null, null)->render($http_code);
+                $view->path('errors/'.$http_code, null)->render($http_code);
             };
         }
 

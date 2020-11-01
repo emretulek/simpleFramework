@@ -5,7 +5,7 @@ use Core\Config\Config;
 use Core\Http\Request;
 use Core\Http\Response;
 use Core\Language\Language;
-use Core\View;
+use Core\View\View;
 
 if (!function_exists('console_log')) {
     /**
@@ -125,6 +125,24 @@ if (!function_exists('dot_array_del')) {
 
         $array = null;
         return true;
+    }
+}
+
+if (!function_exists('conf')) {
+    /**
+     * Config sınıfının hızlı erişim methodu
+     * @param $key
+     * @param mixed $value
+     * @return mixed
+     */
+    function conf($key, $value = null)
+    {
+       if($value === null){
+           return Config::get($key);
+       }
+
+       Config::set($key, $value);
+       return true;
     }
 }
 
@@ -341,12 +359,13 @@ if (!function_exists('viewPath')) {
      *
      * @param $fileName
      * @param array $data
+     * @param string $ext
      * @return View
      */
-    function viewPath($fileName, $data = array())
+    function viewPath($fileName, $data = array(), string $ext = EXT)
     {
         $view = App::getInstance(View::class);
-        return $view->path($fileName, $data);
+        return $view->path($fileName, $data, $ext);
     }
 }
 
@@ -377,7 +396,7 @@ if (!function_exists('jsonSuccess')) {
     function jsonSuccess($message = null, $location = null, $data = null)
     {
         $view = App::getInstance(View::class);
-        return $view->json(['type' => 'success', 'message' => $message, 'location' => $location, 'data' => $data]);
+        return $view->json(['status' => 'success', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
 }
 
@@ -393,7 +412,7 @@ if (!function_exists('jsonError')) {
     function jsonError($message = null, $location = null, $data = null)
     {
         $view = App::getInstance(View::class);
-        return $view->json(['type' => 'error', 'message' => $message, 'location' => $location, 'data' => $data]);
+        return $view->json(['status' => 'error', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
 }
 

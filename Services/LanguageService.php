@@ -15,15 +15,15 @@ class LanguageService extends Services
         Language::init();
 
         //kullanılabilir dillere yeni dil eklendi
-        Language::add('en', 'English', 'en_US');
+        //Language::add('en', 'English', 'en_US');
 
         //default dil olarak ingilizce belirtildi
-        Language::setDefault('en');
+        //Language::setDefault('en');
 
         //ingilizce seçili dil olarak işaretlendi
-        Language::setActive('en');
+        //Language::setActive('en');
 
         //Seçili dil url adresinden algılansın
-        Language::useUrl();
+        //Language::useUrl();
     }
 }

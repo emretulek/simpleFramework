@@ -8,6 +8,7 @@ define('EXT', '.php');
 
 require_once(ROOT . 'Core/helper.php');
 require_once(ROOT . 'Core/Autoload/AutoLoad.php');
+require_once (ROOT. 'vendor/autoload.php');
 $autoLoad = new Core\Autoload\AutoLoad();
 
 /**

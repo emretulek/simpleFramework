@@ -12,9 +12,4 @@ Class AuthCheck Implements IMiddleware {
             redirect('login');
         }
     }
-
-    public function after()
-    {
-        // TODO: Implement after() method.
-    }
 }

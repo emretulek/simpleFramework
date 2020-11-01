@@ -6,6 +6,11 @@ return  array(
     'path' => '/',
 
     /**
+     * App name
+     */
+    'app_name' => 'Simple Framework',
+
+    /**
      * {app_key} projeye özgü anahtar şifreleme türüne göre ayarlanmalı mevcut key 256bit
      */
     'app_key' => 'eThWmZq4t6w9z$C&F)J@NcRfUjXn2r5u',
@@ -57,7 +62,7 @@ return  array(
      * true php password_hash DEFUALT_HASH yöntemi kullanılır, aksi halde hash algo ile belirtilen yöntem kullanılır
      * true , false
      */
-    'password_hash' => true,
+    'password_hash' => false,
 
     /**
      * enable [true or false]

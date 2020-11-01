@@ -140,7 +140,7 @@ class ExceptionHandler
         $message = $e->getMessage();
         $file = $e->getFile();
         $line = $e->getLine();
-        $trace = $backtrace ? $e->getTrace()[$backtrace] : null;
+        $trace = $backtrace ? $e->getTrace()[$backtrace] ?? null : null;
 
         switch (Config::get('app.debug')){
             case 0:
@@ -148,7 +148,7 @@ class ExceptionHandler
                 if(array_key_exists($code, self::ERROR)) {
                     ob_end_clean();
                     ob_start();
-                    $this->print("Yolunda gitmeyen birşeyler var. Debug modunda ayrıntılı bilgi edinebilirsiniz.", $code, $file, $line);
+                    $this->print("Something went wrong. You can get detailed information in debug mode.", $code, $file, $line);
                     $content = ob_get_clean();
                     echo new Response($content, 500);
                     exit;

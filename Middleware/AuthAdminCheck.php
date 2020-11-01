@@ -9,12 +9,8 @@ Class AuthAdminCheck Implements IMiddleware {
     public function before()
     {
         if(!Auth::guard("admin")){
-            redirect('403');
+            viewPath('errors/403', [], '.html')->render();
+            exit;
         }
-    }
-
-    public function after()
-    {
-        // TODO: Implement after() method.
     }
 }

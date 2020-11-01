@@ -5,7 +5,7 @@ class DB extends Core\Database\DB {}
 class Valid extends Core\Validation\Valid {}
 class Lang extends Core\Language\Language {}
 
-class View extends  Core\View {}
+class View extends  Core\View\View {}
 class Exceptions extends Core\Exceptions\Exceptions{}
 
 class Config extends \Core\Config\Config{}

@@ -14,8 +14,8 @@ use Exception;
 class Language
 {
     private static array $default = [];
-    private static array $languages;
-    private static array $translate;
+    private static array $languages = [];
+    private static array $translate = [];
 
 
     public static function init()
@@ -72,10 +72,14 @@ class Language
 
     /**
      * Öntanımlı dil bilgilerini döndürür
+     * @return object
      */
     public static function getDefault()
     {
-        return self::$default ? (object) self::$default : self::$default;
+        if(empty(self::$default)){
+            self::init();
+        }
+        return (object) self::$default;
     }
 
     /**

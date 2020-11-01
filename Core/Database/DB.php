@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * @Created 18.05.2020 22:40:39
  * @Project simpleFramework
@@ -18,6 +18,7 @@ use PDO;
 use PDOStatement;
 
 /**
+ * -------------------------------------------------------------------------------------------
  * @see Database::selectDB()
  * @method static Database selectDB(string $database)
  * --------------------------------------------------------------------------------------------
@@ -102,8 +103,7 @@ class DB {
         try {
             return self::$instance = new Database(
                 Config::get('database.' . $driverName . '.driver'),
-                Config::get('database.' . $driverName . '.host'),
-                Config::get('database.' . $driverName . '.database'),
+                Config::get('database.' . $driverName . '.dsn'),
                 Config::get('database.' . $driverName . '.user'),
                 Config::get('database.' . $driverName . '.password'),
                 Config::get('database.' . $driverName . '.charset'),

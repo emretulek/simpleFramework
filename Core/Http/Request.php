@@ -26,7 +26,7 @@ class Request
      */
     public static function requestUri()
     {
-        $path = preg_replace("@^".trim(Config::get('app.path'), '/')."/@i", '/', self::path().'/', 1);
+        $path = preg_replace("@^" . trim(Config::get('app.path'), '/') . "/@i", '/', self::path() . '/', 1);
         return rtrim(preg_replace("#/+#", "/", $path), '/');
     }
 
@@ -39,7 +39,7 @@ class Request
     public static function matchUri($uri)
     {
         $uri = trim($uri, '/');
-        return (bool) preg_match('#^'.$uri.'$#', self::requestUri());
+        return (bool)preg_match('#^' . $uri . '$#', self::requestUri());
     }
 
     /**
@@ -48,7 +48,7 @@ class Request
      */
     public static function currentUrl()
     {
-        $queryString = $_SERVER['QUERY_STRING'] ? '?'.urldecode($_SERVER['QUERY_STRING']) : "";
+        $queryString = $_SERVER['QUERY_STRING'] ? '?' . urldecode($_SERVER['QUERY_STRING']) : "";
         return trim(self::baseUrl(), '/') . '/' . self::requestUri() . $queryString;
     }
 
@@ -58,7 +58,7 @@ class Request
      */
     public static function baseUrl()
     {
-        return self::scheme() . '://' .self::host() . rtrim(Config::get('app.path'), '/') . '/';
+        return self::scheme() . '://' . self::host() . rtrim(Config::get('app.path'), '/') . '/';
     }
 
     /**
@@ -107,12 +107,15 @@ class Request
      */
     public static function get(string $name = null)
     {
-        if(empty($_GET)){
+        if (empty($_GET)) {
             return [];
         }
 
-        $get = array_map("strip_tags", $_GET);
-        $get = array_map("trim", $get);
+        $get = $_GET;
+
+        array_walk_recursive($get, function (&$item){
+            $item = trim(strip_tags($item));
+        });
 
         if (is_null($name)) return $get;
         return dot_aray_get($get, $name);
@@ -128,11 +131,15 @@ class Request
      */
     public static function post(string $name = null)
     {
-        if(empty($_POST)){
+        if (empty($_POST)) {
             return [];
         }
 
-        $post = array_map("trim", $_POST);
+        $post = $_POST;
+
+        array_walk_recursive($post, function (&$item){
+            $item = trim(strip_tags($item));
+        });
 
         if (is_null($name)) return $post;
         return dot_aray_get($post, $name);
@@ -151,13 +158,13 @@ class Request
     {
         $sort_files = [];
 
-        if(empty($_FILES)){
+        if (empty($_FILES)) {
             return [];
         }
 
         // her resim için yeni dizi oluşturur
-        foreach ($_FILES as $input_name => $inputs){
-            if(is_array($inputs['name'])) {
+        foreach ($_FILES as $input_name => $inputs) {
+            if (is_array($inputs['name'])) {
                 foreach ($inputs['name'] as $key => $file_name) {
                     $sort_files[$input_name][] = [
                         'name' => $file_name,
@@ -167,12 +174,12 @@ class Request
                         'size' => $inputs['size'][$key],
                     ];
                 }
-            }else{
+            } else {
                 $sort_files[$input_name][] = $inputs;
             }
         }
 
-        if($name){
+        if ($name) {
             return dot_aray_get($sort_files, $name);
         }
 
@@ -186,7 +193,7 @@ class Request
      */
     public static function raw()
     {
-        if($data = file_get_contents('php://input')){
+        if ($data = file_get_contents('php://input')) {
             return $data;
         }
 
@@ -197,7 +204,7 @@ class Request
      * İstek methodunu kontrol eder doğrusa true değilse false döner.
      * $method girilmezse header bilgisinden methodu döndürür.
      *
-     * @param string $method kontrol edilecek method [POST, GET, PUT, PATCH, DELETE]
+     * @param string|null $method kontrol edilecek method [POST, GET, PUT, PATCH, DELETE]
      * @return bool
      */
     public static function method(string $method = null)

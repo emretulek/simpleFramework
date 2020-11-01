@@ -6,8 +6,7 @@
 return [
     'mysql' => [
         'driver'    => 'mysql',
-        'host'      =>  'localhost',
-        'database'  =>  'phpfw',
+        'dsn'      =>  'host=localhost;dbname=phpfw',
         'user'      =>  'root',
         'password'  =>  '',
         'charset'   =>  'utf8mb4',
@@ -15,8 +14,7 @@ return [
     ],
     'mysql2' => [
         'driver'    => 'mysql',
-        'host'      =>  'localhost',
-        'database'  =>  'test',
+        'dsn'      =>  'host=localhost;dbname=test',
         'user'      =>  'root',
         'password'  =>  '',
         'charset'   =>  'utf8mb4',

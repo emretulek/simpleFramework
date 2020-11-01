@@ -33,7 +33,7 @@ class FileLog Implements LogInterface
     {
         $type = "[{$type}]";
         $time = date("d.m.Y H:i:s", $time);
-        $data = is_array($data) || is_object($data) ? serialize($data) : $data;
+        $data = is_array($data) || is_object($data) ? json_encode($data) : $data;
 
         return sprintf("%s\t%s\t%s\t%s".PHP_EOL, $time, $type, $message, $data);
     }
@@ -49,11 +49,11 @@ class FileLog Implements LogInterface
     public function writer($message, $data, $type)
     {
         try {
-
-            $handle = fopen($this->file, 'ab+');
-            $log = $this->formatter($message, $data, $type, time());
-
             if (is_writable($this->file)) {
+
+                $handle = fopen($this->file, 'ab+');
+                $log = $this->formatter($message, $data, $type, time());
+
                 if(fwrite($handle, $log, strlen($log))) {
                     return fclose($handle);
                 }

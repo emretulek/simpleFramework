@@ -9,6 +9,9 @@
 
 namespace Core\Database;
 
+use Exception;
+use Exceptions;
+use InvalidArgumentException;
 use PDO;
 
 class QueryBuilder {
@@ -25,9 +28,26 @@ class QueryBuilder {
     protected string $order = '';
     protected string $limit = '';
     protected string $join = '';
+    protected string $pk = '';
 
     private string $queryType = '';
     private int $paramCount = 0;
+
+
+    public function __construct()
+    {
+        Database::$backtrace = 4;
+    }
+
+    /**
+     * @param string $primaryColumn
+     * @return $this
+     */
+    public function pk(string $primaryColumn)
+    {
+        $this->pk = $primaryColumn;
+        return $this;
+    }
 
     /**
      * @param string $table
@@ -72,9 +92,7 @@ class QueryBuilder {
 
         foreach ($columns as $key => $value){
 
-            $paramName = $this->newParamName();
-            $this->params[$paramName] = $value;
-            $query[] = $key.' = '.$paramName;
+            $query[] = $this->comparison($key, '=', $value);
         }
 
         $this->insert .= $this->insert ? ', '.implode(", ", $query) : implode(", ",$query);
@@ -92,9 +110,7 @@ class QueryBuilder {
 
         foreach ($columns as $key => $value){
 
-            $paramName = $this->newParamName();
-            $this->params[$paramName] = $value;
-            $query[] = $key.' = '.$paramName;
+            $query[] = $this->comparison($key, '=', $value);
         }
 
         $this->update .= $this->update ? ', '.implode(", ", $query) : implode(", ",$query);
@@ -104,42 +120,114 @@ class QueryBuilder {
 
 
     /**
+     * @param null $columns
+     * @param null $param
      * @return $this
+     * @throws Exception
      */
-    public function delete()
+    public function delete($columns = null, $param = null)
     {
         $this->delete = true;
 
-        return $this;
-    }
+        if($columns !== null && $param !== null) {
+            $this->where($columns, $param);
+        }elseif (is_array($columns) && $param === null){
+            $this->where($columns);
+        }elseif(is_integer($columns)){
 
-    /**
-     * @param string $column
-     * @param string $operant
-     * @param $param
-     * @return $this
-     */
-    public function where(string $column, string $operant, $param)
-    {
-        $query = $this->andOrStatement($column, $operant, $param);
-
-        $this->where .= $this->where ? ' AND '.$query : ' WHERE '.$query;
+            if(!$this->pk){
+                throw new Exception(__FUNCTION__." method cannot be used because primary key is not specified.");
+            }else{
+                $this->where($this->pk, (int) $columns);
+            }
+        }
 
         return $this;
     }
 
 
     /**
-     * @param string $column
-     * @param string $operant
+     * @param null $columns
+     * @param null $param
+     * @return $this
+     */
+    public function softDelete($columns = null, $param = null)
+    {
+        if($param !== null) {
+            $this->update(['deleted_at' => '{{Now()}}'])->where($columns, $param);
+        }elseif (is_array($columns)){
+            $this->update(['deleted_at' => '{{Now()}}'])->where($columns);
+        }elseif (is_integer($columns) && $this->pk){
+            $this->update(['deleted_at' => '{{Now()}}'])->where($this->pk, $columns);
+        }else{
+            $this->update(['deleted_at' => '{{Now()}}']);
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @param $column
+     * @param $operant
      * @param $param
      * @return $this
      */
-    public function orWhere(string $column, string $operant, $param)
+    public function where($column, $operant = null, $param = null)
     {
-        $query = $this->andOrStatement($column, $operant, $param);
+        if($param !== null && $operant !== null) {
 
-        $this->where .= $this->where ? ' OR '.$query : ' WHERE '.$query;
+            $query = $this->comparison($column, $operant, $param);
+            $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
+        }elseif($operant !== null && is_string($column)){
+
+            $query = $this->comparison($column, '=', $operant);
+            $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
+        }else{
+            if(is_array($column)){
+
+                foreach ($column as $key => $val){
+
+                    $query = $this->comparison($key, '=', $val);
+                    $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
+                }
+            }else{
+                throw new InvalidArgumentException("WHERE condition first parameter is must be an array.");
+            }
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @param $column
+     * @param null $operant
+     * @param null $param
+     * @return $this
+     */
+    public function orWhere($column, $operant = null, $param = null)
+    {
+        if($param !== null && $operant !== null) {
+
+            $query = $this->comparison($column, $operant, $param);
+            $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
+        }elseif($operant !== null && is_string($column)){
+
+            $query = $this->comparison($column, '=', $operant);
+            $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
+        }else{
+            if(is_array($column)){
+
+                foreach ($column as $key => $val){
+
+                    $query = $this->comparison($key, '=', $val);
+                    $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
+                }
+            }else{
+                throw new InvalidArgumentException("WHERE condition first parameter is must be an array.");
+            }
+        }
 
         return $this;
     }
@@ -217,7 +305,7 @@ class QueryBuilder {
      */
     public function having(string $column, string $operant, $param)
     {
-        $query = $this->andOrStatement($column, $operant, $param);
+        $query = $this->comparison($column, $operant, $param);
 
         $this->having .= $this->having ? ' AND '.$query : ' WHERE '.$query;
 
@@ -232,7 +320,7 @@ class QueryBuilder {
      */
     public function orHaving(string $column, string $operant, $param)
     {
-        $query = $this->andOrStatement($column, $operant, $param);
+        $query = $this->comparison($column, $operant, $param);
 
         $this->having .= $this->having ? ' OR '.$query : ' WHERE '.$query;
 
@@ -243,12 +331,13 @@ class QueryBuilder {
     /**
      * @param callable $callback
      * @return string
+     * @throws Exception
      */
     public function subQuery(callable $callback)
     {
         $queryBuilder = new QueryBuilder();
         $callback($queryBuilder);
-        $query = '{('.$queryBuilder->buildQuery().')}';
+        $query = '{{('.$queryBuilder->buildQuery().')}}';
 
         foreach ($queryBuilder->bindingParams() as $param){
             $paramName = $this->newParamName();
@@ -316,34 +405,91 @@ class QueryBuilder {
     }
 
     /**
+     * pk tanımlı ise kullanılabilir
+     * @param $param
+     * @return mixed|array|bool
+     * @throws Exception
+     */
+    public function find($param)
+    {
+        if(!$this->pk){
+            throw new Exception(__FUNCTION__." method cannot be used because primary key is not specified.");
+        }
+
+        return $this->select()->where($this->pk, $param)->getRow();
+    }
+
+    /**
+     * pk tanımlı ise kullanılabilir
+     * @param int $rowCount
+     * @return array|bool
+     * @throws Exception
+     */
+    public function last(int $rowCount = 1)
+    {
+        if(!$this->pk){
+            throw new Exception(__FUNCTION__." method cannot be used because primary key is not specified.");
+        }
+
+        if($rowCount == 1) {
+            return $this->select()->order($this->pk, 'DESC')->limit($rowCount)->getRow();
+        }
+
+        return $this->select()->order($this->pk, 'DESC')->limit($rowCount)->get();
+    }
+
+    /**
+     * pk tanımlı ise kullanılabilir
+     * @param int $rowCount
+     * @return array|bool
+     * @throws Exception
+     */
+    public function first(int $rowCount = 1)
+    {
+        if(!$this->pk){
+            throw new Exception(__FUNCTION__." method cannot be used because primary key is not specified.");
+        }
+
+        if($rowCount == 1) {
+            return $this->select()->order($this->pk)->limit($rowCount)->getRow();
+        }
+
+        return $this->select()->order($this->pk)->limit($rowCount)->get();
+    }
+
+
+    /**
      * @return string
+     * @throws Exception
      */
     public function buildQuery()
     {
-        if($this->select && $this->table != ''){
-
-            $query = 'SELECT '.$this->select.' FROM '.$this->table.$this->join.$this->where.$this->group.$this->having.$this->order.$this->limit;
-            $this->queryType = 'select';
-
-        }elseif ($this->update && $this->table != ''){
-
-            $query = 'UPDATE '.$this->table.$this->join.' SET '.$this->update.$this->where.$this->group.$this->having.$this->order.$this->limit;
-            $this->queryType = 'update';
-
-        }elseif ($this->delete && $this->table != ''){
-
-            $query = 'DELETE FROM '.$this->table.$this->join.$this->where.$this->group.$this->having.$this->order.$this->limit;
-            $this->queryType = 'delete';
-
-        }elseif ($this->insert && $this->table != ''){
-
-            $query = 'INSERT INTO '.$this->table.' SET '.$this->insert.$this->where.$this->group.$this->having.$this->order.$this->limit;
-            $this->queryType = 'insert';
-        }else{
-            $query = '';
+        if($this->table == ''){
+            throw new Exception("No database table selected.");
         }
 
-        return $query;
+        if($this->select){
+
+            $this->queryType = 'select';
+            return 'SELECT '.$this->select.' FROM '.$this->table.$this->join.$this->where.$this->group.$this->having.$this->order.$this->limit;
+
+        }elseif ($this->update){
+
+            $this->queryType = 'update';
+            return 'UPDATE '.$this->table.$this->join.' SET '.$this->update.$this->where.$this->group.$this->having.$this->order.$this->limit;
+
+        }elseif ($this->delete){
+
+            $this->queryType = 'delete';
+            return 'DELETE FROM '.$this->table.$this->join.$this->where.$this->group.$this->having.$this->order.$this->limit;
+
+        }elseif ($this->insert){
+
+            $this->queryType = 'insert';
+            return 'INSERT INTO '.$this->table.' SET '.$this->insert.$this->where.$this->group.$this->having.$this->order.$this->limit;
+        }else{
+            throw new Exception("Please choose one (select, insert, update or delete).");
+        }
     }
 
     /**
@@ -376,9 +522,9 @@ class QueryBuilder {
      * @param $param
      * @return string
      */
-    private function andOrStatement(string $column, string $operant, $param)
+    private function comparison(string $column, string $operant, $param)
     {
-        if(preg_match("/^\{(.+)\}$/", $param, $matches)){
+        if(preg_match("/^\{\{(.+)\}\}$/", $param, $matches)){
             $query = $column. ' '.$operant.' '.$matches[1];
         }else{
 
@@ -392,6 +538,7 @@ class QueryBuilder {
 
     /**
      * @return string
+     * @throws Exception
      */
     public function __toString()
     {
@@ -400,10 +547,15 @@ class QueryBuilder {
 
     /**
      * @return array
+     * @throws Exception
      */
     public function __debugInfo()
     {
-        return [$this->buildQuery(), $this->bindingParams()];
+        try {
+            return [$this->buildQuery(), $this->bindingParams()];
+        }catch (Exception $e){
+            return [$e->getMessage()];
+        }
     }
 
     /*****************************************************************************************
@@ -416,8 +568,12 @@ class QueryBuilder {
      */
     public function get($fetchStyle = PDO::FETCH_OBJ)
     {
-        if($query = $this->buildQuery()){
-            return DB::get($query, $this->bindingParams(), $fetchStyle);
+        try {
+            if ($query = $this->buildQuery()) {
+                return DB::get($query, $this->bindingParams(), $fetchStyle);
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 2);
         }
 
         return [];
@@ -429,20 +585,28 @@ class QueryBuilder {
      */
     public function getRow($fetchStyle = PDO::FETCH_OBJ)
     {
-        if($query = $this->buildQuery()){
-            return DB::getRow($query, $this->bindingParams(), $fetchStyle);
+        try {
+            if ($query = $this->buildQuery()) {
+                return DB::getRow($query, $this->bindingParams(), $fetchStyle);
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 2);
         }
 
         return [];
     }
 
     /**
-     * @return mixed|bool
+     * @return bool|mixed|null
      */
     public function getVar()
     {
-        if($query = $this->buildQuery()){
-            return DB::getVar($query, $this->bindingParams());
+        try {
+            if ($query = $this->buildQuery()) {
+                return DB::getVar($query, $this->bindingParams());
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 2);
         }
 
         return null;
@@ -454,8 +618,12 @@ class QueryBuilder {
      */
     public function getCol($fetchStyle = PDO::FETCH_OBJ)
     {
-        if($query = $this->buildQuery()){
-            return DB::getCol($query, $this->bindingParams(), $fetchStyle);
+        try {
+            if ($query = $this->buildQuery()) {
+                return DB::getCol($query, $this->bindingParams(), $fetchStyle);
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 2);
         }
 
         return [];
@@ -463,18 +631,39 @@ class QueryBuilder {
 
 
     /**
-     * @return bool|int|string
+     * @param false $force
+     * @return array|bool|int|string
      */
-    public function run()
+    public function run($force = false)
     {
-        if($this->getQueryType() == 'insert'){
-            return DB::insert($this->buildQuery(), $this->bindingParams());
-        }elseif ($this->getQueryType() == 'update'){
-            return DB::update($this->buildQuery(), $this->bindingParams());
-        }elseif ($this->getQueryType() == 'delete'){
-            return DB::delete($this->buildQuery(), $this->bindingParams());
-        }else{
-            return false;
+        try {
+            $query = $this->buildQuery();
+
+            if ($this->getQueryType() == 'insert') {
+                return DB::insert($query, $this->bindingParams());
+
+            } elseif ($this->getQueryType() == 'update') {
+
+                if ($this->where == '' && $force == false) {
+                    throw new Exception("Use force true to delete without using where");
+                } else {
+                    return DB::update($query, $this->bindingParams());
+                }
+
+            } elseif ($this->getQueryType() == 'delete') {
+
+                if ($this->where == '' && $force == false) {
+                    throw new Exception("Use force true to delete without using where");
+                } else {
+                    return DB::delete($query, $this->bindingParams());
+                }
+            } else {
+                return [$query, $this->bindingParams()];
+            }
+        }catch (Exception $e){
+            Exceptions::debug($e, 2);
         }
+
+        return false;
     }
 }

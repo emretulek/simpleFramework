@@ -1,6 +1,6 @@
 CREATE TABLE `users`
 (
-    `userID`         INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `userID`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
     `userName`       VARCHAR(256)     NOT NULL,
     `userEmail`      VARCHAR(256)     NOT NULL,
     `userPassword`   VARCHAR(256)     NOT NULL,
@@ -11,8 +11,8 @@ CREATE TABLE `users`
     `registerIP`     VARCHAR(50)      NULL     DEFAULT NULL,
     `created_at`     DATETIME         NULL     DEFAULT CURRENT_TIMESTAMP,
     `updated_at`     DATETIME         NULL     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at`     DATETIME         NULL     DEFAULT NULL,
     `lastLogin`      DATETIME         NULL     DEFAULT CURRENT_TIMESTAMP,
-    `rememberToken`  VARCHAR(256)     NULL     DEFAULT NULL,
     `activationCode` VARCHAR(256)     NULL     DEFAULT NULL,
     `sessionID`      VARCHAR(64)      NULL     DEFAULT NULL,
     PRIMARY KEY (`userID`),

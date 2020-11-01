@@ -8,7 +8,6 @@ class Index extends Model
 {
 
     protected string $table = '';
-    protected string $pk = ' ';
-
+    protected string $pk = '';
 
 }

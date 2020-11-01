@@ -615,6 +615,9 @@ class Router
      */
     public static function errors($http_code, callable $callback = null)
     {
+        /**
+         * @var $view View
+         **/
         $view = App::getInstance(View::class);
         if ($callback instanceof Closure) {
             self::$errors[$http_code] = $callback;
@@ -623,7 +626,7 @@ class Router
 
         if (empty(self::$errors[$http_code])) {
             self::$errors[$http_code] = function () use ($view, $http_code){
-                $view->path('errors/'.$http_code.'.html', null, null)->render($http_code);
+                $view->path('errors/'.$http_code, null)->render($http_code);
             };
         }
 

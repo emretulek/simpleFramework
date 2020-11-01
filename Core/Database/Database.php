@@ -18,6 +18,8 @@ use PDOStatement;
 
 class Database {
 
+    public static int $backtrace = 3;
+
     private ?PDO $pdo;
     private ?PDOStatement $stm;
 
@@ -86,7 +88,6 @@ class Database {
 
 
     /**
-     * Sorgu ve değişkenleri bağlar
      * @param $query
      * @param array|null $bindings
      * @param array $options
@@ -105,9 +106,7 @@ class Database {
                 throw new Exception("Sql error code({$sqlError[0]}/{$sqlError[1]}) Error: {$sqlError[2]}", E_ERROR);
             }
         }catch (PDOException $e){
-            Exceptions::debug($e, 2);
-        }catch (Exception $e){
-            Exceptions::debug($e, 2);
+            Exceptions::debug($e, self::$backtrace);
         }
 
         return $this;
@@ -127,7 +126,7 @@ class Database {
             $this->bindQuery($query, $bindings);
             return $this->stm->fetchAll($fetchStyle);
         }catch (Exception $e){
-            Exceptions::debug($e, 2);
+            Exceptions::debug($e, self::$backtrace);
         }
         return false;
     }
@@ -146,7 +145,7 @@ class Database {
             $this->bindQuery($query, $bindings);
             return $this->stm->fetch($fetchStyle);
         }catch (Exception $e){
-            Exceptions::debug($e, 2);
+            Exceptions::debug($e, self::$backtrace);
         }
         return false;
     }
@@ -165,7 +164,7 @@ class Database {
             $this->bindQuery($query, $bindings);
             return $this->stm->fetchAll($fetchStyle);
         }catch (Exception $e){
-            Exceptions::debug($e, 2);
+            Exceptions::debug($e, self::$backtrace);
         }
         return false;
     }
@@ -183,7 +182,7 @@ class Database {
             $this->bindQuery($query, $bindings);
             return $this->stm->fetchColumn();
         }catch (Exception $e){
-            Exceptions::debug($e, 2);
+            Exceptions::debug($e, self::$backtrace);
         }
         return false;
     }
@@ -201,7 +200,7 @@ class Database {
             $this->bindQuery($query, $bindings);
             return $this->pdo->lastInsertId();
         }catch (Exception $e){
-            Exceptions::debug($e, 2);
+            Exceptions::debug($e, self::$backtrace);
         }
         return false;
     }
@@ -220,7 +219,7 @@ class Database {
             $this->bindQuery($query, $bindings);
             return $this->stm->rowCount() ? $this->stm->rowCount() : true;
         }catch (Exception $e){
-            Exceptions::debug($e, 2);
+            Exceptions::debug($e, self::$backtrace);
         }
         return false;
     }
@@ -238,7 +237,7 @@ class Database {
             $this->bindQuery($query, $bindings);
             return $this->stm->rowCount();
         }catch (Exception $e){
-            Exceptions::debug($e, 2);
+            Exceptions::debug($e, self::$backtrace);
         }
         return false;
     }

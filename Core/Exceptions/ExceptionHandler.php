@@ -140,7 +140,7 @@ class ExceptionHandler
         $message = $e->getMessage();
         $file = $e->getFile();
         $line = $e->getLine();
-        $trace = $backtrace ? $e->getTrace()[$backtrace] : null;
+        $trace = $backtrace ? $e->getTrace()[$backtrace] ?? null : null;
 
         switch (Config::get('app.debug')){
             case 0:

@@ -59,7 +59,7 @@ class Auth
     {
         if (Cookie::get('username') && Cookie::get('user_token') && Session::get('AUTH.LOGIN') == false) {
 
-            if($user = DB::getRow("Select * from users where userName = ? and rememberToken = ? and status = ?", [Cookie::get('username'),Cookie::get('user_token'), 1])){
+            if($user = DB::getRow("Select * from users where userName = ? and status = ?", [Cookie::get('username'), 1])){
 
                 if(Cookie::get('user_token') == self::creatToken($user->userID, $user->userPassword)) {
 

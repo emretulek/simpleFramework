@@ -11,14 +11,18 @@ namespace Core\Model;
 
 use Core\Database\DB;
 use Core\Database\QueryBuilder;
+use Exception;
 
 
 /**
+ * @see QueryBuilder::pk()
+ * @method static QueryBuilder pk($primaryColumn)
+ *  * -------------------------------------------------------------------------
  * @see QueryBuilder::table()
- * @method static QueryBuilder table(string $table)
+ * @method static QueryBuilder table(string $table, $overwrite = false)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::select()
- * @method static QueryBuilder select(string $select = "*")
+ * @method static QueryBuilder select(string $select = "*", $overwrite = false)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::insert()
  * @method static QueryBuilder insert(array $columns)
@@ -27,13 +31,16 @@ use Core\Database\QueryBuilder;
  * @method static QueryBuilder update(array $columns)
  *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::delete()
- * @method static QueryBuilder delete()
+ * @method static QueryBuilder delete($columns = null, $param = null)
+ * *   -------------------------------------------------------------------------
+ * @see QueryBuilder::softDelete()
+ * @method static QueryBuilder softDelete($columns = null, $param = null)
  *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::where()
- * @method static QueryBuilder where(string $column, string $operant, $param)
+ * @method static QueryBuilder where($column, $operant = null, $param = null)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::orWhere()
- * @method static QueryBuilder orWhere(string $column, string $operant, $param)
+ * @method static QueryBuilder orWhere($column, $operant = null, $param = null)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::isNull()
  * @method static QueryBuilder isNull(string $column, $andOR = 'AND')
@@ -79,6 +86,15 @@ use Core\Database\QueryBuilder;
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::getQueryType()
  * @method static string getQueryType()
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::find()
+ * @method static mixed|array|bool find($param)
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::last()
+ * @method static array|bool last(int $rowCount = 1)
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::first()
+ * @method static array|bool first(int $rowCount = 1)
  */
 
 class Model
@@ -86,90 +102,80 @@ class Model
     protected static array $instance;
     protected string $table = "";
     protected string $pk = "";
-    protected string $error = "";
+    protected bool $softDelete = false;
+    protected array $errors = [];
 
-    public DB $DB;
-
-    /**
-     * Model constructor.
-     */
-    public function __construct()
-    {
-        $this->DB = new DB;
-    }
 
     /**
      * @return mixed|static
      */
     public static function static()
     {
-        return isset(self::$instance[static::class]) ? self::$instance[static::class] : self::$instance[static::class] = new static;
+        return self::$instance[static::class] ?? self::$instance[static::class] = new static;
     }
 
     /**
      * @param $methods
      * @param $arguments
-     * @return mixed|null
+     * @return mixed
+     * @throws Exception
      */
     public static function __callStatic($methods, $arguments)
     {
         if(method_exists(QueryBuilder::class, $methods)){
 
-            return call_user_func_array([new QueryBuilder(), $methods], $arguments)->table(self::static()->table);
-        }
+            $queryBuilder = new QueryBuilder();
 
-        return null;
-    }
-
-    /**
-     * @param $pk
-     * @return mixed
-     */
-    public function find($pk)
-    {
-        if(is_array($pk)){
-            $query = self::select();
-            foreach ($pk as $col => $value){
-                $query->where($col, '=', $value);
+            if(self::static()->table){
+                $queryBuilder->table(self::static()->table);
             }
-            return $query->get();
+
+            if(self::static()->pk){
+                $queryBuilder->pk(self::static()->pk);
+            }
+
+            if(self::static()->softDelete && $methods == 'delete'){
+
+                return call_user_func_array([$queryBuilder, 'softDelete'], $arguments);
+            }
+
+            return call_user_func_array([$queryBuilder, $methods], $arguments);
         }else{
-            return self::select()->where($this->pk, '=', $pk)->get();
+            throw new Exception('Method '.$methods.' not found in '.QueryBuilder::class);
         }
     }
 
+
     /**
-     * @return mixed
+     * @param $message
+     * @param string $key
+     * @return false
      */
-    public function first()
+    protected function setErrors($message, $key = '')
     {
-        return self::select()->order($this->pk)->limit(1)->get();
+        if($key){
+            $this->errors[$key] = $message;
+        }else{
+            $this->errors[] = $message;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array
+     */
+    public function getErrors()
+    {
+        return $this->errors;
     }
 
     /**
      * @return mixed
      */
-    public function last()
+    public function getLastError()
     {
-        return self::select()->order($this->pk, 'DESC')->limit(1)->get();
-    }
-
-    /**
-     * Delete primary key from model table
-     * @param $pk
-     * @return mixed
-     */
-    public function del($pk)
-    {
-        return self::delete()->where($this->pk, '=', $pk)->limit(1)->run();
-    }
-
-    /**
-     * @return string
-     */
-    public function getError()
-    {
-        return $this->error;
+        return end($this->errors);
     }
 }
 

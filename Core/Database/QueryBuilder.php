@@ -192,7 +192,7 @@ class QueryBuilder {
                     $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
                 }
             }else{
-                throw new InvalidArgumentException("WHERE condition first parameter is must be an array.");
+                throw new InvalidArgumentException("WHERE condition first parameter is must be an array or column name.");
             }
         }
 
@@ -225,7 +225,7 @@ class QueryBuilder {
                     $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
                 }
             }else{
-                throw new InvalidArgumentException("WHERE condition first parameter is must be an array.");
+                throw new InvalidArgumentException("WHERE condition first parameter is must be an array or column name.");
             }
         }
 
@@ -240,6 +240,8 @@ class QueryBuilder {
     public function isNull(string $column, $andOR = 'AND')
     {
         $this->where .= $this->where ? ' '.$andOR.' '.$column.' IS NULL ' : ' WHERE '.$column.' IS NULL ';
+
+        return $this;
     }
 
 
@@ -250,6 +252,8 @@ class QueryBuilder {
     public function isNOTNull(string $column, $andOR = 'AND')
     {
         $this->where .= $this->where ? ' '.$andOR.' '.$column.' IS NOT NULL ' : ' WHERE '.$column.' IS NOT NULL ';
+
+        return $this;
     }
 
     /**

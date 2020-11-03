@@ -83,6 +83,8 @@ class Response
         } catch (Exception $e) {
             Exceptions::debug($e, 1);
         }
+
+        return $this;
     }
 
 

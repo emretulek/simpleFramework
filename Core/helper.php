@@ -373,7 +373,7 @@ if (!function_exists('json')) {
     /**
      * Core\View::json metodunun eş değeri
      *
-     * @param array $data
+     * @param $data
      * @return View
      */
     function json($data)

@@ -137,7 +137,7 @@ class View
     public function json($data)
     {
         ob_start();
-        (new Response())->json($data)->send();
+        (new Response($data))->send();
         $this->buffer[] = ob_get_clean();
         return $this;
     }

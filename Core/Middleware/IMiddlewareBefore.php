@@ -4,7 +4,7 @@
 namespace Core\Middleware;
 
 
-Interface IMiddleware
+Interface IMiddlewareBefore
 {
     function before();
 }

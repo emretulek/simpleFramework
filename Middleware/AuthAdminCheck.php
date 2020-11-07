@@ -2,9 +2,9 @@
 namespace Middleware;
 
 use Auth;
-use Core\Middleware\IMiddleware;
+use Core\Middleware\IMiddlewareBefore;
 
-Class AuthAdminCheck Implements IMiddleware {
+Class AuthAdminCheck Implements IMiddlewareBefore {
 
     public function before()
     {

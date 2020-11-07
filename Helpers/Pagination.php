@@ -23,17 +23,47 @@ class Pagination {
     ];
 
 
+    /**
+     * @var int $totalRecord toplam kayıt
+     */
     public int $totalRecord = 0;
+    /**
+     * @var int $totalPage toplam sayfa
+     */
     public int $totalPage;
+    /**
+     * @var int $perPage sayfada gösterilen sonuç sayısı
+     */
     public int $perPage;
+    /**
+     * @var int $currentPage aktif sayfa no
+     */
     public $currentPage;
 
+    /**
+     * @var int $start sql başlangıç
+     */
     public int $start;
+    /**
+     * @var int $limit sql miktar
+     */
     public int $limit;
 
+    /**
+     * @var bool $prevNext önceki ve sonraki butonları gösterilsin mi
+     */
     public bool $prevNext = true;
+    /**
+     * @var bool $firstLast ilk ve son butonları gösterilsin mi
+     */
     public bool $firstLast = true;
+    /**
+     * @var int $maxNavigationItems aktif sayfa no sağ ve solunda ki buton sayısı
+     */
     public int $maxNavigationItems = 4;
+    /**
+     * @var int $jumpNavigationItems
+     */
     public int $jumpNavigationItems = 10;
 
 
@@ -62,13 +92,13 @@ class Pagination {
     {
         $item['first'] = [
             'pageNum' => 1,
-            'text' => $this->language['first'],
+            'text' => $this->language['first'].' (1)',
             'is_current' => $this->currentPage == 1,
         ];
 
         $item['last'] = [
             'pageNum' => $this->totalPage,
-            'text' => $this->language['last'],
+            'text' => $this->language['last'].' ('.$this->totalPage.')',
             'is_current' => $this->currentPage == $this->totalPage
         ];
 
@@ -129,7 +159,7 @@ class Pagination {
     }
 
     /**
-     * @param bool $shown_only
+     * @param bool $shown_only true ise tüm sayfa bilgilerini hazırlar
      * @return array
      */
     public function buildPaginate($shown_only = false)

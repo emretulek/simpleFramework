@@ -9,7 +9,6 @@
 
 namespace Core\Model;
 
-use Core\Database\DB;
 use Core\Database\QueryBuilder;
 use Exception;
 
@@ -134,9 +133,13 @@ class Model
                 $queryBuilder->pk(self::static()->pk);
             }
 
-            if(self::static()->softDelete && $methods == 'delete'){
+            if(self::static()->softDelete){
 
-                return call_user_func_array([$queryBuilder, 'softDelete'], $arguments);
+                if($methods == 'delete') {
+                    return call_user_func_array([$queryBuilder, 'softDelete'], $arguments);
+                }else{
+                    $queryBuilder->isNull('deleted_at');
+                }
             }
 
             return call_user_func_array([$queryBuilder, $methods], $arguments);

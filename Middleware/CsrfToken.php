@@ -12,9 +12,9 @@ namespace Middleware;
 
 
 use Core\Csrf\Csrf;
-use Core\Middleware\IMiddleware;
+use Core\Middleware\IMiddlewareBefore;
 
-class CsrfToken implements IMiddleware {
+class CsrfToken implements IMiddlewareBefore {
 
     function before()
     {

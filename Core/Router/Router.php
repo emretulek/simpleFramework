@@ -24,21 +24,21 @@ use ReflectionMethod;
 class Router
 {
     private static int $routeID = 0;
-    private static array $routes;
-    private static array $currentRoute;
+    private static array $routes = [];
+    private static array $currentRoute = [];
 
     private static array $methodPrefix = [];
     private static array $methodNamespace = [];
     private static array $methodMidleware = [];
 
-    private static string $prefix;
-    private static string $nameSpace;
+    private static string $prefix = '';
+    private static string $nameSpace = '';
 
     private static string $controller = 'index';
     private static string $method = 'main';
-    private static array $params;
+    private static array $params = [];
 
-    private static array $errors;
+    private static array $errors = [];
 
     private static array $matchPatterns = [
         '#/\*#' => '/(.*)',

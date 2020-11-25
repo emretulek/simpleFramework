@@ -9,7 +9,8 @@
     "ext-json": "*",
     "ext-ctype": "*",
     "ext-mbstring": "*",
-    "ext-openssl": "*"
+    "ext-openssl": "*",
+    "ext-memcache": "*"
   },
   "license": "MIT",
   "authors": [

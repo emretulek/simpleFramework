@@ -84,7 +84,7 @@ if (!function_exists('dot_aray_get')) {
      * @param string $separator
      * @return mixed
      */
-    function dot_aray_get($array, $path, $separator = '.')
+    function dot_aray_get(array $array, string $path, $separator = '.')
     {
         $keys = explode($separator, $path);
 
@@ -110,7 +110,7 @@ if (!function_exists('dot_array_del')) {
      * @param string $separator
      * @return bool
      */
-    function dot_array_del(&$array, $path, $separator = '.')
+    function dot_array_del(array &$array, string $path, $separator = '.')
     {
         $keys = explode($separator, $path);
 
@@ -168,7 +168,7 @@ if (!function_exists('counter')) {
      * @param int $start
      * @return int
      */
-    function counter(&$count, $step = 1, $start = 1)
+    function counter(int &$count, int $step = 1, int $start = 1)
     {
         $count = is_null($count) ? $start : $count + $step;
         return $count;
@@ -180,10 +180,10 @@ if (!function_exists('random')) {
     /**
      * Random dizge oluşturur
      * @param int $length
-     * @param string $type [number, alpha, special, alnum]
+     * @param ?string $type [number, alpha, special, alnum]
      * @return string|null
      */
-    function random(int $length, string $type = null)
+    function random(int $length, ?string $type = null)
     {
         $random = null;
         $characters = null;

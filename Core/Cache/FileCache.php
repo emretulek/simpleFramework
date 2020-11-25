@@ -27,7 +27,6 @@ class FileCache implements CacheInterface
      * @param int $compress
      * @param int $expires
      * @return bool
-     * @throws Exception
      */
     public function set($key, $value, int $compress = 0, $expires = 2592000): bool
     {
@@ -54,7 +53,6 @@ class FileCache implements CacheInterface
      * @param int $compress
      * @param int $expires
      * @return bool
-     * @throws Exception
      */
     public function add($key, $value, int $compress = 0, $expires = 2592000): bool
     {
@@ -129,7 +127,7 @@ class FileCache implements CacheInterface
         if($files) {
             foreach ($files as $file) {
                 if (is_writable_file($file)) {
-                    return unlink($file);
+                    unlink($file);
                 }else{
                     throw new Exception($file." Dosya silinemiyor.", E_NOTICE);
                 }

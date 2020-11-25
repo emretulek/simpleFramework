@@ -13,13 +13,14 @@ use Core\Router\Router;
  */
 class AutoLoad
 {
-
+    private array $config = [];
     /**
      * AutoLoad constructor.
      */
     public function __construct()
     {
         spl_autoload_register(array($this, "loadClass"));
+        $this->config = Config::get('autoload');
     }
 
 
@@ -29,10 +30,10 @@ class AutoLoad
     private function loadClass(string $class)
     {
         $nameSpaces = explode('\\', $class);
-        $classPath = '/' . implode('/', array_map('ucfirst', $nameSpaces));
+        $classPath = implode('/', array_map('ucfirst', $nameSpaces));
         $filePath = ROOT . $classPath . EXT;
 
-        if (is_file($filePath)) {
+        if (is_readable_file($filePath)) {
             require_once($filePath);
         }
     }
@@ -43,7 +44,7 @@ class AutoLoad
      */
     public function loadServices()
     {
-        foreach (Config::get('autoload.services') as $service) {
+        foreach ($this->config['services'] as $service) {
             new $service;
         }
     }
@@ -54,7 +55,7 @@ class AutoLoad
      */
     public function loadAlias()
     {
-        foreach (Config::get('autoload.alias') as $alias => $orginal) {
+        foreach ($this->config['alias'] as $alias => $orginal) {
 
             class_alias($orginal, $alias);
         }
@@ -65,8 +66,8 @@ class AutoLoad
      */
     public function loadFunctions()
     {
-        foreach (Config::get('autoload.functions') as $key => $file) {
-            if (is_file($file)) {
+        foreach ($this->config['functions'] as $key => $file) {
+            if (is_readable_file($file)) {
                 require_once($file);
             }
         }
@@ -75,12 +76,12 @@ class AutoLoad
 
     /**
      * routes/ dizinindeki dosyaları a-z sıralamasıyla çağırır.
-     * Tüm dosyalar çağırılınca Rototer::run methodunu çalıştırır.
+     * Tüm dosyalar çağırılınca Router::start methodunu çalıştırır.
      */
     public function loadRoutes()
     {
-        foreach (Config::get('autoload.routes') as $key => $file) {
-            if (is_file($file)) {
+        foreach ($this->config['routes'] as $key => $file) {
+            if (is_readable_file($file)) {
                 require_once($file);
             }
         }

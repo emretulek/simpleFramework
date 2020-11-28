@@ -16,18 +16,30 @@ class Cache
 
 
     /**
-     * @return CacheInterface|DatabaseCache|FileCache|MemoryCache
+     * @return CacheInterface|DatabaseCache|FileCache|MemoryCache|null
      */
     public static function init()
     {
-        if (self::$instance == null && Config::get('app.cache.enable')) {
+        $config = Config::get('app.cache');
 
-            if(Config::get('app.cache.driver') == 'memcache') {
-                self::$instance = new MemoryCache();
-            }elseif(Config::get('app.cache.driver') == 'database'){
-                self::$instance = new DatabaseCache();
-            }else{
-                self::$instance = new FileCache();
+        if (self::$instance == null && $config['enable']) {
+
+            try {
+                switch ($config['driver']) {
+                    case 'memcache':
+                        self::$instance = new MemoryCache();
+                        break;
+                    case 'database':
+                        self::$instance = new DatabaseCache();
+                        break;
+                    case 'file':
+                        self::$instance = new FileCache();
+                        break;
+                    default :
+                        throw new Exception("app.config hatalı driver tütü [memcache, database, file] kullanılabilir.", E_ERROR);
+                }
+            }catch (Exception $e){
+                Exceptions::debug($e);
             }
         }
 
@@ -44,7 +56,7 @@ class Cache
      */
     public static function add($key, $value, $compress = false, $expires = 2592000)
     {
-        if($cache = self::init()) {
+        if ($cache = self::init()) {
             return $cache->add($key, $value, $compress, $expires);
         }
 
@@ -65,7 +77,7 @@ class Cache
             if ($cache = self::init()) {
                 return $cache->set($key, $value, $compress, $expires);
             }
-        }catch (Exception $e){
+        } catch (Exception $e) {
             Exceptions::debug($e);
         }
 
@@ -79,7 +91,7 @@ class Cache
      */
     public static function get($key)
     {
-        if($cache = self::init()){
+        if ($cache = self::init()) {
             return $cache->get($key);
         }
 
@@ -93,7 +105,7 @@ class Cache
      */
     public static function delete($key)
     {
-        if($cache = self::init()){
+        if ($cache = self::init()) {
             return $cache->delete($key);
         }
 
@@ -110,7 +122,7 @@ class Cache
             if ($cache = self::init()) {
                 return $cache->flush();
             }
-        }catch (Exception $e){
+        } catch (Exception $e) {
             Exceptions::debug($e);
         }
 
@@ -118,7 +130,7 @@ class Cache
     }
 
     /**
-     * 
+     *
      * @param $key
      * @param Closure $closure
      * @param bool $compress
@@ -127,13 +139,13 @@ class Cache
      */
     public static function use($key, Closure $closure, $compress = false, $expires = 2592000)
     {
-        if($cache = self::get($key)){
+        if ($cache = self::get($key)) {
             return $cache;
         }
 
         $cache = call_user_func($closure);
 
-        if(self::set($key, $cache, $compress, $expires)){
+        if (self::set($key, $cache, $compress, $expires)) {
             return $cache;
         }
 

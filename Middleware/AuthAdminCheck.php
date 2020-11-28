@@ -9,7 +9,7 @@ Class AuthAdminCheck Implements IMiddlewareBefore {
     public function before()
     {
         if(!Auth::guard("admin")){
-            viewPath('errors/403', [], '.html')->render();
+            viewPath('errors/403')->render();
             exit;
         }
     }

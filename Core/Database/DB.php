@@ -100,14 +100,16 @@ class DB {
      */
     public static function selectDriver($driverName)
     {
+        $config = Config::get('database.' . $driverName);
+
         try {
             return self::$instance = new Database(
-                Config::get('database.' . $driverName . '.driver'),
-                Config::get('database.' . $driverName . '.dsn'),
-                Config::get('database.' . $driverName . '.user'),
-                Config::get('database.' . $driverName . '.password'),
-                Config::get('database.' . $driverName . '.charset'),
-                Config::get('database.' . $driverName . '.collaction')
+                $config['driver'],
+                $config['dsn'],
+                $config['user'],
+                $config['password'],
+                $config['charset'],
+                $config['collaction']
             );
         }catch (Exception $e){
             Exceptions::debug($e, 1);
@@ -115,4 +117,25 @@ class DB {
 
         return null;
     }
+
+
+    /**
+     * @param string $table
+     * @param string $pk
+     * @return QueryBuilder
+     */
+    public static function QB(string $table = "", string $pk = "")
+    {
+        $query = new QueryBuilder();
+
+        if($table){
+            $query->table($table);
+        }
+        if($pk){
+            $query->pk($pk);
+        }
+
+        return $query;
+    }
+
 }

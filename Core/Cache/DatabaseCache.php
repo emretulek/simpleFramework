@@ -22,7 +22,7 @@ class DatabaseCache implements CacheInterface
             if (DB::getVar("Select COUNT(1) from INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{$this->table}'")) {
                 $this->clear();
             }else{
-                throw new Exception("{$this->table} belirtilen bellek tablosu bulunamadı.", E_ERROR);
+                throw new Exception("{$this->table} belirtilen ön bellek tablosu bulunamadı.", E_ERROR);
             }
 
         }catch (Exception $e){

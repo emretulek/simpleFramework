@@ -1,6 +1,7 @@
 <?php
 
 namespace Core\Cookie;
+
 use Core\Http\Request;
 
 /**
@@ -9,6 +10,12 @@ use Core\Http\Request;
  */
 class Cookie
 {
+    protected Request $request;
+
+    public function __construct(Request $request)
+    {
+        $this->request = $request;
+    }
 
     /**
      * Cookie oluşturur.
@@ -23,14 +30,14 @@ class Cookie
      * @param string $sameSite Strict, Lax, None
      * @return bool
      */
-    public static function set(string $name, string $value, $lifetime = "+1 Day", $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict')
+    public function set(string $name, string $value, $lifetime = "+1 Month", $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict'):bool
     {
         if($secure == null){
-            $secure = Request::scheme() === 'https';
+            $secure = $this->request->scheme() === 'https';
         }
 
         $options = [
-            'expires' => self::expires($lifetime),
+            'expires' => $this->expires($lifetime),
             'path' => $path,
             'domain' => $domain,
             'secure' => $secure,
@@ -38,20 +45,18 @@ class Cookie
             'samesite' => mb_convert_case($sameSite, MB_CASE_TITLE)
         ];
 
-        return setcookie(self::arrayCookieName($name), $value, $options);
+        return setcookie($this->arrayCookieName($name), $value, $options);
     }
 
     /**
      * Adı girilen cookie değerini döndürür.
      *
-     * @param string $name nokta ile birleşitirilmiş cookie indexi (index1.index2)
-     * @return bool|mixed
+     * @param string|null $name nokta ile birleşitirilmiş cookie indexi (index1.index2)
+     * @return mixed
      */
-    public static function get(string $name)
+    public function get(string $name = null)
     {
-        $cookie = array_map("strip_tags", $_COOKIE);
-        $cookie = array_map("trim", $cookie);
-        return dot_aray_get($cookie, $name);
+        return $this->request->cookie($name);
     }
 
     /**
@@ -60,26 +65,30 @@ class Cookie
      * @param mixed $name nokta ile birleşitirilmiş cookie indexi (index1.index2)
      * @return bool
      */
-    public static function remove(string $name)
+    public function remove(string $name):bool
     {
-        return self::set($name, "", -1);
+        return $this->set($name, "", -1);
     }
 
 
     /**
      * Domain ve subdomain altındaki tüm cookileri siler.
      */
-    public static function destroy()
+    public function destroy():bool
     {
-        if (isset($_SERVER['HTTP_COOKIE'])) {
-            $cookies = explode(';', $_SERVER['HTTP_COOKIE']);
+        $stats = [];
+
+        if ($this->request->server('cookie')) {
+            $cookies = explode(';', $this->request->server('cookie'));
             foreach ($cookies as $cookie) {
                 $parts = explode('=', $cookie);
                 $name = trim($parts[0]);
-                setcookie($name, '', time() - 1000);
-                setcookie($name, '', time() - 1000, '/');
+                $stats[] = setcookie($name, '', time() - 1000);
+                $stats[] = setcookie($name, '', time() - 1000, '/');
             }
         }
+
+        return !in_array(false, $stats);
     }
 
 
@@ -90,7 +99,7 @@ class Cookie
      * @param string $name nokta ile birleşitirilmiş cookie indexi (index1.index2)
      * @return string
      */
-    private static function arrayCookieName(string $name)
+    private function arrayCookieName(string $name):string
     {
         $keys = explode(".", $name);
         $name = array_shift($keys);
@@ -108,7 +117,7 @@ class Cookie
      * @param string|int $time (int saniye) veya php strtotime
      * @return float|int|string
      */
-    private static function expires($time)
+    private function expires($time)
     {
         if(is_numeric($time)){
             return time() + $time;

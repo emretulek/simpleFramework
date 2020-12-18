@@ -2,7 +2,7 @@
 
 namespace Core\Http;
 
-use Core\Config\Config;
+
 
 /**
  * Class Request
@@ -10,23 +10,67 @@ use Core\Config\Config;
  */
 class Request
 {
+    /**
+     * @var string
+     */
+    public string $basePath;
+
+    /**
+     * @var array
+     */
+    public array $post = [];
+
+    /**
+     * @var array
+     */
+    public array $get = [];
+
+    /**
+     * @var array
+     */
+    public array $request = [];
+
+    /**
+     * @var array
+     */
+    public array $files = [];
+
+    /**
+     * @var array
+     */
+    public array $cookie = [];
+
+    /**
+     * Request constructor.
+     * @param string $basePath
+     */
+    public function __construct($basePath = '')
+    {
+        $this->basePath = $basePath;
+
+        $this->get = isset($_GET) ? $_GET : [];
+        $this->post = isset($_POST) ? $_POST : [];
+        $this->request = isset($_REQUEST) ? $_REQUEST : [];
+        $this->files = isset($_FILES) ? $_FILES : [];
+        $this->cookie = isset($_COOKIE) ? $_COOKIE : [];
+    }
 
     /**
      * @return string
      */
-    public static function path()
+    public function path():string
     {
         $request_uri = urldecode(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT));
-        return parse_url(trim($request_uri, '/'), PHP_URL_PATH);
+        return (string) parse_url(trim($request_uri, '/'), PHP_URL_PATH);
     }
 
     /**
      * Yapılan isteği döndürür.
-     * @return string|string[]|null
+     * @return string
      */
-    public static function requestUri()
+    public function requestUri():string
     {
-        $path = preg_replace("@^" . trim(Config::get('app.path'), '/') . "/@i", '/', self::path() . '/', 1);
+        $path = preg_replace("@^" . trim($this->basePath, '/') . "/@i", '/', $this->path() . '/', 1);
         return rtrim(preg_replace("#/+#", "/", $path), '/');
     }
 
@@ -34,31 +78,31 @@ class Request
     /**
      * Girilen string yada regex requestUri ile eşleşirse true aksi halde false döndürür
      * @param $uri
-     * @return false
+     * @return bool
      */
-    public static function matchUri($uri)
+    public function matchUri($uri):bool
     {
         $uri = trim($uri, '/');
-        return (bool)preg_match('#^' . $uri . '$#', self::requestUri());
+        return (bool) preg_match('#^' . $uri . '$#', $this->requestUri());
     }
 
     /**
      * Mevcut adres satırını döndürür.
      * @return string
      */
-    public static function currentUrl()
+    public function currentUrl():string
     {
         $queryString = $_SERVER['QUERY_STRING'] ? '?' . urldecode($_SERVER['QUERY_STRING']) : "";
-        return trim(self::baseUrl(), '/') . '/' . self::requestUri() . $queryString;
+        return trim($this->baseUrl(), '/') . '/' . $this->requestUri() . $queryString;
     }
 
     /**
      * Site adresini döndürür.
      * @return string
      */
-    public static function baseUrl()
+    public function baseUrl():string
     {
-        return self::scheme() . '://' . self::host() . rtrim(Config::get('app.path'), '/') . '/';
+        return $this->scheme() . '://' . self::host() . rtrim($this->basePath, '/') . '/';
     }
 
     /**
@@ -67,9 +111,9 @@ class Request
      * @param int|null $key index girilirse değerini girilmezse tüm segmentleri döndürür.
      * @return mixed
      */
-    public static function segments(?int $key = null)
+    public function segments(?int $key = null)
     {
-        $queryString = preg_replace("#^(/index\.php)#i", "", self::requestUri());
+        $queryString = preg_replace("#^(/index\.php)#i", "", $this->requestUri());
         $queryString = trim($queryString, "/");
         $segments = array_values(array_filter(explode("/", $queryString)));
 
@@ -79,7 +123,7 @@ class Request
         if (array_key_exists($key, $segments)) {
             return $segments[$key];
         }
-        return false;
+        return null;
     }
 
 
@@ -88,13 +132,15 @@ class Request
      *
      * @param string|null $name nokta ile birleşitirilmiş index (index1.index2) değeri alır,
      * belirtilmezse tüm diziyi döndürür. GET yoksa yada index yoksa false döner.
-     * @return null|mixed
+     * @return mixed
      */
-    public static function request(string $name = null)
+    public function request(string $name = null)
     {
-        if (!isset($_REQUEST)) return [];
-        if (is_null($name)) return $_REQUEST;
-        return dot_aray_get($_REQUEST, $name);
+        if (is_null($name)){
+            return $this->request;
+        }
+
+        return dot_aray_get($this->request, $name);
     }
 
 
@@ -105,20 +151,17 @@ class Request
      * belirtilmezse tüm diziyi döndürür. GET yoksa yada index yoksa false döner.
      * @return null|mixed
      */
-    public static function get(string $name = null)
+    public function get(string $name = null)
     {
-        if (empty($_GET)) {
-            return [];
-        }
-
-        $get = $_GET;
-
-        array_walk_recursive($get, function (&$item){
+        array_walk_recursive($this->get, function (&$item){
             $item = trim(strip_tags($item));
         });
 
-        if (is_null($name)) return $get;
-        return dot_aray_get($get, $name);
+        if (is_null($name)) {
+            return $this->get;
+        }
+
+        return dot_aray_get($this->get, $name);
     }
 
 
@@ -129,20 +172,17 @@ class Request
      * belirtilmezse tüm diziyi döndürür. POST yoksa yada index yoksa false döner.
      * @return null|mixed
      */
-    public static function post(string $name = null)
+    public function post(string $name = null)
     {
-        if (empty($_POST)) {
-            return [];
-        }
-
-        $post = $_POST;
-
-        array_walk_recursive($post, function (&$item){
+        array_walk_recursive($this->post, function (&$item){
             $item = trim(strip_tags($item));
         });
 
-        if (is_null($name)) return $post;
-        return dot_aray_get($post, $name);
+        if (is_null($name)) {
+            return $this->post;
+        }
+
+        return dot_aray_get($this->post, $name);
     }
 
 
@@ -154,16 +194,12 @@ class Request
      * belirtilmezse tüm diziyi döndürür. FILES yoksa yada index yoksa false döner.
      * @return array
      */
-    public static function files(string $name = null)
+    public function files(string $name = null):array
     {
         $sort_files = [];
 
-        if (empty($_FILES)) {
-            return [];
-        }
-
         // her resim için yeni dizi oluşturur
-        foreach ($_FILES as $input_name => $inputs) {
+        foreach ($this->files as $input_name => $inputs) {
             if (is_array($inputs['name'])) {
                 foreach ($inputs['name'] as $key => $file_name) {
                     $sort_files[$input_name][] = [
@@ -188,16 +224,33 @@ class Request
 
 
     /**
-     * request raw data
-     * @return false|string|null
+     * @param string|null $name
+     * @return mixed
      */
-    public static function raw()
+    public function cookie(string $name = null)
+    {
+        array_walk_recursive($this->cookie, function (&$item){
+            $item = trim(strip_tags($item));
+        });
+
+        if (is_null($name)) {
+            return $this->cookie;
+        }
+
+        return dot_aray_get($this->cookie, $name);
+    }
+
+    /**
+     * request raw data
+     * @return string
+     */
+    public function raw():string
     {
         if ($data = file_get_contents('php://input')) {
             return $data;
         }
 
-        return null;
+        return "";
     }
 
     /**
@@ -205,9 +258,9 @@ class Request
      * $method girilmezse header bilgisinden methodu döndürür.
      *
      * @param string|null $method kontrol edilecek method [POST, GET, PUT, PATCH, DELETE]
-     * @return bool
+     * @return bool|string
      */
-    public static function method(string $method = null)
+    public function method(string $method = null)
     {
         if (is_null($method)) {
             return $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -224,10 +277,10 @@ class Request
      * @param $method = 'get'
      * @return bool
      */
-    public static function isAjax(string $method = null)
+    public function isAjax(string $method = null):bool
     {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-            if (self::method($method)) {
+            if ($this->method($method)) {
                 return true;
             }
         }
@@ -240,7 +293,7 @@ class Request
      *
      * @return string
      */
-    public static function scheme()
+    public function scheme():string
     {
         return isset($_SERVER['HTTPS']) ? 'https' : 'http';
     }
@@ -251,9 +304,9 @@ class Request
      *
      * @return string
      */
-    public static function host()
+    public function host():string
     {
-        return $_SERVER['SERVER_NAME'] ?? null;
+        return $_SERVER['SERVER_NAME'] ?? '';
     }
 
 
@@ -261,9 +314,9 @@ class Request
      * İstek üst bilgisinde varsa dil anahtarını yoksa ön tanımlı dili anahtarını döndürür.
      *
      * @param bool $basic
-     * @return bool|null|string
+     * @return string
      */
-    public static function local($basic = false)
+    public function local($basic = false):string
     {
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             $local = preg_split("/[,;]/", $_SERVER['HTTP_ACCEPT_LANGUAGE']);
@@ -275,35 +328,27 @@ class Request
                 return $local;
             }
         }
-        return null;
+        return '';
     }
 
 
     /**
-     * Useragen bilgisini döndürür.
-     *
-     * @return null|mixed
+     * Useragent bilgisini döndürür.
+     * @return string
      */
-    public static function userAgent()
+    public function userAgent():string
     {
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
-
-        if ($userAgent) {
-            return filter_var($userAgent, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        }
-
-        return null;
+        return $this->server('user-agent');
     }
 
 
     /**
      * Referer bilgisini döndürür.
-     *
-     * @return mixed|null
+     * @return string
      */
-    public static function referer()
+    public function referer():string
     {
-        $referer = $_SERVER['HTTP_REFERER'] ?? null;
+        $referer = $this->server('referer');
 
         if (filter_var($referer, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return $referer;
@@ -315,36 +360,32 @@ class Request
             return $referer;
         }
 
-        return null;
+        return '';
     }
 
 
     /**
      * IP adresini döndürür.
      *
-     * @return mixed
+     * @return string
      */
-    public static function ip()
+    public function ip():string
     {
-        return $_SERVER['REMOTE_ADDR'];
+        return $this->server('remote-addr') ?? '127.0.0.1';
     }
 
 
     /**
      * Proxy ardında ki ip adresini döndürür, proxy bilgisi yoksa direk ip döndürür.
      *
-     * @return mixed
+     * @return string
      */
-    public static function forwardedIp()
+    public function forwardedIp():string
     {
-        $ip = null;
+        $ip = $this->server('client-ip');
 
-        if (array_key_exists('HTTP_CLIENT_IP', $_SERVER)) {
-            $ip = $_SERVER['HTTP_CLIENT_IP'];
-        }
-
-        if (array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER)) {
-            $proxies = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        if ($this->server('x-forwarded-for')) {
+            $proxies = explode(',', $this->server('x-forwarded-for'));
             $ip = $proxies[0];
         }
 
@@ -355,7 +396,7 @@ class Request
             return $ip;
         }
 
-        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        return $this->ip();
     }
 
 
@@ -365,11 +406,11 @@ class Request
      * @param $value
      * @return mixed
      */
-    public static function server($value)
+    public function server($value):string
     {
         $value = str_replace('-', '_', $value);
         $serverVariable = $_SERVER[strtoupper($value)] ?? $_SERVER['HTTP_' . strtoupper($value)] ?? null;
-        return filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        return (string) filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     }
 }
 

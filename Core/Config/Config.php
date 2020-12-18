@@ -4,76 +4,70 @@ namespace Core\Config;
 
 /**
  * Class Config
- *
- * Config dosyalarınıdan gerekli ayarları yükler.
  */
 class Config
 {
-
-    private static array $configs = [];
-    const PATH = ROOT . 'config';
-
+    private array $configs = [];
 
     /**
-     * Dosyaların daha önce yüklenip yüklenmediğini kontrol eder.
-     * Daha önce yüklenmemişse dosyaları yükler ve diziye alır.
-     * Daha önce yüklenmişse dizi içeriğini döndürür.
+     * Config constructor.
+     * @param array $configs
      */
-    private static function init()
+    public function __construct(array $configs)
     {
-        self::$configs ? self::$configs : self::loadConfigFiles();
+        $this->configs = $configs;
     }
-
-
-    /**
-     * Belirtilen dizindeki tüm config dosyalarını yükler.
-     */
-    private static function loadConfigFiles()
-    {
-        $configFiles = array_diff(scandir(self::PATH), ['.', '..']);
-
-        foreach ($configFiles as $configFile) {
-
-            $fileName = pathinfo($configFile, PATHINFO_FILENAME);
-            self::$configs[$fileName] = require_once(self::PATH . '/' . $configFile);
-        }
-    }
-
 
     /**
      * İstenilen config değerlerini döndürür, bulamazsa false döner.
      *
-     * @param string $configName dizi indexlerinin (.) ile birleştirilmiş isimleri (index1.index2.index3).
-     * @return array|bool|mixed
+     * @param string $key dizi indexlerinin (.) ile birleştirilmiş isimleri (index1.index2.index3).
+     * @return mixed
      */
-    public static function get(string $configName)
+    public function get(string $key)
     {
-        self::init();
-        return dot_aray_get(self::$configs, $configName);
+        return dot_aray_get($this->configs, $key);
     }
 
 
     /**
      * Gönderilen index ve değeri varsa değiştirir, yoksa yenisini ekler.
      *
-     * @param string $configName dizi indexlerinin (.) ile birleştirilmiş isimleri (index1.index2.index3).
+     * @param string $key dizi indexlerinin (.) ile birleştirilmiş isimleri (index1.index2.index3).
      * @param mixed $value
      */
-    public static function set(string $configName, $value)
+    public function set(string $key, $value)
     {
-        self::init();
-        dot_aray_set(self::$configs, $configName, $value);
+        dot_aray_set($this->configs, $key, $value);
+    }
+
+
+    /**
+     * @param string $key
+     * @return bool
+     */
+    public function has(string $key):bool
+    {
+        return dot_aray_get($this->configs, $key) !== null;
+    }
+
+
+    /**
+     * @return array
+     */
+    public function all():array
+    {
+        return $this->configs;
     }
 
     /**
      * Girilen indexi bulup değerini null atar. Bulursa true, bulamazsa false döner.
      *
-     * @param string $configName dizi indexlerinin (.) ile birleştirilmiş isimleri (index1.index2.index3).
+     * @param string $key dizi indexlerinin (.) ile birleştirilmiş isimleri (index1.index2.index3).
      * @return bool
      */
-    public static function remove($configName)
+    public function remove(string $key):bool
     {
-        self::init();
-        return dot_array_del(self::$configs, $configName);
+        return dot_array_del($this->configs, $key);
     }
 }

@@ -3,8 +3,7 @@
 namespace Core\Http;
 
 
-use Core\Exceptions\Exceptions;
-use Exception;
+use InvalidArgumentException;
 
 class Response
 {
@@ -18,9 +17,9 @@ class Response
      * Response constructor.
      * @param null $content
      * @param null|int $code
-     * @param null $headers
+     * @param mixed $headers
      */
-    public function __construct($content = null, $code = 200, $headers = null)
+    public function __construct($content = null, $code = 200, array $headers = null)
     {
         $this->content($content);
         $this->code($code);
@@ -30,58 +29,62 @@ class Response
     }
 
     /**
+     * set content
      * @param $content
      * @return $this
      */
-    public function content($content)
+    public function content($content): self
     {
         $this->response['content'] = $content;
         return $this;
     }
 
     /**
-     * @param $code
+     * http response code
+     * @param int $code
      * @return $this
      */
-    public function code($code)
+    public function code(int $code):self
     {
         $this->response['code'] = $code;
         return $this;
     }
 
     /**
-     * @param $headers
+     * set header
+     * @param string|array $headers
      * @return $this
      */
-    public function headers($headers)
+    public function headers($headers = null): self
     {
         if (is_array($headers)) {
-            foreach ($headers as $type => $value) {
-                if (is_integer($type)) {
+            foreach ($headers as $key => $value) {
+                if (is_integer($key)) {
                     $this->response['headers'][] = $value;
                 } else {
-                    $this->response['headers'][] = $type . ': ' . $value;
+                    $this->response['headers'][] = $key . ': ' . $value;
                 }
             }
-        } elseif($headers) {
+        } elseif ($headers) {
             $this->response['headers'][] = $headers;
         }
+
         return $this;
     }
 
+
     /**
      * @param null $options
+     * @return $this
      */
-     public function json($options = null)
+    public function toJson($options = null):self
     {
-        try {
-            $this->headers(['Content-Type' => 'application/json']);
-            $this->content(json_encode($this->response['content'], $options));
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('JSON decode edilemedi.', E_WARNING);
-            }
-        } catch (Exception $e) {
-            Exceptions::debug($e, 1);
+        $this->headers(['Content-Type' => 'application/json']);
+
+        $this->response['content'] = json_encode($this->response['content'], $options);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new InvalidArgumentException('JSON decode edilemedi.', E_NOTICE);
         }
 
         return $this;
@@ -95,56 +98,51 @@ class Response
     public function redirect($url = null, $code = 302)
     {
         $this->headers(['Location' => $url])->code($code)->send();
+        exit;
     }
 
 
     /**
+     * Yanıt gövdesini döndürür
      * @return string
      */
-    public function getBody()
+    public function getBody():string
     {
-        if (is_string($this->response['content']) ||
-            is_integer($this->response['content']) ||
-            is_float($this->response['content']) ||
-            is_bool($this->response['content']) ||
-            is_null($this->response['content'])) {
+        if (is_resource($this->response['content'])) {
 
-            return (string) $this->response['content'];
-        }elseif (is_array($this->response['content']) ||
-                is_object($this->response['content'])){
+            return 'Resource Type: ' . get_resource_type($this->response['content']);
+        } elseif (is_array($this->response['content']) || is_object($this->response['content'])) {
 
-            $this->json();
-
-            return (string) $this->response['content'];
-
-        }else{
-            return 'Resource Type: '.get_resource_type ($this->response['content']);
+            $this->toJson();
         }
+
+        return (string) $this->response['content'];
     }
 
     /**
-     * print body
+     * print body to screen
      */
     public function send()
     {
-        echo $this->ready();
+        echo $this->setResponce();
     }
 
 
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
-        return $this->ready();
+        return $this->setResponce();
     }
 
     /**
      * @return string
      */
-    private function ready()
+    private function setResponce(): string
     {
         $body = $this->getBody();
+
         http_response_code($this->response['code']);
         foreach ($this->response['headers'] as $header) {
             header($header);

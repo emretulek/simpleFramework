@@ -2,66 +2,100 @@
 
 namespace Core\Language;
 
-use Core\Config\Config;
-use Core\Exceptions\Exceptions;
+use Core\App;
 use Core\Http\Request;
-use Exception;
+use Core\Router\Router;
+use Core\Session\Session;
+use RuntimeException;
 
 /**
  * Class Language
  * Uygulamaya session üzerinden çoklu dil desteği kazandırır.
+ * Language->setActive('tr') methodu çağırılmadan aktif olmayacaktır.
  */
 class Language
 {
-    private static array $default = [];
-    private static array $languages = [];
-    private static array $translate = [];
+    public static bool $isLoaded = false;
 
+    private Request $request;
+    private Session $session;
+    private Router $router;
+    private string $path;
+    private array $config;
+    private array $default;
+    private array $active;
 
-    public static function init()
+    private array $languages = [];
+    private array $translate = [];
+
+    public function __construct(App $app)
     {
-        $default = [
-            'key' => Config::get('app.language.key'),
-            'name' => Config::get('app.language.name'),
-            'local' => Config::get('app.language.local')
-        ];
+        $this->request = $app->resolve(Request::class);
+        $this->session = $app->resolve(Session::class);
+        $this->router = $app->resolve(Router::class);
+        $this->path = $app->basePath.$app->config['path']['language'];
+        $this->config = $app->config['app']['language'];
+    }
 
-        self::add($default['key'], $default['name'], $default['local']);
-        self::setDefault($default['key']);
-        self::setActive($default['key']);
+
+    /**
+     * Uygulamanın dil desteğini aktif eder
+     */
+    public function load()
+    {
+        $this->add(
+            $this->config['key'],
+            $this->config['name'],
+            $this->config['locale']
+        );
+
+        $this->setDefault($this->config['key']);
+        $this->setActive($this->config['key']);
+
+        self::$isLoaded = true;
     }
 
     /**
-     * Url üzerinden aktif dili belirler, aktif dil default dil ile aynı ise url yapısında gösterilmez.
-     * @TODO site.com/en-us/contact
+     * Aktif dilin adı
+     * @return string
      */
-    public static function useUrl()
+    public function getName():string
     {
-        $segments = Request::segments();
-
-        if(isset($segments[0])) {
-
-            Language::setActive($segments[0]);
-
-            //default dil ise adres satırında gösterme
-            if (array_shift($segments) == Language::getDefault()->key) {
-                redirect(Request::baseUrl().implode('/', $segments));
-            }
-        }
+        return $this->active['name'];
     }
+
+    /**
+     * Aktif dilin anahtarı
+     * @return mixed
+     */
+    public function getKey()
+    {
+        return $this->active['key'];
+    }
+
+    /**
+     * Aktif dil locale değeri [TR-tr, EN-en]
+     * @return mixed
+     */
+    public function getLocale()
+    {
+        return $this->active['locale'];
+    }
+
 
     /**
      * Ön tanımlı dili ayarlar
      * @param $key
      * @return bool
      */
-    public static function setDefault($key)
+    public function setDefault($key):bool
     {
-        if (self::exists($key)) {
-            self::$default = [
+        if ($this->exists($key)) {
+
+            $this->default = [
                 'key' => $key,
-                'name' => self::$languages[$key]['name'],
-                'local' => self::$languages[$key]['local'],
+                'name' => $this->languages[$key]['name'],
+                'locale' => $this->languages[$key]['locale'],
             ];
 
             return true;
@@ -70,29 +104,30 @@ class Language
         return false;
     }
 
-    /**
-     * Öntanımlı dil bilgilerini döndürür
-     * @return object
-     */
-    public static function getDefault()
-    {
-        if(empty(self::$default)){
-            self::init();
-        }
-        return (object) self::$default;
-    }
 
     /**
-     * Dili değiştirir.
+     * Varsayılan dil
+     * @return array
+     */
+    public function getDefault():array
+    {
+        return $this->default;
+    }
+
+
+    /**
+     * Aktif dili belirler
      *
      * @param string $key
      * @return bool
      */
-    public static function setActive(string $key)
+    public function setActive(string $key):bool
     {
-        if (self::exists($key)) {
-            $_SESSION['lang'] = (object) array_merge(['key' => $key], self::$languages[$key]);
-            self::loadFiles($key);
+        if ($this->exists($key)) {
+
+            $this->session->set('_lang', $this->languages[$key]);
+            $this->active = $this->languages[$key];
+            $this->loadFiles($key);
 
             return true;
         }
@@ -102,56 +137,51 @@ class Language
 
 
     /**
-     * @return object [key,name,local]
+     * @return array [key,name,locale]
      *
      * Aktif dil özelliklerini döndürür
      */
-    public static function getActive()
+    public function getActive():array
     {
-        return $_SESSION['lang'] ?? self::getDefault();
+        return $this->session->get('_lang') ?? $this->default;
     }
 
 
     /**
-     * Kullanılacak dil dosyasını yükler.
+     * Farklı bir konumdan yeni bir dil dosyası ekler
      *
      * @param string $key dosyanın kullanılacağı dil anahtarı.
      * @param string $file_path yüklenecek dosya yolu
      * @return bool|array
      */
-    public static function loadFile(string $key, string $file_path)
+    public function addFile(string $key, string $file_path)
     {
         if (is_readable_file($file_path)) {
-            return self::$translate[$key][pathinfo($file_path,  PATHINFO_FILENAME)] = require($file_path);
-        }else {
-            try {
-                throw  new Exception('Dil dosyası bulunamadı. ' . $file_path, E_NOTICE);
-            } catch (Exception $e) {
-                Exceptions::debug($e);
-            }
+            $fileName = pathinfo($file_path,  PATHINFO_FILENAME);
+            return $this->translate[$key][$fileName] = require($file_path);
         }
-        return false;
+
+        throw new RuntimeException('Dil dosyası bulunamadı. ' . $file_path, E_NOTICE);
     }
 
 
     /**
-     * lang dizini altındaki ilgili tüm dil dosyalarını yükler
+     * lang dizini altındaki ilgili dil dosyalarını yükler
      *
      * @param $key
      */
-    private static function loadFiles($key)
+    private function loadFiles($key)
     {
-        $fullPath = ROOT . Config::get('path.lang') . '/' . $key;
+        $fullPath = $this->path. '/' . $key;
 
         if(is_readable_dir($fullPath)) {
             $files = array_diff(scandir($fullPath), ['..', '.']);
 
             foreach ($files as $file) {
-                self::loadFile($key, $fullPath.'/'.$file);
+                $this->addFile($key, $fullPath.'/'.$file);
             }
         }
     }
-
 
 
     /**
@@ -159,15 +189,15 @@ class Language
      *
      * @param string $key dosya ismi ile birlikte dizi indexi örn; {lang/tr/home.php, $title} için {home.title}
      * @param mixed ...$args
-     * @return mixed
+     * @return mixed|array
      */
-    public static function translate(string $key, ...$args)
+    public function translate(string $key, ...$args)
     {
-        if($translated = dot_aray_get(self::$translate, self::getDefault()->key.".".$key)){
+        if($translated = dot_aray_get($this->translate[$this->active['key']], $key)){
             return is_array($translated) ? $translated : vsprintf($translated, $args);
         }
 
-        if(self::getDefault() && $default = dot_aray_get(self::$translate, self::getDefault()->key.".".$key)){
+        if($default = dot_aray_get($this->translate[$this->default['key']], $key)){
             return is_array($translated) ? $translated : vsprintf($translated, $args);
         }
 
@@ -180,11 +210,13 @@ class Language
      *
      * @param string $key nokta ile birleştirilmiş dizi indexleri
      * @param mixed $value çeviri
-     * @return mixed
+     * @return void
      */
-    public static function newTranslate(string $key, $value)
+    public function addTranslate(string $key, $value)
     {
-        return dot_aray_set(self::$translate[self::getActive()->key], $key, $value);
+        dot_aray_set($this->translate[$this->active['key']], $key, $value);
+
+        return $value;
     }
 
 
@@ -194,9 +226,9 @@ class Language
      * @param string $lang_key dil anahtarı.
      * @return bool
      */
-    public static function exists(string $lang_key)
+    public function exists(string $lang_key):bool
     {
-        if (array_key_exists($lang_key, self::$languages)) {
+        if (array_key_exists($lang_key, $this->languages)) {
             return true;
         }
         return false;
@@ -206,21 +238,45 @@ class Language
      * Kullanılabilir dillere yenir bir dil ekler
      * @param string $key
      * @param string $name
-     * @param string $local
+     * @param string $locale
      */
-    public static function add(string $key, string $name, string $local)
+    public function add(string $key, string $name, string $locale)
     {
-        self::$languages[$key]['name'] = $name;
-        self::$languages[$key]['local'] = $local;
+        $this->languages[$key]['key'] = $key;
+        $this->languages[$key]['name'] = $name;
+        $this->languages[$key]['locale'] = $locale;
     }
 
     /**
      * Kullanılabilir dillerden keyi girileni kaldırır
      * @param string $lang_key
      */
-    public static function remove(string $lang_key)
+    public function remove(string $lang_key)
     {
-        unset(self::$languages[$lang_key]);
+        unset($this->languages[$lang_key]);
+    }
+
+
+    /**
+     * Url üzerinden aktif dili belirler, aktif dil default dil ile aynı ise url yapısında gösterilmez.
+     * @TODO site.com/en-us/contact or site.com/en/contact
+     */
+    public function useUrl()
+    {
+        $segments = $this->request->segments();
+
+        if(count($segments) > 0) {
+
+            $language = array_shift($segments);
+
+            //default dil ise adres satırında gösterme
+            if ($language == $this->default['key']) {
+                redirect($this->request->baseUrl().implode('/', $segments), 301);
+                return;
+            }
+
+            $this->setActive($language);
+        }
     }
 
 
@@ -229,12 +285,8 @@ class Language
      * Seçili dil default dil ile aynı ise boş dönecektir.
      * @return string
      */
-    public static function prefix()
+    public function routePrefix():string
     {
-        if(self::getDefault()) {
-            return self::getActive()->key == self::getDefault()->key ? '' : self::getActive()->key;
-        }
-
-        return '';
+        return $this->active['key'] == $this->default['key'] ? '' : $this->active['key'];
     }
 }

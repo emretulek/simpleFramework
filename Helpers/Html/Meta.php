@@ -25,7 +25,7 @@ class Meta {
      * @param ?string $text
      * @return Tag
      */
-    public static function title(string $text = null)
+    public static function title(string $text = null): Tag
     {
         if(isset(self::$metaTags['title'][0]) && $text == null){
 
@@ -46,7 +46,7 @@ class Meta {
      * @param string $type
      * @return Tag
      */
-    public static function link(string $href, string $rel = "stylesheet", $type = "text/css")
+    public static function link(string $href, string $rel = "stylesheet", $type = "text/css"): Tag
     {
         $tag = new Tag('link', false);
         $tag->attr('href', $href)
@@ -69,7 +69,7 @@ class Meta {
      * @param string $POS
      * @return Tag
      */
-    public static function script(string $src = null, string $script = null, string $type = null, $POS = self::BOTTOM)
+    public static function script(string $src = null, string $script = null, string $type = null, $POS = self::BOTTOM): Tag
     {
         $tag = new Tag('script');
 
@@ -96,7 +96,7 @@ class Meta {
      * @param string $property og:description şeklinde belirtilirse meta tag için property özelliği eklenir
      * @return Tag|null
      */
-    public static function setName(string $name, string $content, string $property = '')
+    public static function setName(string $name, string $content, string $property = ''): ?Tag
     {
         $tag = new Tag('meta', false);
         $tag->attr('name', $name)
@@ -119,7 +119,7 @@ class Meta {
      * @param string $property og:description şeklinde belirtilirse meta tag için property özelliği eklenir
      * @return Tag|null
      */
-    public static function addName(string $name, string $content, string $property = '')
+    public static function addName(string $name, string $content, string $property = ''): ?Tag
     {
         $tag = new Tag('meta', false);
         $tag->attr('name', $name)
@@ -142,7 +142,7 @@ class Meta {
      * @param string|null $name
      * @return Tag
      */
-    public static function setProperty(string $property, string $content, string $name = null)
+    public static function setProperty(string $property, string $content, string $name = null): Tag
     {
         $tag = new Tag('meta', false);
         $tag->attr('property', $property)
@@ -165,7 +165,7 @@ class Meta {
      * @param string|null $name
      * @return Tag
      */
-    public static function addProperty(string $property, string $content, string $name = null)
+    public static function addProperty(string $property, string $content, string $name = null): Tag
     {
         $tag = new Tag('meta', false);
         $tag->attr('property', $property)
@@ -188,7 +188,7 @@ class Meta {
      * @param string $content
      * @return Tag
      */
-    public static function setEquiv(string $value, string $content)
+    public static function setEquiv(string $value, string $content): Tag
     {
         $tag = new Tag('meta', false);
         $tag->attr('http-equiv', $value)
@@ -206,7 +206,7 @@ class Meta {
      * @param string $content
      * @return Tag
      */
-    public static function addEquiv(string $value, string $content)
+    public static function addEquiv(string $value, string $content): Tag
     {
         $tag = new Tag('meta', false);
         $tag->attr('http-equiv', $value)
@@ -391,7 +391,7 @@ class Meta {
      * Tüm meta tagleri string döndürür
      * @return string
      */
-    public static function getAll()
+    public static function getAll(): string
     {
         $metaTags = "";
 
@@ -411,7 +411,7 @@ class Meta {
      * dizi elemanları Tag sınıfının üyesidir methodlar kullanılabilir
      * @return array
      */
-    public static function getAllTags()
+    public static function getAllTags(): array
     {
         $metaTags = [];
 

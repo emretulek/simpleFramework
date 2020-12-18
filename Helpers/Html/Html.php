@@ -16,10 +16,10 @@ class Html {
     /**
      * Basit html elementleri için kullanım label, span, div, button vb.
      * @param string $tagName
-     * @param string $text
+     * @param string|null $text
      * @return Tag
      */
-    public static function tag(string $tagName, string $text = null)
+    public static function tag(string $tagName, string $text = null):Tag
     {
         $tag = new Tag($tagName);
         $tag->text($text);
@@ -30,12 +30,12 @@ class Html {
 
     /**
      * form elementi oluşturur
-     * @param string $action
+     * @param string|null $action
      * @param string $method
      * @param bool $multipart
      * @return Tag
      */
-    public static function form(string $action = null, string $method = "post", bool $multipart = false)
+    public static function form(string $action = null, string $method = "post", bool $multipart = false):Tag
     {
         $tag = new Tag('form');
         $tag->attr('method', $method)
@@ -52,7 +52,7 @@ class Html {
      * @param string|null $value
      * @return Tag
      */
-    public static function input(string $type, string $name, string $value = null)
+    public static function input(string $type, string $name, string $value = null): Tag
     {
         $tag = new Tag('input', false);
         $tag->attr('type', $type)
@@ -69,7 +69,7 @@ class Html {
      * @param bool $multiple
      * @return Tag
      */
-    public static function file(string $name, $multiple = false)
+    public static function file(string $name, $multiple = false): Tag
     {
         $tag = new Tag('input', false);
         $tag->attr('type', 'file')
@@ -87,7 +87,7 @@ class Html {
      * @param bool $multiple
      * @return Tag
      */
-    public static function select(string $name, array $options, string $selectedOption = null, $multiple = false)
+    public static function select(string $name, array $options, string $selectedOption = null, $multiple = false): Tag
     {
         $tag = new Tag('select');
         $tag->attr('name', $multiple ? $name.'[]': $name);
@@ -137,7 +137,7 @@ class Html {
      * @param bool|string $checked değer olarak value girilirse checked kabul edilir
      * @return Tag
      */
-    public static function checkbox(string $name, string $value = null, $checked = false)
+    public static function checkbox(string $name, string $value = null, $checked = false): Tag
     {
         $tag = new Tag('input', false);
         $tag->attr('type', 'checkbox')
@@ -159,7 +159,7 @@ class Html {
      * @param bool|string $checked değer olarak value girilirse checked kabul edilir
      * @return Tag
      */
-    public static function radio(string $name, string $value = null, $checked = false)
+    public static function radio(string $name, string $value = null, $checked = false): Tag
     {
         $tag = new Tag('input', false);
         $tag->attr('type', 'radio')
@@ -180,7 +180,7 @@ class Html {
      * @param string|null $text
      * @return Tag
      */
-    public static function textarea(string $name, string $text = null)
+    public static function textarea(string $name, string $text = null): Tag
     {
         $tag = new Tag('textarea');
         $tag->attr('name', $name)
@@ -195,7 +195,7 @@ class Html {
      * @param string $text
      * @return Tag
      */
-    public static function button(string $text)
+    public static function button(string $text): Tag
     {
         $tag = new Tag('button');
         $tag->attr('type', 'submit')
@@ -212,7 +212,7 @@ class Html {
      * @param string|null $target
      * @return Tag
      */
-    public static function a(string $href, string $text, string $target = null)
+    public static function a(string $href, string $text, string $target = null): Tag
     {
         $tag = new Tag('a');
         $tag->attr('href', $href)
@@ -232,7 +232,7 @@ class Html {
      * @param $alt
      * @return Tag
      */
-    public static function img(string $src, string $alt = "")
+    public static function img(string $src, string $alt = ""): Tag
     {
         $tag = new Tag('img', false);
         $tag->attr('alt', $alt)
@@ -249,7 +249,7 @@ class Html {
      * @param array $datasets ['min-width:600px' => 'image.jpg', 'min-width:1200px' => 'image2.jpg']
      * @return Tag
      */
-    public static function picture(string $src, string $alt, array $datasets = [])
+    public static function picture(string $src, string $alt, array $datasets = []): Tag
     {
         $tag = new Tag('picture');
         $img = self::img($src, $alt);
@@ -271,7 +271,7 @@ class Html {
      * @param array $elements
      * @return string
      */
-    public static function elements(array $elements)
+    public static function elements(array $elements): string
     {
         $stringElements = "";
         foreach ($elements as $element){

@@ -2,113 +2,133 @@
 
 namespace Core\Log;
 
-use Core\Config\Config;
 
-Class Logger
+Class Logger implements LoggerInterface
 {
+    protected LoggerInterface $logger;
 
-    private static ?LogInterface $instance = null;
-
-
-    /**
-     * @return DatabaseLog|FileLog|LogInterface
-     */
-    public static function init()
+    public function __construct(LoggerInterface $logger)
     {
-        if (self::$instance == null && Config::get('app.log.enable')) {
-
-            if(Config::get('app.log.driver') == 'database') {
-                self::$instance = new DatabaseLog();
-            }else{
-                self::$instance = new FileLog();
-            }
-        }
-        return self::$instance;
-    }
-
-
-    /**
-     * @param $message
-     * @param $data
-     * @param $type
-     * @return bool
-     */
-    public static function writer($message, $data, $type)
-    {
-        if ($logger = self::init()) {
-            return $logger->writer($message, $data, $type);
-        }
-
-        return false;
+        $this->logger = $logger;
     }
 
     /**
-     * @param $message
-     * @param null $data
-     * @return bool
+     * System is unusable.
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
      */
-    public static function debug($message, $data = null)
+    public function emergency(string $message, $context = array())
     {
-        return self::writer($message, $data, 'DEBUG');
+        $this->log(LogLevel::EMERGENCY, $message, $context);
     }
 
     /**
-     * @param $message
-     * @param null $data
-     * @return bool
+     * Action must be taken immediately.
+     *
+     * Example: Entire website down, database unavailable, etc. This should
+     * trigger the SMS alerts and wake you up.
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
      */
-    public static function info($message, $data = null)
+    public function alert(string $message, array $context = array())
     {
-        return self::writer($message, $data, 'INFO');
+        $this->log(LogLevel::ALERT, $message, $context);
     }
 
     /**
-     * @param $message
-     * @param null $data
-     * @return bool
+     * Critical conditions.
+     *
+     * Example: Application component unavailable, unexpected exception.
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
      */
-    public static function notice($message, $data = null)
+    public function critical(string $message, array $context = array())
     {
-        return self::writer($message, $data, 'NOTICE');
+        $this->log(LogLevel::CRITICAL, $message, $context);
     }
 
     /**
-     * @param $message
-     * @param null $data
-     * @return bool
+     * Runtime errors that do not require immediate action but should typically
+     * be logged and monitored.
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
      */
-    public static function warning($message, $data = null)
+    public function error(string $message, array $context = array())
     {
-        return self::writer($message, $data, 'WARNING');
+        $this->log(LogLevel::ERROR, $message, $context);
     }
 
     /**
-     * @param $message
-     * @param null $data
-     * @return bool
+     * Exceptional occurrences that are not errors.
+     *
+     * Example: Use of deprecated APIs, poor use of an API, undesirable things
+     * that are not necessarily wrong.
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
      */
-    public static function error($message, $data = null)
+    public function warning(string $message, array $context = array())
     {
-        return self::writer($message, $data, 'ERROR');
+        $this->log(LogLevel::WARNING, $message, $context);
     }
 
     /**
-     * @param $message
-     * @param null $data
-     * @return bool
+     * Normal but significant events.
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
      */
-    public static function critical($message, $data = null)
+    public function notice(string $message, array $context = array())
     {
-        return self::writer($message, $data, 'CRITICAL');
+        $this->log(LogLevel::NOTICE, $message, $context);
     }
 
     /**
-     * @param $message
-     * @param null $data
-     * @return bool
+     * Interesting events.
+     *
+     * Example: User logs in, SQL logs.
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
      */
-    public static function emergency($message, $data = null)
+    public function info(string $message, array $context = array())
     {
-        return self::writer($message, $data, 'EMERGENCY');
+        $this->log(LogLevel::INFO, $message, $context);
+    }
+
+    /**
+     * Detailed debug information.
+     *
+     * @param string $message
+     * @param array $context
+     * @return void
+     */
+    public function debug(string $message, array $context = array())
+    {
+        $this->log(LogLevel::DEBUG, $message, $context);
+    }
+
+    /**
+     * Logs with an arbitrary level.
+     *
+     * @param mixed $level
+     * @param string $message
+     * @param array $context
+     * @return void
+     */
+    public function log($level, string $message, array $context = array())
+    {
+        $this->logger->log($level, $message, $context);
     }
 }

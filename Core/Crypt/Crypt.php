@@ -4,21 +4,25 @@
 namespace Core\Crypt;
 
 
-use Core\Config\Config;
 use Exception;
 
 class Crypt
 {
-    private static string $secretKey;
-    private static string $algorithm;
+    private string $secretKey;
+    private string $crypt_algo;
+    private string $hash_algo;
 
     /**
      * Crypt constructor.
+     * @param string $secretKey
+     * @param string $crypt_algo
+     * @param string $hash_algo
      */
-    private static function init()
+    public function __construct(string $secretKey, string $crypt_algo, string $hash_algo)
     {
-        self::$secretKey = Config::get('app.app_key');
-        self::$algorithm = Config::get('app.encrypt_algo');
+        $this->secretKey = $secretKey;
+        $this->crypt_algo = $crypt_algo;
+        $this->hash_algo = $hash_algo;
     }
 
 
@@ -27,15 +31,14 @@ class Crypt
      * @return string
      * @throws Exception
      */
-    public static function encrypt(string $text)
+    public function encrypt(string $text):string
     {
-        self::init();
-        $iv_len = openssl_cipher_iv_length(self::$algorithm);
+        $iv_len = openssl_cipher_iv_length($this->crypt_algo);
         $iv = openssl_random_pseudo_bytes($iv_len);
 
-        $encrypted = openssl_encrypt($text, self::$algorithm, self::$secretKey, 0, $iv);
+        $encrypted = openssl_encrypt($text, $this->crypt_algo, $this->secretKey, 0, $iv);
 
-        $json = json_encode(['encrypted' => $encrypted, 'iv' => base64_encode($iv), 'hash' => Hash::makeWithKey($iv . $encrypted)]);
+        $json = json_encode(['encrypted' => $encrypted, 'iv' => base64_encode($iv), 'hash' => $this->hash($iv . $encrypted)]);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new Exception(json_last_error(), E_WARNING);
@@ -50,9 +53,8 @@ class Crypt
      * @return false|string
      * @throws Exception
      */
-    public static function decrypt(string $encodedText)
+    public function decrypt(string $encodedText)
     {
-        self::init();
         $json = base64_decode($encodedText);
         $encrypted = json_decode($json, true);
         $encrypted['iv'] = base64_decode($encrypted['iv']);
@@ -61,12 +63,12 @@ class Crypt
 
             throw new Exception("Şifreleme çözülemiyor.", E_WARNING);
         }
-        if (!hash_equals(Hash::makeWithKey($encrypted['iv'].$encrypted['encrypted']), $encrypted['hash'])) {
+        if (!hash_equals($this->hash($encrypted['iv'].$encrypted['encrypted']), $encrypted['hash'])) {
 
-            throw new Exception("Güvenlik gereği şifre çözülmedi.", E_WARNING);
+            return false;
         }
 
-        return openssl_decrypt($encrypted['encrypted'], self::$algorithm, self::$secretKey, 0, $encrypted['iv']);
+        return openssl_decrypt($encrypted['encrypted'], $this->crypt_algo, $this->secretKey, 0, $encrypted['iv']);
     }
 
 
@@ -75,11 +77,10 @@ class Crypt
      * @return string
      * @throws Exception
      */
-    public static function encryptSerial($veriable)
+    public function encryptSerial($veriable):string
     {
-        self::init();
         $veriable = serialize($veriable);
-        return self::encrypt($veriable);
+        return $this->encrypt($veriable);
     }
 
 
@@ -88,10 +89,19 @@ class Crypt
      * @return mixed
      * @throws Exception
      */
-    public static function decryptSerial(string $encodedVeriable)
+    public function decryptSerial(string $encodedVeriable)
     {
-        self::init();
-        $veriable = self::decrypt($encodedVeriable);
+        $veriable = $this->decrypt($encodedVeriable);
         return unserialize($veriable);
+    }
+
+
+    /**
+     * @param $text
+     * @return string
+     */
+    private function hash($text):string
+    {
+        return hash_hmac($this->hash_algo, $text, $this->secretKey, false);
     }
 }

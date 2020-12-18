@@ -1,19 +1,18 @@
-<?php
+<?php 
 /**
- * @Created 18.05.2020 22:40:39
- * @Project simpleFramework
+ * @Created 09.12.2020 19:31:44
+ * @Project index.php
  * @Author Mehmet Emre Tülek <memretulek@gmail.com>
  * @Class DB
- * @package Core\Database
+ * @package Core\Facades
  */
 
 
-namespace Core\Database;
+namespace Core\Facades;
 
 
-use Core\Config\Config;
-use Core\Exceptions\Exceptions;
-use Exception;
+use Core\Database\Database;
+use Core\Database\QueryBuilder;
 use PDO;
 use PDOStatement;
 
@@ -21,6 +20,9 @@ use PDOStatement;
  * -------------------------------------------------------------------------------------------
  * @see Database::selectDB()
  * @method static Database selectDB(string $database)
+ * --------------------------------------------------------------------------------------------
+ * @see Database::table()
+ * @method static QueryBuilder table(string $table)
  * --------------------------------------------------------------------------------------------
  * @see Database::bindQuery()
  * @method static Database bindQuery($query, array $bindings = null, array $options = [])
@@ -65,77 +67,13 @@ use PDOStatement;
  * @method static PDOStatement stm()
  *--------------------------------------------------------------------------------------------
  */
-class DB {
-
-    private static ?Database $instance = null;
+class DB extends Facade {
 
     /**
-     * @param $name
-     * @param $arguments
-     * @return Database|null
+     * @return string
      */
-    public static function __callStatic($name, $arguments)
+    protected static function getFacadeAccessor(): string
     {
-        try {
-
-            if(self::$instance === null){
-                self::$instance = self::selectDriver(Config::get('app.sql_driver'));
-            }
-
-            return call_user_func_array([self::$instance, $name], $arguments);
-
-        }catch (Exception $e){
-            Exceptions::debug($e, 2);
-        }
-
-        return null;
+        return Database::class;
     }
-
-
-    /**
-     * config/database ayar dosyasında belirtilen driver ile veritabanı bağlantısı oluşturur.
-     *
-     * @param $driverName
-     * @return Database|null
-     */
-    public static function selectDriver($driverName)
-    {
-        $config = Config::get('database.' . $driverName);
-
-        try {
-            return self::$instance = new Database(
-                $config['driver'],
-                $config['dsn'],
-                $config['user'],
-                $config['password'],
-                $config['charset'],
-                $config['collaction']
-            );
-        }catch (Exception $e){
-            Exceptions::debug($e, 1);
-        }
-
-        return null;
-    }
-
-
-    /**
-     * @param string $table
-     * @param string $pk
-     * @return QueryBuilder
-     */
-    public static function QB(string $table = "", string $pk = "")
-    {
-        $query = new QueryBuilder();
-
-        if($table){
-            $query->table($table);
-        }
-        if($pk){
-            $query->pk($pk);
-        }
-
-        return $query;
-    }
-
 }

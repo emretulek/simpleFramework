@@ -32,7 +32,7 @@ class Tag
      * @param bool $closed
      * @return $this
      */
-    private function creat(string $tagName, bool $closed = true)
+    private function creat(string $tagName, bool $closed = true): Tag
     {
         $this->virtualTag['name'] = $tagName;
         $this->virtualTag['closed'] = $closed;
@@ -65,7 +65,7 @@ class Tag
      * Element taglari arasındaki içeriği html taglari ile birlikte oluşturur,
      * değer girilmemiş ise içeriği döndürür
      * @param string|null $html
-     * @return $this
+     * @return $this|string
      */
     public function html(string $html = null)
     {
@@ -100,7 +100,7 @@ class Tag
      * Element özellik ekleme ve değiştirme
      * @param $attributes
      * @param string|null $value
-     * @return $this
+     * @return $this|string|null
      */
     public function attr($attributes, string $value = null)
     {
@@ -162,7 +162,7 @@ class Tag
      * @param $attributes
      * @return $this
      */
-    public function removeAttr($attributes)
+    public function removeAttr($attributes):Tag
     {
         if (is_string($attributes)) {
 
@@ -185,7 +185,7 @@ class Tag
      * @param $html
      * @return $this
      */
-    public function append(string $html)
+    public function append(string $html): Tag
     {
         if ($this->virtualTag['closed']) {
             $this->virtualTag['content'] .= $html;
@@ -200,7 +200,7 @@ class Tag
      * @param $html
      * @return $this
      */
-    public function prepend(string $html)
+    public function prepend(string $html): Tag
     {
         if ($this->virtualTag['closed']) {
             $this->virtualTag['content'] = $html . $this->virtualTag['content'];
@@ -210,7 +210,10 @@ class Tag
     }
 
 
-    public function remove()
+    /**
+     * @return $this
+     */
+    public function remove(): Tag
     {
         $this->virtualTag = null;
         $this->tag = "";
@@ -221,7 +224,7 @@ class Tag
     /**
      * Özellikleri elemente ekler
      */
-    private function saveAttributes()
+    private function saveAttributes():void
     {
         $attributes = [];
         foreach ($this->virtualTag['attributes'] as $attr => $value) {
@@ -236,18 +239,17 @@ class Tag
     /**
      * kapatılması gereken elementler
      */
-    private function closedTagCreator()
+    private function closedTagCreator():void
     {
         $this->saveAttributes();
         $this->tag = '<' . $this->virtualTag['name'] . $this->attributes . '>' . $this->virtualTag['content'] . '</' . $this->virtualTag['name'] . '>'.PHP_EOL;
-
     }
 
 
     /**
      * kapatılmayan elementler
      */
-    private function singleTagCreator()
+    private function singleTagCreator():void
     {
         $this->saveAttributes();
         $this->tag = '<' . $this->virtualTag['name'] . $this->attributes . '/>'.PHP_EOL;
@@ -256,9 +258,9 @@ class Tag
 
     /**
      * Tag html çıktısı
-     * @return mixed
+     * @return string
      */
-    public function __toString()
+    public function __toString():string
     {
         if ($this->virtualTag) {
             if ($this->virtualTag['closed']) {

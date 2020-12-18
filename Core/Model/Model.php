@@ -9,6 +9,8 @@
 
 namespace Core\Model;
 
+use Core\App;
+use Core\Database\Database;
 use Core\Database\QueryBuilder;
 use Exception;
 
@@ -24,16 +26,16 @@ use Exception;
  * @method static QueryBuilder select(string $select = "*", $overwrite = false)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::insert()
- * @method static QueryBuilder insert(array $columns)
+ * @method static int|array insert(array $columns)
  * *  -------------------------------------------------------------------------
  * @see QueryBuilder::update()
- * @method static QueryBuilder update(array $columns)
+ * @method static int|array|bool update(array $columns)
  *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::delete()
- * @method static QueryBuilder delete($columns = null, $param = null)
+ * @method static int|array delete($columns = null, $param = null)
  * *   -------------------------------------------------------------------------
  * @see QueryBuilder::softDelete()
- * @method static QueryBuilder softDelete($columns = null, $param = null)
+ * @method static int|array|bool softDelete($columns = null, $param = null)
  *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::where()
  * @method static QueryBuilder where($column, $operant = null, $param = null)
@@ -44,8 +46,8 @@ use Exception;
  * @see QueryBuilder::isNull()
  * @method static QueryBuilder isNull(string $column, $andOR = 'AND')
  *  * -------------------------------------------------------------------------
- * @see QueryBuilder::isNOTNull()
- * @method static QueryBuilder isNOTNull(string $column, $andOR = 'AND')
+ * @see QueryBuilder::isNotNull()
+ * @method static QueryBuilder isNotNull(string $column, $andOR = 'AND')
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::limit()
  * @method static QueryBuilder limit(int $length, int $start = 0)
@@ -94,21 +96,28 @@ use Exception;
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::first()
  * @method static array|bool first(int $rowCount = 1)
+ * -----------------------------------------------------------------------------
+ * @see QueryBuilder::debug()
+ * @method static QueryBuilder debug()
  */
-
-class Model
+abstract class Model
 {
+    protected App $app;
     protected static array $instance;
     protected string $table = "";
     protected string $pk = "";
     protected bool $softDelete = false;
     protected array $errors = [];
 
+    public function __construct()
+    {
+        $this->app = App::getInstance();
+    }
 
     /**
      * @return mixed|static
      */
-    public static function static()
+    final public static function static(): self
     {
         return self::$instance[static::class] ?? self::$instance[static::class] = new static;
     }
@@ -119,32 +128,33 @@ class Model
      * @return mixed
      * @throws Exception
      */
-    public static function __callStatic($methods, $arguments)
+    final public static function __callStatic($methods, $arguments)
     {
-        if(method_exists(QueryBuilder::class, $methods)){
+        $database = self::static()->app->resolve(Database::class);
 
-            $queryBuilder = new QueryBuilder();
+        if (method_exists(QueryBuilder::class, $methods)) {
 
-            if(self::static()->table){
-                $queryBuilder->table(self::static()->table);
+            $queryBuilder = $database->table(self::static()->table);
+
+            if (self::static()->table) {
+
+                if (self::static()->pk) {
+                    $queryBuilder->pk(self::static()->pk);
+                }
             }
 
-            if(self::static()->pk){
-                $queryBuilder->pk(self::static()->pk);
-            }
+            if (self::static()->softDelete) {
 
-            if(self::static()->softDelete){
-
-                if($methods == 'delete') {
-                    return call_user_func_array([$queryBuilder, 'softDelete'], $arguments);
-                }else{
+                if ($methods == 'delete') {
+                    return $queryBuilder->softDelete(...$arguments);
+                } else {
                     $queryBuilder->isNull('deleted_at');
                 }
             }
 
-            return call_user_func_array([$queryBuilder, $methods], $arguments);
-        }else{
-            throw new Exception('Method '.$methods.' not found in '.QueryBuilder::class);
+            return $queryBuilder->$methods(...$arguments);
+        } else {
+            throw new Exception('Method ' . $methods . ' not found in ' . get_class($database));
         }
     }
 
@@ -152,31 +162,29 @@ class Model
     /**
      * @param $message
      * @param string $key
-     * @return false
+     * @return void
      */
-    protected function setErrors($message, $key = '')
+    final protected function setError($message, $key = '')
     {
-        if($key){
+        if ($key) {
             $this->errors[$key] = $message;
-        }else{
+        } else {
             $this->errors[] = $message;
         }
-
-        return false;
     }
 
     /**
      * @return array
      */
-    public function getErrors()
+    final public function getErrors(): array
     {
         return $this->errors;
     }
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getLastError()
+    final public function getLastError(): string
     {
         return end($this->errors);
     }

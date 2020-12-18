@@ -3,69 +3,135 @@
 namespace Core\Auth;
 
 
+use Core\App;
+use Core\Cookie\Cookie;
 use Core\Crypt\Hash;
-use Core\Database\DB;
+use Core\Database\Database;
+use Core\Database\QueryBuilder;
+use Core\Database\SqlErrorException;
 use Core\Http\Request;
 use Core\Session\Session;
-use Core\Cookie\Cookie;
+
 
 /**
- * Class AuthServices
+ * Class AuthServiceProvider
  *
  * Güvenilir ve hızlı kimlik doğrulama araçları sunar.
  */
 class Auth
 {
+    protected App $app;
+
+    protected string $table = 'users';
+
+    protected string $tokenName = 'user_token';
+
+    protected ?object $user = null;
+
     /**
-     * Bilgileri girilen kullanıcı için oturum verilerini ayarlar.
-     * @param int $id
-     * @param string $username
-     * @param string $email
-     * @param string $password
-     * @param int $group
-     * @param array $userInfo
-     * @param int $remember
-     * @return int
+     * login olacak kulanıcılarda aranan temel kriterler
+     * @var array
      */
-    public static function login(int $id, string $username, string $email, string $password, int $group, $userInfo = [], $remember = 0)
+    public array $userWhere = [
+        'deleted_at' => null,
+        'status' => 1
+    ];
+
+    protected array $noStoreSession = [
+        'userID',
+        'username',
+        'email',
+        'group',
+        'password'
+    ];
+
+
+    /**
+     * Auth constructor.
+     * @param App $app
+     */
+    public function __construct(App $app)
     {
-        Session::set('AUTH.LOGIN', true);
-        self::setInfo('id', $id);
-        self::setInfo('username', $username);
-        self::setInfo('email', $email);
-        self::setInfo('group', $group);
-        self::setInfo('permissions', self::userPermissions($group));
-        self::setInfo('token', self::creatToken($id, $password));
-        self::setInfo('ip', Request::ip());
+        $this->app = $app;
 
-        if ($userInfo) {
-            foreach ($userInfo as $key => $value) {
-                self::setInfo($key, $value);
-            }
+        if ($this->check()) {
+            $this->user = $this->table()->select()->where('userID', $this->userID())->getRow();
+            $this->generateUserSessions();
         }
-
-        if ($remember) {
-            self::creatRememberCookie($id, $username, $password, $remember);
-        }
-
-        return $id;
     }
 
     /**
-     * Cookie kullanarak login methodunun üzerinden otomatik giriş yapar.
-     * @return bool|int
+     * @param string $password
+     * @param string $userName
+     * @param int $remember
+     * @param array $where
+     * @return bool
      */
-    public static function rememberMe()
+    public function loginWithUserName(string $password, string $userName, $remember = 0, array $where = []): bool
     {
-        if (Cookie::get('username') && Cookie::get('user_token') && Session::get('AUTH.LOGIN') == false) {
+        $userInfo = ['username' => $userName];
+        $userInfo = array_merge($userInfo, $where);
 
-            if($user = DB::getRow("Select * from users where userName = ? and status = ?", [Cookie::get('username'), 1])){
+        return $this->login($password, $userInfo, $remember);
+    }
 
-                if(Cookie::get('user_token') == self::creatToken($user->userID, $user->userPassword)) {
+    /**
+     * @param string $password
+     * @param string $email
+     * @param int $remember
+     * @param array $where
+     * @return bool
+     */
+    public function loginWithEmail(string $password, string $email, $remember = 0, array $where = []): bool
+    {
+        $userInfo = ['email' => $email];
+        $userInfo = array_merge($userInfo, $where);
 
-                    return self::login($user->userID, $user->userName, $user->userEmail, $user->userPassword, $user->userGroup);
-                }
+        return $this->login($password, $userInfo, $remember);
+    }
+
+    /**
+     * @param string $password
+     * @param string $userNameOrEmail
+     * @param int $remember
+     * @param array $where
+     * @return bool
+     */
+    public function loginWithEmailOrUserName(string $password, string $userNameOrEmail, $remember = 0, array $where = []): bool
+    {
+        if (filter_var($userNameOrEmail, FILTER_VALIDATE_EMAIL)) {
+            return $this->loginWithEmail($password, $userNameOrEmail, $remember, $where);
+        } else {
+            return $this->loginWithUserName($password, $userNameOrEmail, $remember, $where);
+        }
+    }
+
+
+    /**
+     * @param $password
+     * @param $userInfo
+     * @param int $remember
+     * @return bool
+     * @throws SqlErrorException
+     */
+    public function login($password = null, $userInfo = [], $remember = 0): bool
+    {
+        if ($password) {
+            $this->setUserForPassword($password, $userInfo);
+        } elseif (isset($userInfo['rememberme'])) {
+            $this->setUserForToken($userInfo);
+        }
+
+        if (isset($this->user)) {
+
+            $this->generateUserSessions();
+
+            if ($remember) {
+                $this->updateRememberToken($this->creatToken());
+                $this->creatRememberCookie($this->creatToken(), $remember);
             }
+
+            return true;
         }
 
         return false;
@@ -73,87 +139,184 @@ class Auth
 
 
     /**
-     * AuthServices oturumunun başlatılıp başlatılmadığını kontrol eder.
+     * kullanıcı sessionb ilgilerini oluşturur
+     */
+    protected function generateUserSessions()
+    {
+        $this->authSession('LOGIN', true);
+        $this->authSessionUser('id', $this->user->userID);
+        $this->authSessionUser('username', $this->user->username);
+        $this->authSessionUser('email', $this->user->email);
+        $this->authSessionUser('roleID', $this->user->roleID);
+        $this->authSessionUser('permissions', $this->userPermissions());
+        $this->authSessionUser($this->tokenName, $this->creatToken());
+        $this->authSessionUser('ip', $this->app->resolve(Request::class)->ip());
+
+        foreach ($this->user as $key => $value) {
+            if (!in_array($key, $this->noStoreSession)) {
+                $this->authSessionUser($key, $value);
+            }
+        }
+    }
+
+
+    /**
+     * Password ile login olacak kullanıcı bilgileri
+     * @param string $password
+     * @param array $userInfo
+     * @return bool
+     * @throws SqlErrorException
+     */
+    protected function setUserForPassword(string $password, array $userInfo): bool
+    {
+        $userInfo = array_merge($this->userWhere, $userInfo);
+
+        $query = $this->table()->select();
+
+        //kullanıcı varsa
+        if ($user = $query->where($userInfo)->getRow()) {
+            //şifre kontrolü
+            if ($rehash = $this->app->resolve(Hash::class)->passwordCheck($password, $user->password)) {
+                //rehash gerekliyse şifre update edilir
+                if ($rehash != $user->password) {
+                    $this->table()->where('userID', $user->userID)->update(['password', $rehash]);
+                }
+
+                $this->user = $user;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Token ile login olacak kullanıcı bilgileri
+     * @param array $userInfo
+     * @return bool
+     * @throws SqlErrorException
+     */
+    protected function setUserForToken(array $userInfo)
+    {
+        $userInfo = array_merge($this->userWhere, $userInfo);
+
+        $query = $this->table()->select();
+
+        if ($user = $query->where($userInfo)->getRow()) {
+            $this->user = $user;
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /**
+     * @param string $token
+     * @throws SqlErrorException
+     */
+    protected function updateRememberToken(string $token)
+    {
+        $this->table()
+            ->where('userID', $this->user->userID)
+            ->update(['rememberme' => $token]);
+    }
+
+
+    /**
+     * @return array|false|mixed|object
+     * @throws SqlErrorException
+     */
+    public function rememberMe()
+    {
+        $usertoken = $this->app->resolve(Cookie::class)->get($this->tokenName);
+
+        if ($usertoken && $this->authSession('LOGIN') == false) {
+
+            return $this->login(null, ['rememberme' => $usertoken]);
+        }
+
+        return false;
+    }
+
+
+    /**
+     * Oturumunun başlatılıp başlatılmadığını kontrol eder.
      * @return bool
      */
-    public static function check()
+    public function check(): bool
     {
-        ///* Session hijacking  security */
-        if (Cookie::get('username') && Cookie::get('user_token') && Auth::info('token') != Cookie::get('user_token')) {
-            self::logout();
+        /* Session hijacking  security */
+        if ($this->app->resolve(Cookie::class)->get($this->tokenName) &&
+            $this->info($this->tokenName) != $this->app->resolve(Cookie::class)->get($this->tokenName)) {
+
+            $this->logout();
             return false;
         }
 
-        return Session::get('AUTH.LOGIN');
+        return (bool)$this->authSession('LOGIN');
     }
 
     /**
-     * $_SESSSION['AUTH']['USER'] değişkenine kullanıcı bilgilerini depolar.
-     *
-     * @param $key
-     * @param $value
-     * @return bool
+     * @return object|null
      */
-    public static function setInfo($key, $value)
+    public function user(): ?object
     {
-        return Session::set('AUTH.USER.' . $key, $value);
+        return $this->user;
     }
-
 
     /**
      * $_SESSSION['AUTH']['USER'] değişkeninden kullanıcı bilgilerine erişir.
-     *
      * @param null $key
-     * @return bool|mixed
+     * @return mixed
      */
-    public static function info($key = null)
+    public function info($key = null)
     {
         if ($key === null) {
-            return Session::get('AUTH.USER');
+            return $this->authSession('USER');
         }
-        return Session::get('AUTH.USER.' . $key);
+        return $this->authSessionUser($key);
     }
 
-
-    /**
-     * Sessiondan username değerini döndürür
-     * @return bool|mixed
-     */
-    public static function userName()
-    {
-        return Session::get('AUTH.USER.username');
-    }
 
     /**
      * Sessiondan id değerini döndürür.
      * @return bool|mixed
      */
-    public static function userID()
+    public function userID(): int
     {
-        return Session::get('AUTH.USER.id');
+        return $this->authSessionUser('id');
+    }
+
+    /**
+     * @return bool|mixed
+     */
+    public function role()
+    {
+        return $this->authSessionUser('roleID');
     }
 
     /**
      * Sessiondan yetki seviyesini döndürür.
-     * @return bool|mixed Sessiona ulaşamazsa false döndürür.
+     * @return null|string Sessiona ulaşamazsa false döndürür.
      */
-    public static function userGroupName()
+    public function roleName()
     {
-        return Session::get('AUTH.USER.permissions.groupName');
+        return $this->authSessionUser('permissions.role_name');
     }
 
 
     /**
      * $gruopName group ismi veya group isimlerinden oluşan bir dizi olabilir.
      * KUllanıcı bu gruoplardan birine aitse true aksi halde false döner.
-     * @param string|array $groupName
+     * @param string|array $roleName
      * @return bool
      */
-    public static function guard($groupName)
+    public function guard($roleName): bool
     {
-        $groupName = is_array($groupName) ? $groupName : [$groupName];
+        $roleName = is_array($roleName) ? $roleName : [$roleName];
 
-        if (self::check() && in_array(self::userGroupName(), $groupName)) {
+        if ($this->check() && in_array($this->roleName(), $roleName)) {
             return true;
         }
 
@@ -167,13 +330,13 @@ class Auth
      * @param string|array $permissions
      * @return bool
      */
-    public static function permission($permissions)
+    public function permission($permissions): bool
     {
-        if(self::check()) {
+        if ($this->check()) {
             $permissions = is_array($permissions) ? $permissions : [$permissions];
-            $perm = array_intersect($permissions, self::info('permissions.permissions'));
+            $perm = array_intersect($permissions, $this->info('permissions.permissions'));
 
-            if($perm == $permissions){
+            if ($perm == $permissions) {
                 return true;
             }
         }
@@ -188,64 +351,104 @@ class Auth
      * {true girilirse} kullanıcıya ait tüm bilgiler silinir.
      * @param bool $clear_all
      */
-    public static function logout(bool $clear_all = false)
+    public function logout(bool $clear_all = false)
     {
-        Session::remove('AUTH');
-        Cookie::remove('username');
-        Cookie::remove('user_token');
+        $this->app->resolve(Session::class)->remove('AUTH');
+        $this->app->resolve(Cookie::class)->remove($this->tokenName);
 
         if ($clear_all) {
-            Session::destroy();
-            Cookie::destroy();
+            $this->app->resolve(Session::class)->destroy();
+            $this->app->resolve(Cookie::class)->destroy();
         }
     }
 
 
     /**
      * Beni hatırla seçeneği için cookie oluşturur.
-     * @param $userID
-     * @param $userName
-     * @param $userPassword
-     * @param $lifetime
+     * @param string $token
+     * @param int|string $lifetime strtottime veya int saniye
      */
-    private static function creatRememberCookie(int $userID, string $userName, string $userPassword, $lifetime)
+    protected function creatRememberCookie(string $token, $lifetime)
     {
-        Cookie::set('user_token', self::creatToken($userID, $userPassword), $lifetime);
-        Cookie::set('username', $userName, $lifetime);
+        $this->app->resolve(Cookie::class)->set($this->tokenName, $token, $lifetime);
     }
 
 
     /**
      * Cookie doğrulaması useragent ile token oluşturur.
-     * @param $userID
-     * @param $userPassword
      * @return string
      */
-    private static function creatToken(int $userID, string $userPassword)
+    protected function creatToken(): string
     {
-        return Hash::makeWithKey($userID . $userPassword . Request::userAgent());
+        return md5($this->user->userID . $this->user->password . $this->app->resolve(Request::class)->userAgent());
     }
 
 
     /**
      * Gruba ait izin ve bilgileri döndürür
-     * @param int $groupID
      * @return array [groupID, groupName, permissions]
      */
-    private static function userPermissions(int $groupID)
+    protected function userPermissions()
     {
-        $permissions['groupID'] = $groupID;
-        $permissions['groupName'] = DB::getVar("Select groupName from user_groups where groupID = ?", [$groupID]);
+        $permissions['roleID'] = $this->user->roleID;
+        $permissions['role_name'] = $this->getRoleName();
         $permissions['permissions'] = [];
 
-        $groupPerms = DB::get("Select up.permID, up.permName from user_group_perm ugp 
-                JOIN user_permissions up ON ugp.permID = up.permID WHERE ugp.groupID = ?", [$groupID]);
+        $groupPerms = $this->app->resolve(Database::class)->table('role_permissions rp')
+            ->join('permissions p', 'rp.permissionID = p.permissionID')
+            ->select('p.permissionID, p.perm_name')->where('rp.roleID', $this->user->roleID)->get();
 
-        foreach ($groupPerms as $groupPerm){
-            $permissions['permissions'][$groupPerm->permID] = $groupPerm->permName;
+        foreach ($groupPerms as $groupPerm) {
+            $permissions['permissions'][$groupPerm->permissionID] = $groupPerm->name;
         }
 
         return $permissions;
+    }
+
+
+    /**
+     * @return mixed
+     * @throws SqlErrorException
+     */
+    protected function getRoleName()
+    {
+        return $this->app->resolve(Database::class)->table("user_roles")
+            ->select('role_name')
+            ->where('roleID', $this->user->roleID)
+            ->getVar();
+    }
+
+
+    /**
+     * @param $key
+     * @param null $value
+     * @return bool|mixed
+     */
+    protected function authSessionUser($key, $value = null)
+    {
+        return $this->authSession('USER.' . $key, $value);
+    }
+
+    /**
+     * @param $key
+     * @param null $value
+     * @return bool|mixed
+     */
+    protected function authSession($key, $value = null)
+    {
+        if ($value === null) {
+            return $this->app->resolve(Session::class)->get('AUTH.' . $key);
+        } else {
+            return $this->app->resolve(Session::class)->set('AUTH.' . $key, $value);
+        }
+    }
+
+    /**
+     * @return QueryBuilder
+     */
+    protected function table(): QueryBuilder
+    {
+        return $this->app->resolve(Database::class)->table($this->table);
     }
 }
 

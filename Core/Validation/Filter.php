@@ -2,8 +2,7 @@
 
 namespace Core\Validation;
 
-use Core\Crypt\Hash;
-use Core\Language\Language;
+use Core\Facades\Hash;
 
 /**
  * Class Filter
@@ -17,6 +16,8 @@ class Filter
     private ?string $key = NULL;
     private array $error = [];
 
+
+    private static array $langMessages = [];
     private array $messages = [
         'no_index' => 'Zorunlu alan.',
         'required' => 'Zorunlu alan.',
@@ -49,20 +50,27 @@ class Filter
     /**
      * Filter constructor.
      * @param array $params elemanları filtrelenecek dizi
-     * @param array $messages hataların döndürüleceği dil dizisi
      */
-    public function __construct(array $params, array $messages = [])
+    public function __construct(array $params)
     {
         $this->params = $params;
 
-        if($messages) {
-            $this->messages = $messages;
-        }elseif($messages = Language::translate('validation')){
-            $this->messages = $messages;
-        }else{
-            $this->messages;
+        if(static::$langMessages) {
+            $this->messages = static::$langMessages;
         }
     }
+
+
+    /**
+     * Ön tanımlı hata mesajlarını yenisi ile değiştirir,
+     * farklı diller için farklı mesaj dizileri
+     * @param array $messages
+     */
+    public static function setMessages(array $messages)
+    {
+        static::$langMessages = $messages;
+    }
+
 
     /**
      * Filtrelenecek dizi elemanını belirler
@@ -71,7 +79,7 @@ class Filter
      * @param bool $required
      * @return $this
      */
-    public function input($key, $required = false)
+    public function input($key, $required = false):self
     {
         $this->key = $key;
 

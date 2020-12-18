@@ -3,8 +3,6 @@
 
 namespace Core\Exceptions;
 
-use Core\Config\Config;
-use Core\Http\Request;
 use Core\Http\Response;
 use Exception;
 use ErrorException;
@@ -38,10 +36,15 @@ class ExceptionHandler
     ];
 
 
+    public function __construct()
+    {
+        $this->bootstrap();
+    }
+
     /**
      * ExceptionHandler constructor.
      */
-    public function bootstrap()
+    protected function bootstrap()
     {
         error_reporting(-1);
 
@@ -52,6 +55,7 @@ class ExceptionHandler
         register_shutdown_function([$this, 'handleShutdown']);
 
         ini_set('display_errors', 'Off');
+
     }
 
     /**
@@ -62,9 +66,9 @@ class ExceptionHandler
      */
     public function handleError($code, $message, $file = '', $line = 0)
     {
-        try{
+        try {
             throw new ErrorException($message, $code, 1, $file, $line);
-        }catch (Exception $e){
+        } catch (Exception $e) {
             $this->handleException($e);
         }
     }
@@ -85,9 +89,9 @@ class ExceptionHandler
     public function handleShutdown()
     {
         if (!is_null($error = error_get_last()) && array_key_exists($error['type'], self::ERROR)) {
-            try{
+            try {
                 throw new ErrorException($error['message'], $error['type'], 1, $error['file'], $error['line']);
-            }catch (Exception $e){
+            } catch (Exception $e) {
                 $this->handleException($e);
             }
         }
@@ -97,11 +101,11 @@ class ExceptionHandler
      * @param $code
      * @return int|mixed
      */
-    public function codeToString($code)
+    protected function codeToString($code)
     {
         $codes = self::ERROR + self::WARNING + self::NOTICE;
 
-        if(array_key_exists($code, $codes)){
+        if (array_key_exists($code, $codes)) {
             return $codes[$code];
         }
 
@@ -111,67 +115,80 @@ class ExceptionHandler
     /**
      * @param $message
      * @param $code
-     * @param null $file
-     * @param null $line
+     * @param null $location
+     * @param null $exceptionType
      */
-    public function print($message, $code, $file = null, $line = null)
+    protected function print($message, $code, $location = null, $exceptionType = null)
     {
-        echo '<div style="margin: 5px 15px; border: solid 1px #cecece">' . PHP_EOL;
-        echo '<h3 style="background-color: #cecece; padding: 10px; margin: 0">' . $this->codeToString($code) . '</h3>' . PHP_EOL;
-        echo '<div style="background-color: #eeeeee; color:#a94442; padding: 10px;">';
+        echo '<style>';
+        echo 'body{background-color:#292929}
+                .error-container{margin: 15px;background-color: #000000;color: #eee;padding: 5px;font-family: Arial, sans-serif;}
+                .error-title{margin: 0;padding: 10px;background-color: #1f1f1f;color: #bb86fc;}.error-type {float: right;}
+                .error-message {padding: 15px;}
+                .error-footer {background-color: #352c2d;padding: 10px;color: #ff7597;}';
+        echo '</style>';
+        echo '<div class="error-container">' . PHP_EOL;
+        echo '<h3 class="error-title">' . PHP_EOL;
+        echo '<small class="error-type">' . $exceptionType . '</small>' . $this->codeToString($code) . PHP_EOL;
+        echo '</h3>' . PHP_EOL;
+        echo '<div class="error-message">';
         echo '<pre>' . $message . '</pre>' . PHP_EOL;
         echo '</div>' . PHP_EOL;
-        echo '<div style="background-color: #cecece; padding: 5px">' . PHP_EOL;
-        echo '<b>File:</b> ' . $file . '&nbsp;&nbsp;' . PHP_EOL;
-        echo '<b>Line:</b> ' . $line . PHP_EOL;
-        echo '</div>';
+        foreach ($location as $value):
+            echo '<div class="error-footer">' . PHP_EOL;
+            echo '<b>File:</b> ' . $value['file'] . '&nbsp;&nbsp;' . PHP_EOL;
+            echo '<b>Line:</b> ' . $value['line'] . PHP_EOL;
+            echo '</div>';
+        endforeach;
         echo '</div>';
     }
 
 
     /**
      * @param Throwable $e
-     * @param int $backtrace hata dosya ve satırnı değil çağıran fonksiyona ait dosya ve satırı döndürür girilen sayı ne kadar geri gidileceğini belirtir.
      */
-    public function debug(Throwable $e, int $backtrace = 0)
+    public function debug(Throwable $e)
     {
-        $console_info = ['code'=> $this->codeToString($e->getCode()),'message' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()];
+        $e = $e->getPrevious() ?? $e;
+        $exceptionType = get_class($e);
         $code = $e->getCode();
         $message = $e->getMessage();
-        $file = $e->getFile();
-        $line = $e->getLine();
-        $trace = $backtrace ? $e->getTrace()[$backtrace] ?? null : null;
+        $location = $this->getLocation($e);
+        $file = $location[0]['file'];
+        $line = $location[0]['line'];
 
-        switch (Config::get('app.debug')){
+        $console_info = ['code' => $code, 'message' => $message, 'file' => $file, 'line' => $line, 'exception' => $exceptionType];
+
+        switch (conf('app.debug')) {
             case 0:
                 // kullanıcılara önemli hatalar hakkında bilgi verme.
-                if(array_key_exists($code, self::ERROR)) {
+                if (array_key_exists($code, self::ERROR)) {
                     ob_end_clean();
                     ob_start();
-                    $this->print("Something went wrong. You can get detailed information in debug mode.", $code, $file, $line);
+                    $this->print("Something went wrong. You can get detailed information in debug mode.", $code, $location, $exceptionType);
                     $content = ob_get_clean();
                     echo new Response($content, 500);
                     exit;
                 }
-                if(!array_key_exists($code, self::NOTICE)) {
-                    $trace ? $this->writeLog($message, $code, $trace['file'], $trace['line']):$this->writeLog($message, $code, $file, $line);
+                if (!array_key_exists($code, self::NOTICE)) {
+                    $this->writeLog($message, $code, $file, $line);
                 }
                 break;
             case 1:
-                if(!array_key_exists($code, self::NOTICE)) {
+                if (!array_key_exists($code, self::NOTICE)) {
                     console_log($console_info);
-                    $trace ? $this->writeLog($message, $code, $trace['file'], $trace['line']):$this->writeLog($message, $code, $file, $line);
+                    $this->writeLog($message, $code, $file, $line);
                 }
                 break;
             case 2:
                 console_log($console_info);
-                $trace ? $this->print($message, $code, $trace['file'], $trace['line']):$this->print($message, $code, $file, $line);
-                $trace ? $this->writeLog($message, $code, $trace['file'], $trace['line']):$this->writeLog($message, $code, $file, $line);
+                $this->print($message, $code, $location, $exceptionType);
+                $this->writeLog($message, $code, $file, $line);
                 break;
             case 3:
                 console_log($console_info);
-                $this->print($message, $code, $file, $line);
-                dump($e->getTrace());
+                $this->print($message, $code, $location, $exceptionType);
+                dump($e);
                 $this->writeLog($message, $code, $file, $line);
                 break;
             default:
@@ -188,8 +205,37 @@ class ExceptionHandler
      */
     public function writeLog($message, $code, $file = null, $line = null)
     {
+        $error_message = "[{$this->codeToString($code)}]\t[" . date("H:i:s d.m.Y") . "]\t{$message}\t{$file}\t{$line}\t" .
+            $_SERVER['REMOTE_ADDR'] . "\t" . $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'] . PHP_EOL;
+        error_log($error_message, 3, ROOT . '/' . conf('path.error_log') . '/' . $this->codeToString($code) . '.log');
+    }
 
-        $error_message = "[{$this->codeToString($code)}]\t[" . date("H:i:s d.m.Y") . "]\t{$message}\t{$file}\t{$line}\t" . Request::forwardedIp() . PHP_EOL;
-        error_log($error_message, 3, ROOT . Config::get('path.error_log') . '/' . $this->codeToString($code).'.log');
+
+    /**
+     * @param Throwable $throwable
+     * @return array
+     */
+    private function getLocation(Throwable $throwable): array
+    {
+        $trace = $throwable->getTrace();
+        $visibleTrace = [];
+
+        if ($trace) {
+            foreach ($trace as $item) {
+                if(isset($item['file'], $item['line'])) {
+                    $visibleTrace[] = [
+                        'file' => $item['file'],
+                        'line' => $item['line']
+                    ];
+                }
+            }
+
+            return $visibleTrace;
+        }
+
+        return $visibleTrace[] = [
+            'file' => $throwable->getFile(),
+            'line' => $throwable->getLine()
+        ];
     }
 }

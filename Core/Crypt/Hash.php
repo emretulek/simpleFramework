@@ -4,37 +4,39 @@
 namespace Core\Crypt;
 
 
-use Core\Config\Config;
-
 class Hash
 {
 
-    private static string $secretKey;
-    private static string $algorithm;
-    private static bool $password_hash = true;
-
+    private string $secretKey;
+    private string $hash_algo;
+    private $password_hash;
 
     /**
-     * hash sınıfı için gerekli ayarları yükler
+     * Hash constructor.
+     * @param string $secretKey
+     * @param string $hash_algo
+     * @param $password_hash
      */
-    private static function init()
+    public function __construct(string $secretKey, string $hash_algo, $password_hash)
     {
-        self::$secretKey = Config::get('app.app_key');
-        self::$algorithm = Config::get('app.hash_algo');
-        self::$password_hash = Config::get('app.password_hash');
+        $this->secretKey = $secretKey;
+        $this->hash_algo = $hash_algo;
+        $this->password_hash = $password_hash;
     }
 
 
     /**
-     * api_key kullanarak hash üretir
-     *
      * @param string $text
+     * @param null $key
+     * @param null $algo
      * @return string
      */
-    public static function makeWithKey(string $text)
+    public function makeWithKey(string $text, $key = null, $algo = null):string
     {
-        self::init();
-        return hash_hmac(self::$algorithm, $text, self::$secretKey, false);
+        $key = $key ?? $this->secretKey;
+        $algo = $algo ?? $this->hash_algo;
+
+        return hash_hmac($algo, $text, $key, false);
     }
 
 
@@ -42,12 +44,14 @@ class Hash
      * hash üretir
      *
      * @param string $text
+     * @param null $algo
      * @return string
      */
-    public static function make(string $text)
+    public function make(string $text, $algo = null):string
     {
-        self::init();
-        return hash(self::$algorithm, $text, false);
+        $algo = $algo ?? $this->hash_algo;
+
+        return hash($algo, $text, false);
     }
 
 
@@ -57,32 +61,38 @@ class Hash
      * @param string $password
      * @return false|string|null
      */
-    public static function password(string $password)
+    public function password(string $password)
     {
-        self::init();
-        if (self::$password_hash) {
+        if ($this->password_hash === true) {
             return password_hash($password, PASSWORD_BCRYPT);
-        } else {
-            return hash(self::$algorithm, $password, false);
         }
+
+        return hash($this->hash_algo, $password, false);
     }
 
 
     /**
-     * şifre ile hash karşılaştırılır
+     * şifre ile hash karşılaştırılır, doğru ise password hash değeri yanlış ise false döner,
+     * ayrıca yeniden hash alınması gerekiyorsa hash değeri yenilenir.
      *
      * @param string $password
      * @param string $hashedPassword
-     * @return bool
+     * use_algo false ise php nin password_hash fonksiyonu kullanılır
+     * @return string|false
      */
-    public static function passwordCheck(string $password, string $hashedPassword)
+    public function passwordCheck(string $password, string $hashedPassword)
     {
-        self::init();
-        if (self::$password_hash) {
-            return password_verify($password, $hashedPassword);
-        } else {
-            return hash(self::$algorithm, $password, false) == $hashedPassword;
+        if ($this->password_hash === true) {
+            if ($hashedPassword = password_verify($password, $hashedPassword)) {
+                return $this->passwordRehash($password, $hashedPassword);
+            }
+        }else {
+            if(hash($this->password_hash, $password, false) == $hashedPassword){
+                return $hashedPassword;
+            }
         }
+
+        return false;
     }
 
 
@@ -91,16 +101,14 @@ class Hash
      *
      * @param $password
      * @param $hashedPassword
-     * @return bool|false|string|null
+     * @return string
      */
-    public static function passwordRehash(string $password, string $hashedPassword)
+    public function passwordRehash(string $password, string $hashedPassword):string
     {
-        if (self::$password_hash && self::passwordCheck($password, $hashedPassword)) {
-            if (password_needs_rehash($hashedPassword, PASSWORD_BCRYPT)) {
-                return password_hash($password, PASSWORD_BCRYPT);
-            }
+        if (password_needs_rehash($hashedPassword, PASSWORD_BCRYPT)) {
+            return password_hash($password, PASSWORD_BCRYPT);
         }
 
-        return false;
+        return $hashedPassword;
     }
 }

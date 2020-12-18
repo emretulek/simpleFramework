@@ -11,8 +11,8 @@
 namespace Core\Model;
 
 
-class UserPermissions extends Model{
+class Permissions extends Model{
 
-    protected string $table = 'user_permissions';
-    protected string $pk = 'permID';
+    protected string $table = 'permissions';
+    protected string $pk = 'permissionID';
 }

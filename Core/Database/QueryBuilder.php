@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * @Created 19.10.2020 20:00:33
  * @Project index.php
@@ -10,18 +10,20 @@
 namespace Core\Database;
 
 use Exception;
-use Exceptions;
 use InvalidArgumentException;
 use PDO;
 
-class QueryBuilder {
+class QueryBuilder
+{
 
+    protected Database $database;
     protected array $params = [];
     protected string $table = '';
     protected string $select = '';
     protected string $insert = '';
     protected string $update = '';
     protected bool $delete = false;
+    protected bool $force = false;
     protected string $where = '';
     protected string $group = '';
     protected string $having = '';
@@ -29,23 +31,26 @@ class QueryBuilder {
     protected string $limit = '';
     protected string $join = '';
     protected string $pk = '';
+    protected int $paramCount = 0;
+    protected bool $debug = false;
 
-    private string $queryType = '';
-    private int $paramCount = 0;
 
-
-    public function __construct()
+    /**
+     * QueryBuilder constructor.
+     * @param Database $database
+     */
+    public function __construct(Database $database)
     {
-        Database::$backtrace = 4;
+        $this->database = $database;
     }
 
     /**
      * @param string $primaryColumn
      * @return $this
      */
-    public function pk(string $primaryColumn)
+    public function pk(string $primaryColumn): self
     {
-        $this->pk = $primaryColumn;
+        $this->pk = $this->quoteColumn($primaryColumn);
         return $this;
     }
 
@@ -54,11 +59,13 @@ class QueryBuilder {
      * @param false $overwrite
      * @return $this
      */
-    public function table(string $table, $overwrite = false)
+    public function table(string $table, $overwrite = false): self
     {
-        if($overwrite){
+        $table = $this->quoteColumn($table);
+
+        if ($overwrite) {
             $this->table = $table;
-        }else {
+        } else {
             $this->table .= $this->table ? ', ' . $table : $table;
         }
 
@@ -70,11 +77,13 @@ class QueryBuilder {
      * @param false $overwrite
      * @return $this
      */
-    public function select(string $select = "*", $overwrite = false)
+    public function select(string $select = "*", $overwrite = false): self
     {
-        if($overwrite) {
+        $select = $this->quoteColumn($select);
+
+        if ($overwrite) {
             $this->select = $select;
-        }else{
+        } else {
             $this->select .= $this->select ? ', ' . $select : $select;
         }
 
@@ -84,86 +93,94 @@ class QueryBuilder {
 
     /**
      * @param array $columns
-     * @return $this
+     * @return array|bool|string
+     * @throws SqlErrorException
      */
     public function insert(array $columns)
     {
         $query = [];
 
-        foreach ($columns as $key => $value){
+        foreach ($columns as $key => $value) {
 
             $query[] = $this->comparison($key, '=', $value);
         }
 
-        $this->insert .= $this->insert ? ', '.implode(", ", $query) : implode(", ",$query);
+        $this->insert .= $this->insert ? ', ' . implode(", ", $query) : implode(", ", $query);
 
-        return $this;
+        if ($this->debug) {
+            return [$this->buildQuery(), $this->bindingParams()];
+        }
+
+        return $this->database->insert($this->buildQuery(), $this->bindingParams());
     }
 
     /**
      * @param array $columns
-     * @return $this
+     * @return array|bool|int
+     * @throws SqlErrorException
      */
-    public function update(array $columns)
+    public function update(array $columns, $force = false)
     {
+        $this->force = $force;
+
         $query = [];
 
-        foreach ($columns as $key => $value){
+        foreach ($columns as $key => $value) {
 
             $query[] = $this->comparison($key, '=', $value);
         }
 
-        $this->update .= $this->update ? ', '.implode(", ", $query) : implode(", ",$query);
+        $this->update .= $this->update ? ', ' . implode(", ", $query) : implode(", ", $query);
 
-        return $this;
+        if ($this->debug) {
+            return [$this->buildQuery(), $this->bindingParams()];
+        }
+
+        return $this->database->update($this->buildQuery(), $this->bindingParams());
     }
 
 
     /**
-     * @param null $columns
-     * @param null $param
-     * @return $this
-     * @throws Exception
+     * @param array|int $columns
+     * @param bool $force
+     * @return array|bool|int
+     * @throws SqlErrorException
      */
-    public function delete($columns = null, $param = null)
+    public function delete($columns, bool $force = false)
     {
         $this->delete = true;
+        $this->force = $force;
 
-        if($columns !== null && $param !== null) {
-            $this->where($columns, $param);
-        }elseif (is_array($columns) && $param === null){
+        if (is_array($columns)) {
             $this->where($columns);
-        }elseif(is_integer($columns)){
-
-            if(!$this->pk){
-                throw new Exception(__FUNCTION__." method cannot be used because primary key is not specified.");
-            }else{
-                $this->where($this->pk, (int) $columns);
-            }
+        }elseif($this->pk){
+            $this->where($this->pk, $columns);
+        }else{
+            throw new InvalidArgumentException("\$column [column_name => value] ilişkili bir dizi olmalı.");
         }
 
-        return $this;
+        if ($this->debug) {
+            return [$this->buildQuery(), $this->bindingParams()];
+        }
+
+        return $this->database->delete($this->buildQuery(), $this->bindingParams());
     }
 
 
     /**
-     * @param null $columns
-     * @param null $param
-     * @return $this
+     * @param array|int $columns
+     * @return bool|int
+     * @throws SqlErrorException
      */
-    public function softDelete($columns = null, $param = null)
+    public function softDelete($columns)
     {
-        if($param !== null) {
-            $this->update(['deleted_at' => '{{Now()}}'])->where($columns, $param);
-        }elseif (is_array($columns)){
-            $this->update(['deleted_at' => '{{Now()}}'])->where($columns);
-        }elseif (is_integer($columns) && $this->pk){
-            $this->update(['deleted_at' => '{{Now()}}'])->where($this->pk, $columns);
+        if (is_array($columns)) {
+            return $this->where($columns)->update(['deleted_at' => '{{Now()}}']);
+        }elseif($this->pk){
+            return $this->where($this->pk, $columns)->update(['deleted_at' => '{{Now()}}']);
         }else{
-            $this->update(['deleted_at' => '{{Now()}}']);
+            throw new InvalidArgumentException("\$column [column_name => value] ilişkili bir dizi olmalı.");
         }
-
-        return $this;
     }
 
 
@@ -173,27 +190,23 @@ class QueryBuilder {
      * @param $param
      * @return $this
      */
-    public function where($column, $operant = null, $param = null)
+    public function where($column, $operant = null, $param = null): self
     {
-        if($param !== null && $operant !== null) {
+        if (is_array($column)) {
 
-            $query = $this->comparison($column, $operant, $param);
-            $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
-        }elseif($operant !== null && is_string($column)){
+            $operant = $operant ? $operant : '=';
 
+            foreach ($column as $key => $val) {
+                $query = $this->comparison($key, $operant, $val);
+                $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
+            }
+
+        } elseif (is_string($column) && is_null($param)) {
             $query = $this->comparison($column, '=', $operant);
             $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
-        }else{
-            if(is_array($column)){
-
-                foreach ($column as $key => $val){
-
-                    $query = $this->comparison($key, '=', $val);
-                    $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
-                }
-            }else{
-                throw new InvalidArgumentException("WHERE condition first parameter is must be an array or column name.");
-            }
+        } else {
+            $query = $this->comparison($column, $operant, $param);
+            $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
         }
 
         return $this;
@@ -206,27 +219,23 @@ class QueryBuilder {
      * @param null $param
      * @return $this
      */
-    public function orWhere($column, $operant = null, $param = null)
+    public function orWhere($column, $operant = null, $param = null): self
     {
-        if($param !== null && $operant !== null) {
+        if (is_array($column)) {
 
-            $query = $this->comparison($column, $operant, $param);
-            $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
-        }elseif($operant !== null && is_string($column)){
+            $operant = $operant ? $operant : '=';
 
+            foreach ($column as $key => $val) {
+                $query = $this->comparison($key, $operant, $val);
+                $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
+            }
+
+        } elseif (is_string($column) && is_null($param)) {
             $query = $this->comparison($column, '=', $operant);
             $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
-        }else{
-            if(is_array($column)){
-
-                foreach ($column as $key => $val){
-
-                    $query = $this->comparison($key, '=', $val);
-                    $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
-                }
-            }else{
-                throw new InvalidArgumentException("WHERE condition first parameter is must be an array or column name.");
-            }
+        } else {
+            $query = $this->comparison($column, $operant, $param);
+            $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
         }
 
         return $this;
@@ -236,10 +245,11 @@ class QueryBuilder {
     /**
      * @param string $column
      * @param string $andOR
+     * @return $this
      */
-    public function isNull(string $column, $andOR = 'AND')
+    public function isNull(string $column, $andOR = 'AND'): self
     {
-        $this->where .= $this->where ? ' '.$andOR.' '.$column.' IS NULL ' : ' WHERE '.$column.' IS NULL ';
+        $this->where .= $this->where ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IS NULL ' : ' WHERE ' . $column . ' IS NULL ';
 
         return $this;
     }
@@ -248,10 +258,11 @@ class QueryBuilder {
     /**
      * @param string $column
      * @param string $andOR
+     * @return $this
      */
-    public function isNOTNull(string $column, $andOR = 'AND')
+    public function isNotNull(string $column, $andOR = 'AND'): self
     {
-        $this->where .= $this->where ? ' '.$andOR.' '.$column.' IS NOT NULL ' : ' WHERE '.$column.' IS NOT NULL ';
+        $this->where .= $this->where ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IS NOT NULL ' : ' WHERE ' . $column . ' IS NOT NULL ';
 
         return $this;
     }
@@ -261,11 +272,11 @@ class QueryBuilder {
      * @param int $start
      * @return $this
      */
-    public function limit(int $length, int $start = 0)
+    public function limit(int $length, int $start = 0): self
     {
         $this->limit = $start ?
-            ' LIMIT '. $start .','.$length :
-            ' LIMIT '.$length;
+            ' LIMIT ' . $start . ',' . $length :
+            ' LIMIT ' . $length;
 
         return $this;
     }
@@ -275,9 +286,11 @@ class QueryBuilder {
      * @param string $column
      * @return $this
      */
-    public function group(string $column)
+    public function group(string $column): self
     {
-        $this->group .= $this->group ? ', '.$column :' GROUP BY '.$column;
+        $this->group .= $this->group ?
+            ', ' . $this->quoteColumn($column) :
+            ' GROUP BY ' . $column;
 
         return $this;
     }
@@ -288,15 +301,17 @@ class QueryBuilder {
      * @param string $type
      * @return $this
      */
-    public function order(string $column, string $type = "ASC")
+    public function order(string $column, string $type = "ASC"): self
     {
         $type = strtoupper($type);
 
-        if(!in_array($type, ['ASC', 'DESC'])){
+        if (!in_array($type, ['ASC', 'DESC'])) {
             $type = "ASC";
         }
 
-        $this->order .= $this->order ? ', '.$column.' '.$type :' ORDER BY '.$column.' '.$type;
+        $this->order .= $this->order ?
+            ', ' . $this->quoteColumn($column) . ' ' . $type :
+            ' ORDER BY ' . $this->quoteColumn($column) . ' ' . $type;
 
         return $this;
     }
@@ -307,11 +322,11 @@ class QueryBuilder {
      * @param $param
      * @return $this
      */
-    public function having(string $column, string $operant, $param)
+    public function having(string $column, string $operant, $param): self
     {
         $query = $this->comparison($column, $operant, $param);
 
-        $this->having .= $this->having ? ' AND '.$query : ' WHERE '.$query;
+        $this->having .= $this->having ? ' AND ' . $query : ' WHERE ' . $query;
 
         return $this;
     }
@@ -322,11 +337,11 @@ class QueryBuilder {
      * @param $param
      * @return $this
      */
-    public function orHaving(string $column, string $operant, $param)
+    public function orHaving(string $column, string $operant, $param): self
     {
         $query = $this->comparison($column, $operant, $param);
 
-        $this->having .= $this->having ? ' OR '.$query : ' WHERE '.$query;
+        $this->having .= $this->having ? ' OR ' . $query : ' WHERE ' . $query;
 
         return $this;
     }
@@ -337,13 +352,13 @@ class QueryBuilder {
      * @return string
      * @throws Exception
      */
-    public function subQuery(callable $callback)
+    public function subQuery(callable $callback): string
     {
-        $queryBuilder = new QueryBuilder();
+        $queryBuilder = new QueryBuilder($this->database);
         $callback($queryBuilder);
-        $query = '{{('.$queryBuilder->buildQuery().')}}';
+        $query = '{{(' . $queryBuilder->buildQuery() . ')}}';
 
-        foreach ($queryBuilder->bindingParams() as $param){
+        foreach ($queryBuilder->bindingParams() as $param) {
             $paramName = $this->newParamName();
             $query = preg_replace("/:param_[0-9]/", $paramName, $query, 1);
             $this->params[$paramName] = $param;
@@ -358,9 +373,9 @@ class QueryBuilder {
      * @param string $matching
      * @return $this
      */
-    public function join(string $table, string $matching)
+    public function join(string $table, string $matching): self
     {
-        $this->join .= ' JOIN '. $table . ' ON '. $matching;
+        $this->join .= ' JOIN ' . $this->quoteColumn($table) . ' ON ' . $matching;
 
         return $this;
     }
@@ -370,9 +385,9 @@ class QueryBuilder {
      * @param string $matching
      * @return $this
      */
-    public function leftJoin(string $table, string $matching)
+    public function leftJoin(string $table, string $matching): self
     {
-        $this->join .= ' LEFT JOIN '. $table . ' ON '. $matching;
+        $this->join .= ' LEFT JOIN ' . $this->quoteColumn($table) . ' ON ' . $matching;
 
         return $this;
     }
@@ -382,9 +397,9 @@ class QueryBuilder {
      * @param string $matching
      * @return $this
      */
-    public function rightJoin(string $table, string $matching)
+    public function rightJoin(string $table, string $matching): self
     {
-        $this->join .= ' RIGHT JOIN '. $table . ' ON '. $matching;
+        $this->join .= ' RIGHT JOIN ' . $this->quoteColumn($table) . ' ON ' . $matching;
 
         return $this;
     }
@@ -395,17 +410,179 @@ class QueryBuilder {
      * @param $callback
      * @return $this
      */
-    public function cover($condition, $callback)
+    public function cover($condition, $callback): self
     {
-        if(strcasecmp($condition, 'AND') === 0 || strcasecmp($condition, 'OR') === 0 || strcasecmp($condition, 'WHERE') === 0) {
+        if (strcasecmp($condition, 'AND') === 0 || strcasecmp($condition, 'OR') === 0 || strcasecmp($condition, 'WHERE') === 0) {
             $this->where .= $this->where ? ' ' . $condition . ' (' : ' WHERE (';
             call_user_func($callback, $this);
             $this->where = str_replace('( AND ', '(', $this->where);
             $this->where = str_replace('( OR ', '(', $this->where);
             $this->where .= ')';
         }
-        
+
         return $this;
+    }
+
+    /**
+     * @return string
+     * @throws SqlErrorException
+     */
+    public function buildQuery(): string
+    {
+        if ($this->table == '') {
+            throw new SqlErrorException("İşlem yapılacak veritabanı tablosu seçilmedi.");
+        }
+
+        if ($this->insert) {
+
+            return 'INSERT INTO ' . $this->table . ' SET ' . $this->insert . $this->where . $this->group . $this->having . $this->order . $this->limit;
+        } elseif ($this->update) {
+
+            if (empty($this->where) && $this->force == false) {
+                throw new SqlErrorException("Where deyimi kullanmadan update işlemi yapmak için force true ayarlayın");
+            }
+
+            return 'UPDATE ' . $this->table . $this->join . ' SET ' . $this->update . $this->where . $this->group . $this->having . $this->order . $this->limit;
+        } elseif ($this->delete) {
+
+            if (empty($this->where) && $this->force == false) {
+                throw new SqlErrorException("Where deyimi kullanmadan delete işlemi yapmak için force true ayarlayın");
+            }
+
+            return 'DELETE FROM ' . $this->table . $this->join . $this->where . $this->group . $this->having . $this->order . $this->limit;
+        } elseif ($this->select) {
+
+            return 'SELECT ' . $this->select . ' FROM ' . $this->table . $this->join . $this->where . $this->group . $this->having . $this->order . $this->limit;
+        } else {
+            throw new SqlErrorException("[select, insert, update, delete] deyimlerinden en az birini kullanmalısınız.");
+        }
+    }
+
+    /**
+     * @return array
+     */
+    public function bindingParams(): array
+    {
+        return $this->params;
+    }
+
+    /**
+     * debug query
+     * @return $this
+     */
+    public function debug()
+    {
+        $this->debug = true;
+
+        return $this;
+    }
+
+
+    /**
+     * @return string
+     */
+    protected function newParamName(): string
+    {
+        return ':param_' . ++$this->paramCount;
+    }
+
+    /**
+     * @param string $column
+     * @param string $operant
+     * @param $param
+     * @return string
+     */
+    protected function comparison(string $column, string $operant, $param): string
+    {
+        if (preg_match("/^\{\{(.+)\}\}$/", $param, $matches)) {
+            $query = $this->quoteColumn($column) . ' ' . $operant . ' ' . $matches[1];
+        } else {
+            if($param === null){
+                if($operant == '=') {
+                    $query = $this->quoteColumn($column) . ' ' . 'IS NULL';
+                }else{
+                    $query = $this->quoteColumn($column) . ' ' . 'IS NOT NULL';
+                }
+            }else {
+                $paramName = $this->newParamName();
+                $query = $this->quoteColumn($column) . ' ' . $operant . ' ' . $paramName;
+                $this->params[$paramName] = $param;
+            }
+        }
+
+        return $query;
+    }
+
+    /**
+     * @param string $column
+     * @return string
+     */
+    protected function quoteColumn(string $column): string
+    {
+        if (preg_match("#^[\w]+$#", $column)) {
+            return '`' . $column . '`';
+        }
+
+        return $column;
+    }
+
+
+    /*****************************************************************************************
+     * DATABASE QUERY RUNNING
+     *****************************************************************************************/
+
+    /**
+     * @param int $fetchStyle
+     * @return mixed
+     * @throws SqlErrorException
+     */
+    public function get($fetchStyle = PDO::FETCH_OBJ)
+    {
+        if ($this->debug) {
+            return [$this->buildQuery(), $this->bindingParams()];
+        }
+
+        return $this->database->get($this->buildQuery(), $this->bindingParams(), $fetchStyle);
+    }
+
+    /**
+     * @param int $fetchStyle
+     * @return mixed
+     * @throws SqlErrorException
+     */
+    public function getRow($fetchStyle = PDO::FETCH_OBJ)
+    {
+        if ($this->debug) {
+            return [$this->buildQuery(), $this->bindingParams()];
+        }
+
+        return $this->database->getRow($this->buildQuery(), $this->bindingParams(), $fetchStyle);
+    }
+
+    /**
+     * @return mixed
+     * @throws SqlErrorException
+     */
+    public function getVar()
+    {
+        if ($this->debug) {
+            return [$this->buildQuery(), $this->bindingParams()];
+        }
+
+        return $this->database->getVar($this->buildQuery(), $this->bindingParams());
+    }
+
+    /**
+     * @return mixed
+     * @throws SqlErrorException
+     */
+    public function getCol()
+    {
+        if ($this->debug) {
+            return [$this->buildQuery(), $this->bindingParams()];
+        }
+
+        return $this->database->getCol($this->buildQuery(), $this->bindingParams());
     }
 
     /**
@@ -416,258 +593,48 @@ class QueryBuilder {
      */
     public function find($param)
     {
-        if(!$this->pk){
-            throw new Exception(__FUNCTION__." method cannot be used because primary key is not specified.");
+        if ($this->pk) {
+            return $this->select()->where($this->pk, $param)->getRow();
         }
 
-        return $this->select()->where($this->pk, $param)->getRow();
+        throw new Exception(__FUNCTION__ . " methodu pk değeri atanmadan kullanılamaz.");
     }
 
     /**
      * pk tanımlı ise kullanılabilir
      * @param int $rowCount
-     * @return array|bool
+     * @return mixed
      * @throws Exception
      */
     public function last(int $rowCount = 1)
     {
-        if(!$this->pk){
-            throw new Exception(__FUNCTION__." method cannot be used because primary key is not specified.");
+        if ($this->pk) {
+            if ($rowCount == 1) {
+                return $this->select()->order($this->pk, 'DESC')->limit($rowCount)->getRow();
+            }
+
+            return $this->select()->order($this->pk, 'DESC')->limit($rowCount)->get();
         }
 
-        if($rowCount == 1) {
-            return $this->select()->order($this->pk, 'DESC')->limit($rowCount)->getRow();
-        }
-
-        return $this->select()->order($this->pk, 'DESC')->limit($rowCount)->get();
+        throw new Exception(__FUNCTION__ . " methodu pk değeri atanmadan kullanılamaz.");
     }
 
     /**
      * pk tanımlı ise kullanılabilir
      * @param int $rowCount
-     * @return array|bool
+     * @return mixed
      * @throws Exception
      */
     public function first(int $rowCount = 1)
     {
-        if(!$this->pk){
-            throw new Exception(__FUNCTION__." method cannot be used because primary key is not specified.");
+        if (!$this->pk) {
+            throw new Exception(__FUNCTION__ . " methodu pk değeri atanmadan kullanılamaz.");
         }
 
-        if($rowCount == 1) {
+        if ($rowCount == 1) {
             return $this->select()->order($this->pk)->limit($rowCount)->getRow();
         }
 
         return $this->select()->order($this->pk)->limit($rowCount)->get();
-    }
-
-
-    /**
-     * @return string
-     * @throws Exception
-     */
-    public function buildQuery()
-    {
-        if($this->table == ''){
-            throw new Exception("No database table selected.");
-        }
-
-        if($this->select){
-
-            $this->queryType = 'select';
-            return 'SELECT '.$this->select.' FROM '.$this->table.$this->join.$this->where.$this->group.$this->having.$this->order.$this->limit;
-
-        }elseif ($this->update){
-
-            $this->queryType = 'update';
-            return 'UPDATE '.$this->table.$this->join.' SET '.$this->update.$this->where.$this->group.$this->having.$this->order.$this->limit;
-
-        }elseif ($this->delete){
-
-            $this->queryType = 'delete';
-            return 'DELETE FROM '.$this->table.$this->join.$this->where.$this->group.$this->having.$this->order.$this->limit;
-
-        }elseif ($this->insert){
-
-            $this->queryType = 'insert';
-            return 'INSERT INTO '.$this->table.' SET '.$this->insert.$this->where.$this->group.$this->having.$this->order.$this->limit;
-        }else{
-            throw new Exception("Please choose one (select, insert, update or delete).");
-        }
-    }
-
-    /**
-     * @return array
-     */
-    public function bindingParams()
-    {
-        return $this->params;
-    }
-
-    /**
-     * @return string
-     */
-    public function getQueryType()
-    {
-        return $this->queryType;
-    }
-
-    /**
-     * @return string
-     */
-    private function newParamName()
-    {
-        return ':param_'.++$this->paramCount;
-    }
-
-    /**
-     * @param string $column
-     * @param string $operant
-     * @param $param
-     * @return string
-     */
-    private function comparison(string $column, string $operant, $param)
-    {
-        if(preg_match("/^\{\{(.+)\}\}$/", $param, $matches)){
-            $query = $column. ' '.$operant.' '.$matches[1];
-        }else{
-
-            $paramName = $this->newParamName();
-            $query = $column. ' '.$operant.' '.$paramName;
-            $this->params[$paramName] = $param;
-        }
-
-        return $query;
-    }
-
-    /**
-     * @return string
-     * @throws Exception
-     */
-    public function __toString()
-    {
-        return $this->buildQuery();
-    }
-
-    /**
-     * @return array
-     * @throws Exception
-     */
-    public function __debugInfo()
-    {
-        try {
-            return [$this->buildQuery(), $this->bindingParams()];
-        }catch (Exception $e){
-            return [$e->getMessage()];
-        }
-    }
-
-    /*****************************************************************************************
-     * DATABASE QUERY RUNNING
-     *****************************************************************************************/
-
-    /**
-     * @param int $fetchStyle
-     * @return array|bool
-     */
-    public function get($fetchStyle = PDO::FETCH_OBJ)
-    {
-        try {
-            if ($query = $this->buildQuery()) {
-                return DB::get($query, $this->bindingParams(), $fetchStyle);
-            }
-        }catch (Exception $e){
-            Exceptions::debug($e, 2);
-        }
-
-        return [];
-    }
-
-    /**
-     * @param int $fetchStyle
-     * @return array|bool|mixed
-     */
-    public function getRow($fetchStyle = PDO::FETCH_OBJ)
-    {
-        try {
-            if ($query = $this->buildQuery()) {
-                return DB::getRow($query, $this->bindingParams(), $fetchStyle);
-            }
-        }catch (Exception $e){
-            Exceptions::debug($e, 2);
-        }
-
-        return [];
-    }
-
-    /**
-     * @return bool|mixed|null
-     */
-    public function getVar()
-    {
-        try {
-            if ($query = $this->buildQuery()) {
-                return DB::getVar($query, $this->bindingParams());
-            }
-        }catch (Exception $e){
-            Exceptions::debug($e, 2);
-        }
-
-        return null;
-    }
-
-    /**
-     * @param int $fetchStyle
-     * @return array|bool
-     */
-    public function getCol($fetchStyle = PDO::FETCH_OBJ)
-    {
-        try {
-            if ($query = $this->buildQuery()) {
-                return DB::getCol($query, $this->bindingParams(), $fetchStyle);
-            }
-        }catch (Exception $e){
-            Exceptions::debug($e, 2);
-        }
-
-        return [];
-    }
-
-
-    /**
-     * @param false $force
-     * @return array|bool|int|string
-     */
-    public function run($force = false)
-    {
-        try {
-            $query = $this->buildQuery();
-
-            if ($this->getQueryType() == 'insert') {
-                return DB::insert($query, $this->bindingParams());
-
-            } elseif ($this->getQueryType() == 'update') {
-
-                if ($this->where == '' && $force == false) {
-                    throw new Exception("Use force true to delete without using where");
-                } else {
-                    return DB::update($query, $this->bindingParams());
-                }
-
-            } elseif ($this->getQueryType() == 'delete') {
-
-                if ($this->where == '' && $force == false) {
-                    throw new Exception("Use force true to delete without using where");
-                } else {
-                    return DB::delete($query, $this->bindingParams());
-                }
-            } else {
-                return [$query, $this->bindingParams()];
-            }
-        }catch (Exception $e){
-            Exceptions::debug($e, 2);
-        }
-
-        return false;
     }
 }

@@ -10,80 +10,67 @@
 
 namespace Core\Database;
 
-use Core\Exceptions\Exceptions;
-use Exception;
+use Core\App;
 use PDO;
 use PDOException;
 use PDOStatement;
 
 class Database {
 
-    public static int $backtrace = 3;
-
-    private ?PDO $pdo;
-    private ?PDOStatement $stm;
-
-    private string $driver;
-    private string $dsn;
-    private string $user;
-    private string $password;
-    private string $charset;
-    private string $collection;
+    public App $app;
+    private PDO $pdo;
+    private PDOStatement $stm;
+    private ConnectionInterface $connection;
+    public array $config;
 
 
     /**
      * Database constructor.
-     * @param $driver
-     * @param $dsn
-     * @param $user
-     * @param $password
-     * @param string $charset
-     * @param string $collaction
-     * @throws Exception
+     * @param ConnectionInterface $connection
+     * @param App $app
+     * @throws SqlErrorException
      */
-    public function __construct(string $driver, string $dsn, string $user = '', string $password = '', string $charset = 'utf8', string $collaction = 'utf8_general_ci')
+    public function __construct(ConnectionInterface $connection, App $app)
     {
-        $this->driver = $driver;
-        $this->dsn = $dsn;
-        $this->user = $user;
-        $this->password = $password;
-        $this->charset = $charset;
-        $this->collection = $collaction;
+        $this->connection = $connection;
+        $this->app = $app;
 
-        $this->connect();
-    }
-
-    /**
-     * Veritabanı bağlantısı oluşturur
-     * @throws Exception
-     */
-    private function connect()
-    {
         try {
-            $this->pdo = new PDO($this->driver.':'.$this->dsn, $this->user, $this->password);
-            $this->pdo->exec("SET NAMES '" . $this->charset . "' COLLATE '" . $this->collection . "'");
-            $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
-
+            $this->pdo = $connection->connection();
+            $this->config = $this->connection->config;
         } catch (PDOException $e) {
-            throw new Exception($this->driver." veritabanı bağlantısı kurulamıyor.", E_ERROR, $e);
+            throw new SqlErrorException($this->connection->config['driver']." veritabanı bağlantısı kurulamıyor.", E_ERROR, $e);
         }
-
-        return $this;
     }
 
     /**
      * Yeniden database seçer
      * @param $database
      * @return $this
-     * @throws Exception
+     * @throws SqlErrorException
      */
-    public function selectDB(string $database)
+    public function selectDB(string $database):Database
     {
         if($this->pdo->exec("USE $database") === false){
-            throw new Exception("Veritabanı seçilemedi.", E_ERROR);
+            throw new SqlErrorException("Veritabanı seçilemedi.", E_ERROR);
         }
 
         return $this;
+    }
+
+
+    /**
+     * @param string $table
+     * @return QueryBuilder
+     */
+    public function table(string $table = ''):QueryBuilder
+    {
+        $queryBuilder = __NAMESPACE__.'\\'.$this->config['driver']."QueryBuilder";
+        /**
+         * @var QueryBuilder $queryBuilderInstance
+         */
+        $queryBuilderInstance = new $queryBuilder($this);
+        return $queryBuilderInstance->table($table);
     }
 
 
@@ -91,25 +78,20 @@ class Database {
      * @param $query
      * @param array|null $bindings
      * @param array $options
-     * @return $this
-     * @throws Exception
+     * @return PDOStatement
+     * @throws SqlErrorException
      */
-    public function bindQuery($query, array $bindings = null, array $options = [])
+    public function bindQuery($query, array $bindings = null, array $options = []):PDOStatement
     {
-        try {
-            $this->stm = $this->pdo->prepare($query, $options);
-            $this->stm->execute($bindings);
-            $sqlError = $this->stm->errorInfo();
+        $this->stm = $this->pdo->prepare($query, $options);
+        $this->stm->execute($bindings);
+        $sqlError = $this->stm->errorInfo();
 
-            if(isset($sqlError[1])){
-
-                throw new Exception("Sql error code({$sqlError[0]}/{$sqlError[1]}) Error: {$sqlError[2]}", E_ERROR);
-            }
-        }catch (PDOException $e){
-            Exceptions::debug($e, self::$backtrace);
+        if(isset($sqlError[1])){
+            throw new SqlErrorException("Sql error code({$sqlError[0]}/{$sqlError[1]}) Error: {$sqlError[2]}", E_ERROR);
         }
 
-        return $this;
+        return $this->stm;
     }
 
 
@@ -118,17 +100,12 @@ class Database {
      * @param string $query
      * @param array|null $bindings
      * @param int $fetchStyle
-     * @return array|bool
+     * @return mixed
+     * @throws SqlErrorException
      */
     public function get(string $query, array $bindings = null, $fetchStyle = PDO::FETCH_OBJ)
     {
-        try {
-            $this->bindQuery($query, $bindings);
-            return $this->stm->fetchAll($fetchStyle);
-        }catch (Exception $e){
-            Exceptions::debug($e, self::$backtrace);
-        }
-        return false;
+        return $this->bindQuery($query, $bindings)->fetchAll($fetchStyle);
     }
 
 
@@ -137,17 +114,12 @@ class Database {
      * @param string $query
      * @param array|null $bindings
      * @param int $fetchStyle
-     * @return bool|mixed
+     * @return mixed
+     * @throws SqlErrorException
      */
     public function getRow(string $query, array $bindings = null, $fetchStyle = PDO::FETCH_OBJ)
     {
-        try {
-            $this->bindQuery($query, $bindings);
-            return $this->stm->fetch($fetchStyle);
-        }catch (Exception $e){
-            Exceptions::debug($e, self::$backtrace);
-        }
-        return false;
+        return $this->bindQuery($query, $bindings)->fetch($fetchStyle);
     }
 
 
@@ -155,18 +127,12 @@ class Database {
      * Sorgu sonucu dönen ilk stunun tamanını döndürür
      * @param string $query
      * @param array|null $bindings
-     * @param int $fetchStyle
-     * @return array|bool
+     * @return mixed
+     * @throws SqlErrorException
      */
-    public function getCol(string $query, array $bindings = null, $fetchStyle = PDO::FETCH_COLUMN)
+    public function getCol(string $query, array $bindings = null)
     {
-        try {
-            $this->bindQuery($query, $bindings);
-            return $this->stm->fetchAll($fetchStyle);
-        }catch (Exception $e){
-            Exceptions::debug($e, self::$backtrace);
-        }
-        return false;
+        return $this->bindQuery($query, $bindings)->fetchAll(PDO::FETCH_COLUMN);
     }
 
 
@@ -174,17 +140,12 @@ class Database {
      * Eşleşen ilk satırdan belirtilen stunu döndürür
      * @param string $query
      * @param array|null $bindings
-     * @return bool|mixed
+     * @return mixed
+     * @throws SqlErrorException
      */
     public function getVar(string $query, array $bindings = null)
     {
-        try {
-            $this->bindQuery($query, $bindings);
-            return $this->stm->fetchColumn();
-        }catch (Exception $e){
-            Exceptions::debug($e, self::$backtrace);
-        }
-        return false;
+        return $this->bindQuery($query, $bindings)->fetchColumn();
     }
 
 
@@ -193,16 +154,12 @@ class Database {
      * @param string $query
      * @param array|null $bindings
      * @return bool|string
+     * @throws SqlErrorException
      */
     public function insert(string $query, array $bindings = null)
     {
-        try {
-            $this->bindQuery($query, $bindings);
-            return $this->pdo->lastInsertId();
-        }catch (Exception $e){
-            Exceptions::debug($e, self::$backtrace);
-        }
-        return false;
+        $this->bindQuery($query, $bindings);
+        return $this->pdo->lastInsertId();
     }
 
 
@@ -212,16 +169,12 @@ class Database {
      * @param string $query
      * @param array|null $bindings
      * @return bool|int
+     * @throws SqlErrorException
      */
     public function update(string $query, array $bindings = null)
     {
-        try {
-            $this->bindQuery($query, $bindings);
-            return $this->stm->rowCount() ? $this->stm->rowCount() : true;
-        }catch (Exception $e){
-            Exceptions::debug($e, self::$backtrace);
-        }
-        return false;
+        $this->bindQuery($query, $bindings);
+        return $this->stm->rowCount() ? $this->stm->rowCount() : true;
     }
 
 
@@ -230,16 +183,12 @@ class Database {
      * @param string $query
      * @param array|null $bindings
      * @return bool|int
+     * @throws SqlErrorException
      */
     public function delete(string $query, array $bindings = null)
     {
-        try {
-            $this->bindQuery($query, $bindings);
-            return $this->stm->rowCount();
-        }catch (Exception $e){
-            Exceptions::debug($e, self::$backtrace);
-        }
-        return false;
+        $this->bindQuery($query, $bindings);
+        return $this->stm->rowCount();
     }
 
     /**
@@ -247,8 +196,7 @@ class Database {
      */
     public function close()
     {
-        $this->pdo = null;
-        $this->stm = null;
+        unset($this->pdo, $this->stm);
     }
 
     /**
@@ -279,7 +227,7 @@ class Database {
      * Aktif PDO nesnesi
      * @return PDO
      */
-    public function pdo()
+    public function pdo():PDO
     {
         return $this->pdo;
     }
@@ -288,7 +236,7 @@ class Database {
      * Aktif PDOStatement nesnesi
      * @return PDOStatement
      */
-    public function stm()
+    public function stm():PDOStatement
     {
         return $this->stm;
     }

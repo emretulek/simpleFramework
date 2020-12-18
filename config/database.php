@@ -6,18 +6,34 @@
 return [
     'mysql' => [
         'driver'    => 'mysql',
-        'dsn'      =>  'host=localhost;dbname=phpfw',
-        'user'      =>  'root',
-        'password'  =>  '',
-        'charset'   =>  'utf8mb4',
-        'collaction' =>  'utf8mb4_general_ci'
+        'host'      => 'localhost',
+        'port'      => '3306',
+        'database'  => 'phpfw',
+        'user'      => 'root',
+        'password'  => '',
+        'charset'   => 'utf8mb4',
+        'collation' => 'utf8mb4_general_ci',
+        'options' => [
+            [
+                PDO::ATTR_DEFAULT_FETCH_MODE,
+                PDO::FETCH_OBJ
+            ]
+        ]
     ],
     'mysql2' => [
         'driver'    => 'mysql',
-        'dsn'      =>  'host=localhost;dbname=test',
-        'user'      =>  'root',
-        'password'  =>  '',
-        'charset'   =>  'utf8mb4',
-        'collaction' =>  'utf8mb4_general_ci'
-    ]
+        'host'      => 'localhost',
+        'port'      => '3306',
+        'database'  => 'phpfw',
+        'user'      => 'root',
+        'password'  => '',
+        'charset'   => 'utf8mb4',
+        'collation' => 'utf8mb4_general_ci',
+        'options' => [
+            [
+                PDO::ATTR_DEFAULT_FETCH_MODE,
+                PDO::FETCH_OBJ
+            ]
+        ]
+    ],
 ];

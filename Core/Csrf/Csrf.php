@@ -4,42 +4,65 @@
 namespace Core\Csrf;
 
 
+
+use Core\App;
 use Core\Cookie\Cookie;
 use Core\Http\Request;
 use Core\Session\Session;
 
 class Csrf
 {
+    private Request $request;
+    private Session $session;
+    private Cookie $cookie;
+
+    public function __construct(App $app)
+    {
+        $this->request = $app->resolve(Request::class);
+        $this->session = $app->resolve(Session::class);
+        $this->cookie = $app->resolve(Cookie::class);
+    }
     /**
      * Csrf için token oluşturup cookie ve sessiona atar
      * $_SESSION old_csrf_token, csrf_token
      * $_COOKIE csrf_token
      */
-    public static function generateToken()
+    public function generateToken():string
     {
         $token = md5(uniqid());
-        Session::set('old_csrf_token', Session::get('csrf_token'));
-        Session::set('csrf_token', $token);
-        Cookie::set('csrf_token', $token, 60 * 60, '/', null, false, false);
+        $this->session->set('old_csrf_token', $this->session->get('csrf_token'));
+        $this->session->set('csrf_token', $token);
+        $this->cookie->set('csrf_token', $token, 60 * 60, '/', null, false, false);
+
+        return $token;
     }
 
 
     /**
      * Input için kullanılacak token değerini döndürür
-     * @return bool|mixed
+     * @return bool|string
      */
-    public static function token()
+    public function token()
     {
-        return Session::get('csrf_token');
+        return $this->session->get('csrf_token');
+    }
+
+    /**
+     * bir önceki token değerini döndürür
+     * @return bool|string
+     */
+    public function old_token()
+    {
+        return $this->session->get('old_csrf_token');
     }
 
     /**
      * POST veya GET işlemlerinde CSRF yoksa false, varsa true döner
      * @return bool
      */
-    public static function check()
+    public function check():bool
     {
-        if (Request::request('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(), Request::host())) {
+        if ($this->request->request('csrf_token') == $this->old_token() && $this->isSelfReferer()) {
             return false;
         }
 
@@ -50,10 +73,10 @@ class Csrf
      * POST işlemlerinde CSRF yoksa false, varsa true döner
      * @return bool
      */
-    public static function checkPost()
+    public function checkPost():bool
     {
-        if(Request::method('post')) {
-            if (Request::post('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(), Request::host())) {
+        if($this->request->method('post')) {
+            if ($this->request->post('csrf_token') == $this->old_token() && $this->isSelfReferer()) {
                 return false;
             }
         }
@@ -66,10 +89,10 @@ class Csrf
      * GET işlemlerinde CSRF yoksa false, varsa true döner
      * @return bool
      */
-    public static function checkGet()
+    public function checkGet():bool
     {
-        if(Request::method('get')) {
-            if (Request::get('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(), Request::host())) {
+        if($this->request->method('get')) {
+            if ($this->request->post('csrf_token') == $this->old_token() && $this->isSelfReferer()) {
                 return false;
             }
         }
@@ -80,15 +103,30 @@ class Csrf
 
     /**
      * GET, POST işlemlerinde Cookie üzerinden kontrol eder CSRF yoksa false, varsa true döner
+     * @return bool
      */
-    public static function checkCookie()
+    public function checkCookie():bool
     {
-        if(Cookie::get('csrf_token') == Session::get('old_csrf_token') && strpos(Request::referer(),Request::host())){
-            if(Request::server('cache-control') != 'max-age=0') {
+        if($this->cookie->get('csrf_token') == $this->old_token() && $this->isSelfReferer()){
+            if($this->request->server('cache-control') != 'max-age=0') {
                 return false;
             }
         }
 
         return true;
+    }
+
+
+    /**
+     * istek kaynağı kendi sitemiz ise true
+     * @return bool
+     */
+    private function isSelfReferer():bool
+    {
+        if(strpos($this->request->referer(), $this->request->host())){
+            return true;
+        }
+
+        return false;
     }
 }

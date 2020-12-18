@@ -2,15 +2,26 @@
   "name": "emretulek/simple-framework",
   "description": "Basit ve kullanisli php framework",
   "type": "project",
+  "version": "3.0.0",
+  "autoload": {
+    "psr-4": {
+      "": ""
+    },
+    "files": [
+      "Core/helpers.php"
+    ]
+  },
   "require": {
-    "php": ">=7.4",
+    "php": "^7.4|^8.0",
     "ext-bz2": "*",
     "ext-pdo": "*",
     "ext-json": "*",
     "ext-ctype": "*",
     "ext-mbstring": "*",
     "ext-openssl": "*",
-    "ext-memcache": "*"
+    "ext-memcached": "*",
+    "ext-apcu": "*",
+    "ext-redis": "*"
   },
   "license": "MIT",
   "authors": [

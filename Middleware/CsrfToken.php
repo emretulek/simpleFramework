@@ -11,7 +11,7 @@
 namespace Middleware;
 
 
-use Core\Csrf\Csrf;
+use Csrf;
 use Core\Middleware\IMiddlewareBefore;
 
 class CsrfToken implements IMiddlewareBefore {

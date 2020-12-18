@@ -3,14 +3,13 @@
 namespace Core\Router;
 
 use Core\App;
-use Core\Exceptions\Exceptions;
 use Core\Http\HttpMethodNotAllowed;
 use Core\Http\HttpNotFound;
 use Core\Http\Request;
-use Core\Config\Config;
 use ArgumentCountError;
 use Closure;
 use Core\Http\Response;
+use Core\Reflection\Reflection;
 use Core\View\View;
 use Exception;
 use ReflectionException;
@@ -23,52 +22,65 @@ use ReflectionMethod;
  */
 class Router
 {
-    private static int $routeID = 0;
-    private static array $routes = [];
-    private static array $currentRoute = [];
+    private App $app;
+    private Request $request;
 
-    private static array $methodPrefix = [];
-    private static array $methodNamespace = [];
-    private static array $methodMidleware = [];
+    private int $routeID = 0;
+    private array $routes = [];
+    private array $currentRoute = [];
 
-    private static string $prefix = '';
-    private static string $nameSpace = '';
+    private array $methodPrefix = [];
+    private array $methodNamespace = [];
+    private array $methodMidleware = [];
 
-    private static string $controller = 'index';
-    private static string $method = 'main';
-    private static array $params = [];
+    private string $prefix = '';
+    private string $nameSpace = '';
 
-    private static array $errors = [];
+    private string $controller = 'home';
+    private string $method = 'index';
+    private array $params = [];
 
-    private static array $matchPatterns = [
-        '#/\*#' => '/(.*)',
-        '#\{id\}#' => '([0-9]+)',
-        '#\{id\?}#' => '?([0-9]+)?',
-        '#\{int\}#' => '([0-9\-]+)',
-        '#\{int\?}#' => '?([0-9\-]+)?',
-        '#\{string\}#' => '([\s\w\._-]+)',
-        '#\{string\?}#' => '?([\s\w\._-]+)?',
-        '#\{\*\}#' => '(.+)',
-        '#\{\*\?}#' => '?(.*)?'
+    private array $errors = [];
+
+    private array $matchPatterns = [
+        '/*' => '/(.*)',
+        '{id}' => '([0-9]+)',
+        '{id?}' => '?([0-9]+)?',
+        '{int}' => '([0-9\-]+)',
+        '{int?}' => '?([0-9\-]+)?',
+        '{string}' => '([\s\w\._-]+)',
+        '{string?}' => '?([\s\w\._-]+)?',
+        '{*}' => '(.+)',
+        '{*?}' => '?(.*)?'
     ];
+
+
+    public function __construct(App $app)
+    {
+        $this->app = $app;
+        $this->request = $app->resolve(Request::class);
+    }
 
 
     /**
      * @param array $options
+     * @return Router
      */
-    public static function global(array $options)
+    public function global(array $options):self
     {
         if (array_key_exists('middleware', $options)) {
-            self::$methodMidleware[] = $options['middleware'];
+            $this->methodMidleware[] = $options['middleware'];
         }
 
         if (array_key_exists('namespace', $options)) {
-            self::$methodNamespace[] = $options['namespace'];
+            $this->methodNamespace[] = $options['namespace'];
         }
 
         if (array_key_exists('prefix', $options)) {
-            self::$methodPrefix[] = $options['prefix'];
+            $this->methodPrefix[] = $options['prefix'];
         }
+
+        return $this;
     }
 
 
@@ -76,32 +88,32 @@ class Router
      * @param array $options
      * @param callable $callback
      */
-    public static function group(array $options, callable $callback)
+    public function group(array $options, callable $callback)
     {
         if (array_key_exists('middleware', $options)) {
-            self::$methodMidleware[] = $options['middleware'];
+            $this->methodMidleware[] = $options['middleware'];
         }
 
         if (array_key_exists('namespace', $options)) {
-            self::$methodNamespace[] = $options['namespace'];
+            $this->methodNamespace[] = $options['namespace'];
         }
 
         if (array_key_exists('prefix', $options)) {
-            self::$methodPrefix[] = $options['prefix'];
+            $this->methodPrefix[] = $options['prefix'];
         }
 
-        call_user_func($callback);
+        call_user_func($callback, $options);
 
         if (array_key_exists('middleware', $options)) {
-            array_pop(self::$methodMidleware);
+            array_pop($this->methodMidleware);
         }
 
         if (array_key_exists('namespace', $options)) {
-            array_pop(self::$methodNamespace);
+            array_pop($this->methodNamespace);
         }
 
         if (array_key_exists('prefix', $options)) {
-            array_pop(self::$methodPrefix);
+            array_pop($this->methodPrefix);
         }
     }
 
@@ -110,15 +122,15 @@ class Router
      * @param string $prefix
      * @return Router
      */
-    public static function prefix(string $prefix)
+    public function prefix(string $prefix):self
     {
-        if (!empty(self::$routes[self::$routeID]['prefix'])) {
-            self::$routes[self::$routeID]['prefix'] .= '/' . trim($prefix, '/');
+        if (!empty($this->routes[$this->routeID]['prefix'])) {
+            $this->routes[$this->routeID]['prefix'] .= '/' . trim($prefix, '/');
         } else {
-            self::$routes[self::$routeID]['prefix'] = trim($prefix, '/');
+            $this->routes[$this->routeID]['prefix'] = trim($prefix, '/');
         }
 
-        return new static();
+        return $this;
     }
 
 
@@ -126,11 +138,11 @@ class Router
      * @param string $routeName
      * @return Router
      */
-    public static function name(string $routeName)
+    public function name(string $routeName):self
     {
-        self::$routes[self::$routeID]['name'] = $routeName;
+        $this->routes[$this->routeID]['name'] = $routeName;
 
-        return new static();
+        return $this;
     }
 
 
@@ -138,31 +150,31 @@ class Router
      * @param string $nameSpace
      * @return Router
      */
-    public static function nameSpace(string $nameSpace)
+    public function nameSpace(string $nameSpace):self
     {
-        if (isset(self::$routes[self::$routeID]['namespace']) && !empty(self::$routes[self::$routeID]['namespace'])) {
+        if (isset($this->routes[$this->routeID]['namespace']) && !empty($this->routes[$this->routeID]['namespace'])) {
 
-            self::$routes[self::$routeID]['namespace'] .= '\\' . trim($nameSpace, '\\');
+            $this->routes[$this->routeID]['namespace'] .= '\\' . trim($nameSpace, '\\');
         } else {
-            self::$routes[self::$routeID]['namespace'] = trim($nameSpace, '\\');
+            $this->routes[$this->routeID]['namespace'] = trim($nameSpace, '\\');
         }
 
-        return new static();
+        return $this;
     }
 
     /**
      * @param $middleware
      * @return Router
      */
-    public static function middleware($middleware)
+    public function middleware($middleware):self
     {
         if (is_array($middleware)) {
-            self::$routes[self::$routeID]['middleware'] = array_merge(self::$routes[self::$routeID]['middleware'], $middleware);
+            $this->routes[$this->routeID]['middleware'] = array_merge($this->routes[$this->routeID]['middleware'], $middleware);
         } else {
-            array_push(self::$routes[self::$routeID]['middleware'], $middleware);
+            array_push($this->routes[$this->routeID]['middleware'], $middleware);
         }
 
-        return new static();
+        return $this;
     }
 
     /**
@@ -171,31 +183,31 @@ class Router
      * @param string $pattern yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @param null $method zorlanacak istek türü POST, GET
-     * @return self
+     * @return Router
      */
-    private static function addRoute(string $pattern, $cmp, $method)
+    private function addRoute(string $pattern, $cmp, $method):self
     {
-        self::$routeID++;
+        $this->routeID++;
 
-        self::$routes[self::$routeID]['requestUri'] = Request::requestUri();
-        self::$routes[self::$routeID]['pattern'] = $pattern;
-        self::$routes[self::$routeID]['cmp'] = $cmp;
-        self::$routes[self::$routeID]['method'] = $method;
-        self::$routes[self::$routeID]['name'] = null;
+        $this->routes[$this->routeID]['requestUri'] = $this->request->requestUri();
+        $this->routes[$this->routeID]['pattern'] = $pattern;
+        $this->routes[$this->routeID]['cmp'] = $cmp;
+        $this->routes[$this->routeID]['method'] = $method;
+        $this->routes[$this->routeID]['name'] = null;
 
-        self::$routes[self::$routeID]['prefix'] = implode('/', self::$methodPrefix);
-        self::$routes[self::$routeID]['namespace'] = implode('\\', self::$methodNamespace);
-        self::$routes[self::$routeID]['middleware'] = [];
+        $this->routes[$this->routeID]['prefix'] = implode('/', $this->methodPrefix);
+        $this->routes[$this->routeID]['namespace'] = implode('\\', $this->methodNamespace);
+        $this->routes[$this->routeID]['middleware'] = [];
 
-        foreach (self::$methodMidleware as $middleware) {
+        foreach ($this->methodMidleware as $middleware) {
             if (is_array($middleware)) {
-                self::$routes[self::$routeID]['middleware'] = array_merge(self::$routes[self::$routeID]['middleware'], $middleware);
+                $this->routes[$this->routeID]['middleware'] = array_merge($this->routes[$this->routeID]['middleware'], $middleware);
             } else {
-                array_push(self::$routes[self::$routeID]['middleware'], $middleware);
+                array_push($this->routes[$this->routeID]['middleware'], $middleware);
             }
         }
 
-        return new static();
+        return $this;
     }
 
 
@@ -204,10 +216,10 @@ class Router
      *
      * @return Router
      */
-    public static function autoRute()
+    public function autoRute():self
     {
-        $segments = Request::segments();
-        $segments = array_slice($segments, count(self::$methodPrefix));
+        $segments = $this->request->segments();
+        $segments = array_slice($segments, count($this->methodPrefix));
         $controller = isset($segments[0]) ? array_shift($segments) : null;
         $controller = substr($controller, 0, 2) == '__' ? null : $controller;
         $method = isset($segments[0]) ? array_shift($segments) : null;
@@ -217,7 +229,7 @@ class Router
         $pattern = preg_replace("#[^\w\d/]#iu", "", $pattern);
         $pattern = preg_quote($pattern);
 
-        return self::any($pattern . $params, $controller . '@' . $method);
+        return $this->any($pattern . $params, $controller . '@' . $method);
     }
 
 
@@ -229,9 +241,9 @@ class Router
      * @param array|string[] $methods ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'] biri veya birkaçı
      * @return Router
      */
-    public static function useMethod($pattern, $cmp, array $methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'])
+    public function useMethod($pattern, $cmp, array $methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']):self
     {
-        return self::addRoute($pattern, $cmp, $methods);
+        return $this->addRoute($pattern, $cmp, $methods);
     }
 
     /**
@@ -239,11 +251,11 @@ class Router
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
-     * @return self
+     * @return Router
      */
-    public static function any(string $pattern, $cmp)
+    public function any(string $pattern, $cmp):self
     {
-        return self::addRoute($pattern, $cmp, ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']);
+        return $this->addRoute($pattern, $cmp, ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']);
     }
 
     /**
@@ -251,11 +263,11 @@ class Router
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
-     * @return self
+     * @return Router
      */
-    public static function get(string $pattern, $cmp)
+    public function get(string $pattern, $cmp):self
     {
-        return self::addRoute($pattern, $cmp, ['GET']);
+        return $this->addRoute($pattern, $cmp, ['GET']);
     }
 
     /**
@@ -263,11 +275,11 @@ class Router
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
-     * @return self
+     * @return Router
      */
-    public static function post(string $pattern, $cmp)
+    public function post(string $pattern, $cmp):self
     {
-        return self::addRoute($pattern, $cmp, ['POST']);
+        return $this->addRoute($pattern, $cmp, ['POST']);
     }
 
     /**
@@ -275,11 +287,11 @@ class Router
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
-     * @return self
+     * @return Router
      */
-    public static function put(string $pattern, $cmp)
+    public function put(string $pattern, $cmp):self
     {
-        return self::addRoute($pattern, $cmp, ['PUT']);
+        return $this->addRoute($pattern, $cmp, ['PUT']);
     }
 
     /**
@@ -287,11 +299,11 @@ class Router
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
-     * @return self
+     * @return Router
      */
-    public static function delete(string $pattern, $cmp)
+    public function delete(string $pattern, $cmp):self
     {
-        return self::addRoute($pattern, $cmp, ['DELETE']);
+        return $this->addRoute($pattern, $cmp, ['DELETE']);
     }
 
     /**
@@ -299,11 +311,11 @@ class Router
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
-     * @return self
+     * @return Router
      */
-    public static function patch(string $pattern, $cmp)
+    public function patch(string $pattern, $cmp):self
     {
-        return self::addRoute($pattern, $cmp, ['PATCH']);
+        return $this->addRoute($pattern, $cmp, ['PATCH']);
     }
 
     /**
@@ -311,11 +323,11 @@ class Router
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
-     * @return self
+     * @return Router
      */
-    public static function head(string $pattern, $cmp)
+    public function head(string $pattern, $cmp):self
     {
-        return self::addRoute($pattern, $cmp, ['HEAD']);
+        return $this->addRoute($pattern, $cmp, ['HEAD']);
     }
 
     /**
@@ -325,9 +337,9 @@ class Router
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
      * @return self
      */
-    public static function options(string $pattern, $cmp)
+    public function options(string $pattern, $cmp):self
     {
-        return self::addRoute($pattern, $cmp, ['OPTIONS']);
+        return $this->addRoute($pattern, $cmp, ['OPTIONS']);
     }
 
 
@@ -338,7 +350,7 @@ class Router
      * @return mixed
      * @throws HttpNotFound
      */
-    private static function route($controller, $method, $params)
+    private function route($controller, $method, $params)
     {
         try {
             //class mevcut değilse
@@ -349,13 +361,17 @@ class Router
                 throw new HttpNotFound($method . ' : method not found in ' . $controller, E_NOTICE);
             } else {
                 //method public değilse
-                $reflection = new ReflectionMethod($controller, $method);
-                if (!$reflection->isPublic()) {
+                $reflectionMethod = new ReflectionMethod($controller, $method);
+
+                if (!$reflectionMethod->isPublic()) {
                     throw new HttpNotFound($method . ' : method is not a public', E_NOTICE);
                 }
+
+                $reflectionForParameters = new Reflection($this->app);
+                $classRefParameters = $reflectionForParameters->setMethodParameters($controller, $method, $params);
             }
 
-            return call_user_func_array([new $controller, $method], $params);
+            return call_user_func_array([new $controller, $method], $classRefParameters);
 
         } catch (ArgumentCountError $e) {
             throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
@@ -369,22 +385,22 @@ class Router
      *
      * @return void
      */
-    public static function start()
+    public function start()
     {
         try {
 
-            foreach (self::$routes as $name => $route) {
+            foreach ($this->routes as $name => $route) {
 
-                if (false !== ($matches = self::rootMatch($route['prefix'] . $route['pattern'], $route['requestUri']))) {
+                if (false !== ($matches = $this->rootMatch($route['prefix'] . $route['pattern'], $route['requestUri']))) {
 
                     //current router
-                    self::$currentRoute = $route;
+                    $this->currentRoute = $route;
 
                     //prefix
-                    self::$prefix = $route['prefix'];
+                    $this->prefix = $route['prefix'];
 
                     //Request method check
-                    if (in_array(Request::method(), $route['method']) == false) {
+                    if (in_array($this->request->method(), $route['method']) == false) {
                         throw new HttpMethodNotAllowed("Http method allowed " . implode(",", $route['method']));
                     }
 
@@ -397,9 +413,9 @@ class Router
 
                     //Router callback clouser
                     if (is_callable($route['cmp'])) {
-                        $response = self::startCallback($route['cmp'], $matches);
+                        $response = $this->startCallback($route['cmp'], $matches);
                     } else {
-                        $response = self::startController($route, $matches);
+                        $response = $this->startController($route, $matches);
                     }
 
                     //load middleware after
@@ -423,13 +439,13 @@ class Router
             throw new HttpNotFound('No match router.', E_NOTICE);
 
         } catch (HttpNotFound $e) {
-            Exceptions::debug($e);
+            $this->app->debug($e);
             return self::errors(404);
         } catch (HttpMethodNotAllowed $e) {
-            Exceptions::debug($e);
+            $this->app->debug($e);
             return self::errors(405);
         } catch (Exception $e) {
-            Exceptions::debug($e);
+            $this->app->debug($e);
             return self::errors(500);
         }
     }
@@ -441,10 +457,13 @@ class Router
      * @return Response|View|null
      * @throws HttpNotFound
      */
-    private static function startCallback(callable $callback, $args)
+    private function startCallback(callable $callback, $args)
     {
         try {
-            return call_user_func_array($callback, $args);
+            $reflection = new Reflection($this->app);
+            $parameters = $reflection->setFunctionParameters($callback, $args);
+
+            return call_user_func_array($callback, $parameters);
         } catch (ArgumentCountError $e) {
             throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
         }
@@ -457,18 +476,29 @@ class Router
      * @return mixed
      * @throws HttpNotFound
      */
-    private static function startController($route, $matches)
+    private function startController($route, $matches)
     {
         $cmp = explode('@', $route['cmp']);
         //namespace
-        self::setNameSpace($route['namespace']);
-        self::setController(array_shift($cmp));
-        self::setMethod(array_shift($cmp));
-        self::setParams(array_merge($matches, $cmp));
+        $this->setNameSpace($route['namespace']);
+        $this->setController(array_shift($cmp));
+        $this->setMethod(array_shift($cmp));
+        $this->setParams(array_merge($matches, $cmp));
 
-        return self::route(self::$nameSpace . self::$controller, self::$method, self::$params);
+        return $this->route($this->nameSpace . $this->controller, $this->method, $this->params);
     }
 
+
+    /**
+     * @param $pattern
+     * @param $replacement
+     * @return $this
+     */
+    public function where($pattern, $replacement):self
+    {
+        $this->matchPatterns[$pattern] = $replacement;
+        return $this;
+    }
 
     /**
      * Yönlendirme kalıplarını regex olarak dönüştürür.
@@ -477,9 +507,14 @@ class Router
      * @param $requestUri
      * @return array|bool
      */
-    private static function rootMatch(string $pattern, $requestUri)
+    private function rootMatch(string $pattern, $requestUri)
     {
-        $pattern = preg_replace(array_keys(self::$matchPatterns), self::$matchPatterns, $pattern);
+        $patternKeys = array_keys($this->matchPatterns);
+        array_walk($patternKeys, function (&$item){
+            $item = '#'.preg_quote($item).'#';
+        });
+
+        $pattern = preg_replace($patternKeys, $this->matchPatterns, $pattern);
         $pattern = '/' . trim($pattern, '/');
         $requestUri = '/' . trim($requestUri, '/');
 
@@ -494,23 +529,23 @@ class Router
     /**
      * @param string $nameSpace
      */
-    private static function setNameSpace(string $nameSpace)
+    private function setNameSpace(string $nameSpace)
     {
-        $controllerPath = str_replace('/', '\\', Config::get('path.controller')) . '\\';
+        $controllerPath = str_replace('/', '\\', $this->app->config['path']['controller']) . '\\';
         $subPath = $nameSpace ? str_replace('/', '\\', $nameSpace) . '\\' : '';
         $nameSpace = $controllerPath . $subPath;
         $nameSpace = preg_replace('/[^\w\d\\\]{1,256}/u', '', $nameSpace);
-        self::$nameSpace = (string)$nameSpace;
+        $this->nameSpace = (string)$nameSpace;
     }
 
     /**
      * Girilen class kullanılabilir hale getirir
      * @param $className
      */
-    private static function setController($className)
+    private function setController($className)
     {
         $className = preg_replace('/[^\w\d\/\\\]{1,256}/u', '', $className);
-        self::$controller = $className ? str_replace('/', '\\', $className) : self::$controller;
+        $this->controller = $className ? str_replace('/', '\\', $className) : $this->controller;
     }
 
     /**
@@ -518,10 +553,10 @@ class Router
      *
      * @param $methodName
      */
-    private static function setMethod($methodName)
+    private function setMethod($methodName)
     {
         $methodName = preg_replace('/[^\w\d]{1,256}/u', '', $methodName);
-        self::$method = $methodName ? $methodName : self::$method;
+        $this->method = $methodName ? $methodName : $this->method;
     }
 
     /**
@@ -529,14 +564,14 @@ class Router
      *
      * @param $params
      */
-    private static function setParams($params)
+    private function setParams($params)
     {
         if (is_array($params)) {
-            self::$params = $params;
+            $this->params = $params;
         } elseif (empty($params)) {
-            self::$params = [];
+           $this->params = [];
         } else {
-            self::$params = [$params];
+            $this->params = [$params];
         }
     }
 
@@ -545,9 +580,9 @@ class Router
      *
      * @return string
      */
-    public static function getNameSpace()
+    public function getNameSpace():string
     {
-        return self::$nameSpace;
+        return $this->nameSpace;
     }
 
     /**
@@ -555,9 +590,9 @@ class Router
      *
      * @return string
      */
-    public static function getController()
+    public function getController():string
     {
-        return self::$controller;
+        return $this->controller;
     }
 
     /**
@@ -565,9 +600,9 @@ class Router
      *
      * @return string
      */
-    public static function getMethod()
+    public function getMethod():string
     {
-        return self::$method;
+        return $this->method;
     }
 
     /**
@@ -575,9 +610,9 @@ class Router
      *
      * @return array
      */
-    public static function getParams()
+    public function getParams():array
     {
-        return self::$params;
+        return $this->params;
     }
 
     /**
@@ -585,9 +620,9 @@ class Router
      *
      * @return string
      */
-    public static function getPrefix()
+    public function getPrefix():string
     {
-        return trim(self::$prefix, '/');
+        return trim($this->prefix, '/');
     }
 
 
@@ -596,11 +631,10 @@ class Router
      * @param string $searchName name or regex
      * @return array
      */
-    public static function getNames(string $searchName)
+    public function getNames(string $searchName):array
     {
-        $routes = self::$routes;
         $matchedRoutes = [];
-        array_walk($routes, function ($item) use ($searchName, &$matchedRoutes) {
+        array_walk($this->routes, function ($item) use ($searchName, &$matchedRoutes) {
 
             if (preg_match('#^' . $searchName . '$#', $item['name'])) {
                 $matchedRoutes[] = $item;
@@ -616,9 +650,9 @@ class Router
      * @param string $routerName name or regex
      * @return bool
      */
-    public static function matchName(string $routerName)
+    public function matchName(string $routerName):bool
     {
-        return preg_match('#^' . $routerName . '$#', self::$currentRoute['name']);
+        return preg_match('#^' . $routerName . '$#', $this->currentRoute['name']);
     }
 
     /**
@@ -628,23 +662,23 @@ class Router
      * @param callable|null $callback
      * @return mixed
      */
-    public static function errors($http_code, callable $callback = null)
+    public function errors($http_code, callable $callback = null)
     {
         /**
          * @var $view View
          **/
-        $view = App::getInstance(View::class);
+        $view = $this->app->resolve(View::class);
         if ($callback instanceof Closure) {
-            self::$errors[$http_code] = $callback;
-            return new static();
+            $this->errors[$http_code] = $callback;
+            return $this;
         }
 
-        if (empty(self::$errors[$http_code])) {
-            self::$errors[$http_code] = function () use ($view, $http_code) {
+        if (empty($this->errors[$http_code])) {
+            $this->errors[$http_code] = function () use ($view, $http_code) {
                 $view->path('errors/' . $http_code, null)->render($http_code);
             };
         }
 
-        return call_user_func(self::$errors[$http_code]);
+        return call_user_func($this->errors[$http_code]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Core\Session;
 
+
 /**
  * Class Session
  * Kolay session yönetimi sağlar
@@ -17,13 +18,23 @@ class Session
      * @param null $domain oturumun geçerli olduğu alan
      * @param bool $secure true değeri atanırsa https etki alanında çalışır.
      * @param bool $httponly oturum verilerine istemci tarafından erişim kısıtlanır.
+     * @param array $options ['samesite' => 'Strict']
+     * @return bool
      */
-    public static function start($lifetime = 0, $path = '/', $domain = null, $secure = false, $httponly = true)
+    public function start($lifetime = 0, $path = '/', $domain = null, $secure = false, $httponly = true, array $options = ['samesite' => 'Strict']):bool
     {
-        session_set_cookie_params($lifetime, $path, $domain, $secure, $httponly);
-        session_name("SID");
-        session_start();
-        self::tempClear();
+        if (!$this->status()) {
+            session_set_cookie_params($lifetime, $path, $domain, $secure, $httponly);
+            foreach ($options as $option => $value) {
+                session_set_cookie_params([$option => $value]);
+            }
+            $started = session_start();
+            $this->tempClear();
+
+            return $started;
+        }
+
+        return false;
     }
 
 
@@ -34,9 +45,9 @@ class Session
      * @param $value
      * @return bool
      */
-    public static function set(string $name, $value)
+    public function set(string $name, $value):bool
     {
-        if (session_status() === PHP_SESSION_ACTIVE) {
+        if ($this->status()) {
             dot_aray_set($_SESSION, $name, $value);
             return true;
         }
@@ -50,9 +61,9 @@ class Session
      * @param string $name nokta ile birleşitirilmiş session indexi (index1.index2)
      * @return mixed
      */
-    public static function get(string $name)
+    public function get(string $name)
     {
-        if (session_status() === PHP_SESSION_ACTIVE) {
+        if ($this->status()) {
             return dot_aray_get($_SESSION, $name);
         }
         return false;
@@ -64,9 +75,9 @@ class Session
      * @param string $name nokta ile birleşitirilmiş session indexi (index1.index2)
      * @return bool
      */
-    public static function remove(string $name)
+    public function remove(string $name):bool
     {
-        if (session_status() === PHP_SESSION_ACTIVE) {
+        if ($this->status()) {
             return dot_array_del($_SESSION, $name);
         }
         return false;
@@ -82,9 +93,9 @@ class Session
      * @param int $lifecycle
      * @return bool
      */
-    public static function tempSet(string $name, $value, int $lifecycle = 1)
+    public function tempSet(string $name, $value, int $lifecycle = 1):bool
     {
-        if (session_status() === PHP_SESSION_ACTIVE) {
+        if ($this->status()) {
             $_SESSION['__TEMPRORY__']['__TIMES__'][$name] = 0;
             $_SESSION['__TEMPRORY__']['__LIFECYCLE__'][$name] = $lifecycle;
             $_SESSION['__TEMPRORY__'][$name] = $value;
@@ -99,7 +110,7 @@ class Session
      * @param string $name
      * @return mixed
      */
-    public static function tempGet(string $name)
+    public function tempGet(string $name)
     {
         return $_SESSION['__TEMPRORY__'][$name] ?? null;
     }
@@ -108,7 +119,7 @@ class Session
     /**
      * Session::tmpSet medhoduyla oluşturulan verileri bir sonraki sayfada siler.
      */
-    public static function tempClear()
+    public function tempClear()
     {
         if (isset($_SESSION['__TEMPRORY__'])) {
 
@@ -125,12 +136,23 @@ class Session
         }
     }
 
+    /**
+     * @return bool
+     */
+    public function status():bool
+    {
+        return session_status() === PHP_SESSION_ACTIVE;
+    }
 
     /**
      * Tüm oturum bilgilerini siler.
      */
-    public static function destroy()
+    public function destroy():bool
     {
-        session_destroy();
+        if($this->status()) {
+            return session_destroy();
+        }
+
+        return false;
     }
 }

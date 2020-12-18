@@ -35,7 +35,7 @@ return  array(
     'language' => [
         'key' => 'tr',
         'name' => 'Türkçe',
-        'local' => 'TR-tr'
+        'locale' => 'TR-tr'
     ],
     /**
      * Charset
@@ -59,35 +59,20 @@ return  array(
     'hash_algo' => 'sha256',
 
     /**
-     * true php password_hash DEFUALT_HASH yöntemi kullanılır, aksi halde hash algo ile belirtilen yöntem kullanılır
-     * true , false
+     * true php password_hash DEFUALT_HASH yöntemi kullanılır, aksi halde belirtilen hash yöntemi kullanılır
+     * true, "md5", "sha256", "haval160,4" ve benzerleri
      */
-    'password_hash' => false,
+    'password_hash' => 'md5',
 
     /**
-     * enable [true or false]
      * driver [file or database]
      */
-    'log' => [
-        'enable' => true,
-        'driver' => 'file'
-    ],
+    'logger_driver' => 'file',
 
     /**
-     * Cache ayarları
-     * enable [true or false]
-     * driver [file, memcache, database]
-     * memcache [host, port]
+     * cache.php
+     * driver seçeneklerinden biri
+     * [file, apcu, database, redis, memcached]
      */
-    'cache' => [
-        'enable' => true,
-        'driver' => 'file',
-        'memcache' => [
-            'host' => 'localhost',
-            'port' => 11211
-        ],
-        'database' => [
-            'table' => 'cache'
-        ]
-    ]
+    'cache_driver' => 'file',
 );

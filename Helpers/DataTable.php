@@ -12,6 +12,7 @@ namespace Helpers;
 
 
 use Core\Database\QueryBuilder;
+use DB;
 use PDO;
 
 class DataTable {
@@ -34,19 +35,9 @@ class DataTable {
      * @param string $table
      * @return QueryBuilder
      */
-    public function query(string $table)
+    public function table(string $table):QueryBuilder
     {
-        return $this->query = (new QueryBuilder())->table($table);
-    }
-
-
-    /**
-     * @return QueryBuilder
-     */
-    public function recordsTotalQuery()
-    {
-        $recordsTotalQuery = clone $this->query;
-        return $recordsTotalQuery->select('Count(1)', true);
+        return $this->query = DB::table($table);
     }
 
 
@@ -95,9 +86,22 @@ class DataTable {
     }
 
     /**
-     * @return array
+     * @return QueryBuilder
      */
-    public function result()
+    protected function recordsTotalQuery():QueryBuilder
+    {
+        $recordsTotalQuery = clone $this->query;
+        $recordsTotalQuery->select('Count(1)', true);
+
+        return $recordsTotalQuery;
+    }
+
+
+    /**
+     * @return array
+     * @throws \Core\Database\SqlErrorException
+     */
+    public function result():array
     {
         $this->response['data'] = $this->query->limit(intval($this->request['start']), intval($this->request['length']))->get(PDO::FETCH_ASSOC);
         $this->response['recordsTotal'] = $this->recordsTotalQuery()->getVar();
@@ -110,9 +114,9 @@ class DataTable {
 /**
 EXAMPLE
 
-$dataTable = new DataTable($_GET);
+$dataTable = new DataTable(Request::get());
 
-$dataTable->query('users u')
+$dataTable->table('users u')
 ->select('w.withdrawID, u.nameSurname, u.userEmail, u.withdrawAddress, u.userID, w.status, w.created_at, w.updated_at')
 ->join('withdraw w', 'u.userID = w.userID')
 ->order("w.updated_at");

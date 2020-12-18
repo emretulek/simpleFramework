@@ -4,151 +4,153 @@
 namespace Core\Cache;
 
 
+
 use Closure;
-use Core\Config\Config;
-use Core\Exceptions\Exceptions;
-use Exception;
 
-class Cache
+class Cache implements CacheInterface
 {
+    protected CacheInterface $cache;
 
-    private static ?CacheInterface $instance = null;
-
-
-    /**
-     * @return CacheInterface|DatabaseCache|FileCache|MemoryCache|null
-     */
-    public static function init()
+    public function __construct(CacheInterface $cache)
     {
-        $config = Config::get('app.cache');
-
-        if (self::$instance == null && $config['enable']) {
-
-            try {
-                switch ($config['driver']) {
-                    case 'memcache':
-                        self::$instance = new MemoryCache();
-                        break;
-                    case 'database':
-                        self::$instance = new DatabaseCache();
-                        break;
-                    case 'file':
-                        self::$instance = new FileCache();
-                        break;
-                    default :
-                        throw new Exception("app.config hatalı driver tütü [memcache, database, file] kullanılabilir.", E_ERROR);
-                }
-            }catch (Exception $e){
-                Exceptions::debug($e);
-            }
-        }
-
-        return self::$instance;
-    }
-
-
-    /**
-     * @param $key
-     * @param $value
-     * @param bool $compress
-     * @param int $expires
-     * @return bool
-     */
-    public static function add($key, $value, $compress = false, $expires = 2592000)
-    {
-        if ($cache = self::init()) {
-            return $cache->add($key, $value, $compress, $expires);
-        }
-
-        return false;
-    }
-
-
-    /**
-     * @param $key
-     * @param $value
-     * @param bool $compress
-     * @param int $expires
-     * @return bool
-     */
-    public static function set($key, $value, $compress = false, $expires = 2592000)
-    {
-        try {
-            if ($cache = self::init()) {
-                return $cache->set($key, $value, $compress, $expires);
-            }
-        } catch (Exception $e) {
-            Exceptions::debug($e);
-        }
-
-        return false;
-    }
-
-
-    /**
-     * @param $key
-     * @return bool|mixed
-     */
-    public static function get($key)
-    {
-        if ($cache = self::init()) {
-            return $cache->get($key);
-        }
-
-        return false;
-    }
-
-
-    /**
-     * @param $key
-     * @return bool
-     */
-    public static function delete($key)
-    {
-        if ($cache = self::init()) {
-            return $cache->delete($key);
-        }
-
-        return false;
-    }
-
-
-    /**
-     * @return bool
-     */
-    public static function flush()
-    {
-        try {
-            if ($cache = self::init()) {
-                return $cache->flush();
-            }
-        } catch (Exception $e) {
-            Exceptions::debug($e);
-        }
-
-        return false;
+        $this->cache = $cache;
     }
 
     /**
+     *  Önbellekten ilgili anahtara ait değeri döndürür
+     * @param string $key
+     * @param null $default
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    public function get(string $key, $default = null)
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
+
+    /**
+     * Önbelleğe yeni bir değer ekler, anahtar varsa üzerine yazar
      *
-     * @param $key
-     * @param Closure $closure
-     * @param bool $compress
-     * @param int $expires
-     * @return bool|mixed
+     * @param string $key
+     * @param $value
+     * @param int|null|\DateInterval $ttl
+     * @return bool
+     * @throws InvalidArgumentException
      */
-    public static function use($key, Closure $closure, $compress = false, $expires = 2592000)
+    public function set(string $key, $value, $ttl = null): bool
     {
-        if ($cache = self::get($key)) {
-            return $cache;
-        }
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
 
-        $cache = call_user_func($closure);
+    /**
+     * Önbelleğe yeni bir değer ekler, anahtar varsa false döner
+     *
+     * @param string $key
+     * @param $value
+     * @param int|null|\DateInterval $ttl
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    public function add(string $key, $value, $ttl = null): bool
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
 
-        if (self::set($key, $cache, $compress, $expires)) {
-            return $cache;
-        }
+    /**
+     * Önbellekte veri varsa getirir yoksa oluşturuğ default değeri döndürür
+     * @param string $key
+     * @param int|null|\DateInterval $ttl
+     * @param mixed|Closure $default
+     * @return mixed
+     */
+    public function getSet(string $key, $ttl = null, $default = null)
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
 
-        return $cache;
+    /**
+     * Önbellekten ilgili anahtara ait değeri siler
+     *
+     * @param string $key
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    public function delete(string $key): bool
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
+
+    /**
+     * Tüm önbelleği temizler
+     * @return bool
+     */
+    public function clear(): bool
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
+
+    /**
+     * Çoklu önbellek listesi
+     * @param array $keys anahtar değer ilişkili liste
+     * @return array A list of key
+     * @throws InvalidArgumentException
+     */
+    public function getMultiple(array $keys): array
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
+
+    /**
+     * Çoklu önbellekleme
+     * @param array $items anahtar değer ilişkili liste
+     * @param int|null|\DateInterval $ttl geçerlilik süresi
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    public function setMultiple(array $items, $ttl = null): bool
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
+
+    /**
+     * Çoklu önbellekten veri silme
+     * @param array $keys
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    public function deleteMultiple(array $keys): bool
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
+
+    /**
+     * Önbellekte anahtarın olup olmadığını kontrol eder
+     * @param string $key
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    public function has(string $key): bool
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
+
+    /**
+     * @param string $key
+     * @param int $value
+     * @return int|false
+     */
+    public function increment(string $key, $value = 1)
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
+    }
+
+    /**
+     * @param string $key
+     * @param int $value
+     * @return int|false
+     */
+    public function decrement(string $key, $value = 1)
+    {
+        return $this->cache->{__FUNCTION__}(...func_get_args());
     }
 }

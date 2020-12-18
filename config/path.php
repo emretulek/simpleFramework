@@ -3,18 +3,17 @@
  * Temel dosya dizin yapıları
  */
 return  array(
-    'core'  => 'Core',
-    'controller' => 'App/Controller',
-    'model' => 'App/Model',
-    'view' => 'App/View',
-    'template' => 'App/View/template',
-    'page' => 'App/View/page',
-    'assets' => 'assets',
-    'lang' => 'lang',
-    'helpers' => 'Helpers',
-    'routes' => 'routes',
-    'services' => 'Services',
-    'logs' => 'storage/logs',
-    'cache' => 'storage/cache',
-    'error_log' => 'storage/error_log'
+    'core'  => '/Core',
+    'controller' => '/App/Controller',
+    'model' => '/App/Model',
+    'view' => '/App/View',
+    'layout' => '/App/View/layout',
+    'page' => '/App/View/page',
+    'assets' => '/assets',
+    'language' => '/lang',
+    'helpers' => '/Helpers',
+    'routes' => '/routes',
+    'services' => '/ServiceProvider',
+    'cache' => '/storage/cache',
+    'error_log' => '/storage/error_log'
 );

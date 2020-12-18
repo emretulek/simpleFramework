@@ -2,7 +2,6 @@
 
 namespace Core\Hook;
 
-use Core\App;
 
 class Hook
 {
@@ -10,11 +9,13 @@ class Hook
     protected static array $storages = [];
 
     /**
+     * Yeni bir kanca ekler
      * @param string $name
      * @param callable $callable
      * @param int $priority
+     * @return bool
      */
-    public static function add(string $name, callable $callable, int $priority = 50)
+    public function add(string $name, callable $callable, int $priority = 50): bool
     {
         if(isset(self::$storages[$name][$priority])) {
             self::$storages[$name][] = $callable;
@@ -23,12 +24,15 @@ class Hook
         }
 
         ksort(self::$storages[$name]);
+
+        return true;
     }
 
     /**
+     * Belirtilen kancayı kaldırır
      * @param $name
      */
-    public static function remove($name)
+    public function remove($name)
     {
         if (isset(self::$storages[$name])) {
             unset(self::$storages[$name]);
@@ -37,33 +41,37 @@ class Hook
 
 
     /**
+     * Kanca daha önce eklenmiş mi kontrol eder
      * @param $name
      * @return bool
      */
-    public static function exists($name)
+    public function exists($name):bool
     {
         return isset(self::$storages[$name]);
     }
 
     /**
-     * @return mixed
+     * Tüm kancaların listesini döndürür
+     * @return array
      */
-    public static function list()
+    public function list():array
     {
         return self::$storages;
     }
 
     /**
+     * Bir kancayı çalıştırır
      * @param string $name
      * @param mixed $output
      * @return mixed|null
      */
-    public static function exec(string $name, $output)
+    public function exec(string $name, $output)
     {
-        if (self::exists($name)) {
+        if ($this->exists($name)) {
 
             foreach (self::$storages[$name] as $callable) {
-                $output = App::caller($callable,  [$output]);
+
+                $output = call_user_func_array($callable, [$output]);
             }
         }
 

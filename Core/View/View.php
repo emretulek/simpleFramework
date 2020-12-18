@@ -3,8 +3,7 @@
 namespace Core\View;
 
 
-use Core\Config\Config;
-use Core\Exceptions\Exceptions;
+use Core\App;
 use Core\Http\Response;
 use Exception;
 
@@ -14,22 +13,23 @@ use Exception;
  */
 class View
 {
+    private App $app;
 
-    public static string $templateName = 'default';
+    public static string $layoutName = 'default';
     public static string $dynamicPage = 'index';
 
-    protected static array $insertData = [];
+    protected static array $insertedData = [];
     protected array $data = [];
     protected array $buffer = [];
 
 
     /**
      * View constructor.
+     * @param App $app
      */
-    public function __construct()
+    public function __construct(App $app)
     {
-        $this->data(self::$insertData);
-        return $this;
+        $this->app = $app;
     }
 
 
@@ -39,9 +39,9 @@ class View
      * @param array $data
      * @return array
      */
-    public static function insertData(array $data)
+    public static function insertData(array $data):array
     {
-        return self::$insertData = array_merge(self::$insertData, $data);
+        return static::$insertedData = array_merge(static::$insertedData, $data);
     }
 
     /**
@@ -51,10 +51,10 @@ class View
      * @param array $data
      * @return View
      */
-    public function page(string $fileName, array $data = array())
+    public function page(string $fileName, array $data = array()):self
     {
         $this->data($data);
-        $___page = ROOT . Config::get('path.page') . '/' . $fileName . EXT;
+        $___page = $this->app->basePath . $this->app->config['path']['page'] . '/' . $fileName . EXT;
 
         try {
             if (file_exists($___page)) {
@@ -66,7 +66,7 @@ class View
                 throw new Exception("Sayfa bulunamadı. $___page", E_ERROR);
             }
         } catch (Exception $e) {
-            Exceptions::debug($e);
+            $this->app->debug($e);
         }
         return $this;
     }
@@ -80,10 +80,10 @@ class View
      * @param string $ext
      * @return $this
      */
-    public function path(string $filePath, $data = array(), $ext = EXT)
+    public function path(string $filePath, $data = array(), $ext = EXT):self
     {
         $this->data($data);
-        $___part = ROOT . Config::get('path.view') . '/' . $filePath . $ext;
+        $___part = $this->app->basePath . $this->app->config['path']['view'] . '/' . $filePath . $ext;
         try {
             if (file_exists($___part)) {
                 ob_start();
@@ -94,36 +94,36 @@ class View
                 throw new Exception("Sayfa bulunamadı. $___part", E_ERROR);
             }
         } catch (Exception $e) {
-            Exceptions::debug($e);
+            $this->app->debug($e);
         }
         return $this;
     }
 
 
     /**
-     * /page dizininden bir dosyayı template içine dahil ederek hazırlar.
+     * /page dizininden bir dosyayı layout içine dahil ederek hazırlar.
      *
      * @param string $fileName
      * @param array $data
      * @return View
      */
-    public function template(string $fileName, $data = array())
+    public function layout(string $fileName, $data = array()):self
     {
         $this->data($data);
-        self::$dynamicPage = $fileName;
-        $___template = ROOT . Config::get('path.template') . '/' . self::$templateName . EXT;
+        static::$dynamicPage = $fileName;
+        $___layout = $this->app->basePath . $this->app->config['path']['layout'] . '/' . static::$layoutName . EXT;
 
         try {
-            if (file_exists($___template)) {
+            if (file_exists($___layout)) {
                 ob_start();
                 extract($this->data);
-                include($___template);
+                include($___layout);
                 $this->buffer[] = ob_get_clean();
             } else {
-                throw new Exception("Sayfa bulunamadı. $___template", E_ERROR);
+                throw new Exception("Sayfa bulunamadı. $___layout", E_ERROR);
             }
         } catch (Exception $e) {
-            Exceptions::debug($e);
+            $this->app->debug($e);
         }
         return $this;
     }
@@ -134,10 +134,10 @@ class View
      * @param $data
      * @return $this
      */
-    public function json($data)
+    public function json($data):self
     {
         ob_start();
-        (new Response($data))->json()->send();
+        (new Response($data))->toJson()->send();
         $this->buffer[] = ob_get_clean();
         return $this;
     }
@@ -149,7 +149,7 @@ class View
      * @param null $headers
      * @return $this
      */
-    public function render($code = null, $headers = null)
+    public function render($code = null, $headers = null):self
     {
         (new Response($this->getBuffer(), $code, $headers))->send();
         $this->buffer = [];
@@ -160,21 +160,21 @@ class View
      * render etmeden view içeriğini döndürür
      * @return string
      */
-    public function getBuffer()
+    public function getBuffer():string
     {
         return implode('', $this->buffer);
     }
 
 
     /**
-     * Kullanılacak template dosyasını belirler.
+     * Kullanılacak layout dosyasını belirler.
      *
-     * @param string $template
+     * @param string $layout
      * @return View
      */
-    public function setTemplate(string $template)
+    public function setLayout(string $layout):self
     {
-        self::$templateName = $template;
+        static::$layoutName = $layout;
         return $this;
     }
 
@@ -184,8 +184,11 @@ class View
      * @param $data
      * @return $this
      */
-    private function data($data)
+    private function data($data):self
     {
+        $this->data = array_merge($this->data, static::$insertedData);
+        static::$insertedData = [];
+
         if (is_array($data)) {
             $this->data = array_merge($this->data, $data);
         } else {
@@ -197,7 +200,7 @@ class View
     /**
      * @return string
      */
-    public function __toString()
+    public function __toString():string
     {
         return $this->getBuffer();
     }

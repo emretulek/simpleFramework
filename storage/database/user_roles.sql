@@ -11,21 +11,21 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
--- Dumping structure for table phpfw.cache
-CREATE TABLE IF NOT EXISTS `cache` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `key` varchar(32) NOT NULL,
-  `value` mediumblob,
-  `expires` bigint(20) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `key` (`key`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+-- Dumping structure for table phpfw.user_roles
+CREATE TABLE IF NOT EXISTS `user_roles` (
+  `roleID` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `role_name` varchar(32) NOT NULL,
+  `role_description` varchar(32) DEFAULT NULL,
+  PRIMARY KEY (`roleID`),
+  UNIQUE KEY `groupName` (`role_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
--- Dumping data for table phpfw.cache: ~1 rows (approximately)
-/*!40000 ALTER TABLE `cache` DISABLE KEYS */;
-INSERT INTO `cache` (`id`, `key`, `value`, `expires`) VALUES
-	(1, 'test', _binary 0x733A31303A22746573742076616C7565223B, 2607872728);
-/*!40000 ALTER TABLE `cache` ENABLE KEYS */;
+-- Dumping data for table phpfw.user_roles: ~2 rows (approximately)
+/*!40000 ALTER TABLE `user_roles` DISABLE KEYS */;
+INSERT INTO `user_roles` (`roleID`, `role_name`, `role_description`) VALUES
+	(1, 'admin', NULL),
+	(2, 'member', NULL);
+/*!40000 ALTER TABLE `user_roles` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

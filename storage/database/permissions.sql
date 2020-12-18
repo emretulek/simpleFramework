@@ -11,21 +11,21 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
--- Dumping structure for table phpfw.cache
-CREATE TABLE IF NOT EXISTS `cache` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `key` varchar(32) NOT NULL,
-  `value` mediumblob,
-  `expires` bigint(20) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `key` (`key`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+-- Dumping structure for table phpfw.permissions
+CREATE TABLE IF NOT EXISTS `permissions` (
+  `permissionID` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `perm_name` varchar(32) NOT NULL,
+  `perm_description` varchar(256) DEFAULT NULL,
+  PRIMARY KEY (`permissionID`),
+  UNIQUE KEY `permName` (`perm_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
--- Dumping data for table phpfw.cache: ~1 rows (approximately)
-/*!40000 ALTER TABLE `cache` DISABLE KEYS */;
-INSERT INTO `cache` (`id`, `key`, `value`, `expires`) VALUES
-	(1, 'test', _binary 0x733A31303A22746573742076616C7565223B, 2607872728);
-/*!40000 ALTER TABLE `cache` ENABLE KEYS */;
+-- Dumping data for table phpfw.permissions: ~3 rows (approximately)
+/*!40000 ALTER TABLE `permissions` DISABLE KEYS */;
+INSERT INTO `permissions` (`permissionID`, `perm_name`, `perm_description`) VALUES
+	(1, 'perm1', 'perm 1 description'),
+	(2, 'perm2', 'perm 2 descript');
+/*!40000 ALTER TABLE `permissions` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

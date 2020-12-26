@@ -24,6 +24,9 @@ namespace Core\Facades;
  * @see \Core\View\View::layout()
  * @method static \Core\View\View layout(string $fileName, $data = array())
  * ----------------------------------------------------------------------------------
+ * @see \Core\View\View::getLayoutPage()
+ * @method static \Core\View\View getLayoutPage()
+ * ----------------------------------------------------------------------------------
  * @see \Core\View\View::json()
  * @method static \Core\View\View json($data)
  * ------------------------------------------------------------------------------------

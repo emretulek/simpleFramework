@@ -15,7 +15,7 @@ class Home extends Controller
         //$this->view()->page('index', ['hello' => 'Hello World.'])->render();
         //page('index', ['hello' => 'Not found.'])->render(404);
 
-        return page('index', ['hello' => 'Hello world']);
+        return layout('index', ['content' => 'This content here']);
     }
 }
 

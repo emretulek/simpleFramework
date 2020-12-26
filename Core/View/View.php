@@ -15,8 +15,8 @@ class View
 {
     private App $app;
 
-    public static string $layoutName = 'default';
-    public static string $dynamicPage = 'index';
+    protected string $layoutName = 'default';
+    protected string $dynamicPage = 'index';
 
     protected static array $insertedData = [];
     protected array $data = [];
@@ -57,10 +57,10 @@ class View
         $___page = $this->app->basePath . $this->app->config['path']['page'] . '/' . $fileName . EXT;
 
         try {
-            if (file_exists($___page)) {
+            if (is_readable_file($___page)) {
                 ob_start();
                 extract($this->data);
-                include($___page);
+                require($___page);
                 $this->buffer[$fileName] = ob_get_clean();
             } else {
                 throw new Exception("Sayfa bulunamadı. $___page", E_ERROR);
@@ -85,10 +85,10 @@ class View
         $this->data($data);
         $___part = $this->app->basePath . $this->app->config['path']['view'] . '/' . $filePath . $ext;
         try {
-            if (file_exists($___part)) {
+            if (is_readable_file($___part)) {
                 ob_start();
                 extract($this->data);
-                include($___part);
+                require($___part);
                 $this->buffer[$filePath] = ob_get_clean();
             } else {
                 throw new Exception("Sayfa bulunamadı. $___part", E_ERROR);
@@ -110,14 +110,14 @@ class View
     public function layout(string $fileName, $data = array()):self
     {
         $this->data($data);
-        static::$dynamicPage = $fileName;
-        $___layout = $this->app->basePath . $this->app->config['path']['layout'] . '/' . static::$layoutName . EXT;
+        $this->dynamicPage = $fileName;
+        $___layout = $this->app->basePath . $this->app->config['path']['layout'] . '/' . $this->layoutName . EXT;
 
         try {
-            if (file_exists($___layout)) {
+            if (is_readable_file($___layout)) {
                 ob_start();
                 extract($this->data);
-                include($___layout);
+                require($___layout);
                 $this->buffer[] = ob_get_clean();
             } else {
                 throw new Exception("Sayfa bulunamadı. $___layout", E_ERROR);
@@ -126,6 +126,16 @@ class View
             $this->app->debug($e);
         }
         return $this;
+    }
+
+
+    /**
+     * Layout methoduna aktarılan dinamik sayfa
+     * @return $this
+     */
+    public function getLayoutPage():self
+    {
+        return $this->page($this->dynamicPage);
     }
 
     /**
@@ -149,7 +159,7 @@ class View
      * @param null $headers
      * @return $this
      */
-    public function render($code = null, $headers = null):self
+    public function render($code = 200, $headers = null):self
     {
         (new Response($this->getBuffer(), $code, $headers))->send();
         $this->buffer = [];
@@ -162,7 +172,7 @@ class View
      */
     public function getBuffer():string
     {
-        return implode('', $this->buffer);
+        return implode(PHP_EOL, $this->buffer);
     }
 
 
@@ -174,7 +184,7 @@ class View
      */
     public function setLayout(string $layout):self
     {
-        static::$layoutName = $layout;
+        $this->layoutName = $layout;
         return $this;
     }
 

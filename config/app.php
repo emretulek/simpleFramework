@@ -74,5 +74,5 @@ return  array(
      * driver seçeneklerinden biri
      * [file, apcu, database, redis, memcached]
      */
-    'cache_driver' => 'file',
+    'cache_driver' => 'null',
 );

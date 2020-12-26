@@ -23,6 +23,7 @@ class CacheServiceProvider extends ServiceProvider {
         $this->registerMemcachedCache();
         $this->registerDatabaseCache();
         $this->registerRedisCache();
+        $this->registerNullCache();
 
         //default cache driver registered
         $this->app->singleton(Cache::class, function ($app){
@@ -77,6 +78,16 @@ class CacheServiceProvider extends ServiceProvider {
     {
         $this->app->singleton(RedisCache::class, function($app){
             return new RedisCache(new RedisConnector(), $app->config['cache']['redis']);
+        });
+    }
+
+    /**
+     * Null cache singleton
+     */
+    protected function registerNullCache()
+    {
+        $this->app->singleton(NullCache::class, function(){
+            return new NullCache();
         });
     }
 }

@@ -1,1 +1,3 @@
-<?=$hello?>
+<div>
+    <p><?=$content?></p>
+</div>

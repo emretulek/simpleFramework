@@ -52,5 +52,10 @@ return [
                 'weight' => 100
             ]
         ]
+    ],
+
+    //nullcache driver olarak atanırsa cache devre dışı bırakılmış olur
+    'null' => [
+        'driver' => 'null'
     ]
 ];

@@ -149,11 +149,12 @@ class ExceptionHandler
      */
     public function debug(Throwable $e)
     {
-        $e = $e->getPrevious() ?? $e;
-        $exceptionType = get_class($e);
-        $code = $e->getCode();
-        $message = $e->getMessage();
-        $location = $this->getLocation($e);
+        $exception = $e->getPrevious() ?? $e;
+        $exceptionType = get_class($exception);
+        $code = $exception->getCode();
+        $message = $exception->getMessage();
+        $location = $this->getLocation($exception);
+        array_unshift($location,['file' => $e->getFile(), 'line' => $e->getLine()]);
         $file = $location[0]['file'];
         $line = $location[0]['line'];
 
@@ -188,7 +189,7 @@ class ExceptionHandler
             case 3:
                 console_log($console_info);
                 $this->print($message, $code, $location, $exceptionType);
-                dump($e);
+                dump($exception);
                 $this->writeLog($message, $code, $file, $line);
                 break;
             default:

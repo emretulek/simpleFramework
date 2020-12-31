@@ -11,9 +11,6 @@ return  array(
     'page' => '/App/View/page',
     'assets' => '/assets',
     'language' => '/lang',
-    'helpers' => '/Helpers',
-    'routes' => '/routes',
-    'services' => '/ServiceProvider',
     'cache' => '/storage/cache',
     'error_log' => '/storage/error_log'
 );

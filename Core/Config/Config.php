@@ -7,15 +7,15 @@ namespace Core\Config;
  */
 class Config
 {
-    private array $configs = [];
+    private array $configs;
 
     /**
      * Config constructor.
      * @param array $configs
      */
-    public function __construct(array $configs)
+    public function __construct(array &$configs)
     {
-        $this->configs = $configs;
+        $this->configs = &$configs;
     }
 
     /**

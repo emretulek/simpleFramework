@@ -17,6 +17,16 @@ if (!function_exists('app')) {
     }
 }
 
+if (!function_exists('debug')) {
+    /**
+     * @param Throwable $throwable
+     */
+    function debug(Throwable $throwable):void
+    {
+        app()->debug($throwable);
+    }
+}
+
 if (!function_exists('lang')) {
     /**
      * @return Language

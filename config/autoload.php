@@ -4,6 +4,7 @@
  * {functions} fonksiyon veya php dosyalarını dahil eder.
  * {alias} uzun namespace veya sınıfların takma isimle çağırılmasını sağlar.
  * {services} ilgili services sınıfının boot methodunu çağırır. (bkz. Core\ServiceProvider )
+ * {routes} route dosyalarının tam yolu
  */
 
 return [

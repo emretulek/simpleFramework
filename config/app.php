@@ -65,14 +65,14 @@ return  array(
     'password_hash' => 'md5',
 
     /**
-     * driver [file or database]
+     * driver [file, database, null]
      */
-    'logger_driver' => 'file',
+    'logger_driver' => 'null',
 
     /**
      * cache.php
      * driver seçeneklerinden biri
-     * [file, apcu, database, redis, memcached]
+     * [file, apcu, database, redis, memcached, null]
      */
     'cache_driver' => 'null',
 );

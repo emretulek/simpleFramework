@@ -8,5 +8,7 @@ return [
     //veritabanı tablosu
     'database' => [
         'table' => 'logger'
-    ]
+    ],
+    //null driver logger disable
+    'null' => 'null'
 ];

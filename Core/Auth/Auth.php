@@ -394,12 +394,12 @@ class Auth
         $permissions['role_name'] = $this->getRoleName();
         $permissions['permissions'] = [];
 
-        $groupPerms = $this->app->resolve(Database::class)->table('role_permissions rp')
+        $rolePerms = $this->app->resolve(Database::class)->table('role_permissions rp')
             ->join('permissions p', 'rp.permissionID = p.permissionID')
             ->select('p.permissionID, p.perm_name')->where('rp.roleID', $this->user->roleID)->get();
 
-        foreach ($groupPerms as $groupPerm) {
-            $permissions['permissions'][$groupPerm->permissionID] = $groupPerm->name;
+        foreach ($rolePerms as $rolePerm) {
+            $permissions['permissions'][$rolePerm->permissionID] = $rolePerm->perm_name;
         }
 
         return $permissions;

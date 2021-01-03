@@ -38,8 +38,11 @@ namespace Core\Facades;
  * @see \Core\Auth\Auth::userID()
  * @method static int userID()
  * -----------------------------------------------------------------------------
- * @see \Core\Auth\Auth::userGroupName()
- * @method static null|string userGroupName()
+ * @see \Core\Auth\Auth::roleName()
+ * @method static null|string roleName()
+ * -----------------------------------------------------------------------------
+ * @see \Core\Auth\Auth::role()
+ * @method static bool|int role()
  * -----------------------------------------------------------------------------
  * @see \Core\Auth\Auth::guard()
  * @method static bool guard($groupName)

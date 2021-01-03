@@ -3,6 +3,7 @@
 use Core\App;
 use Core\Config\Config;
 use Core\Http\Request;
+USE Core\Router\Router;
 use Core\Http\Response;
 use Core\Language\Language;
 use Core\View\View;
@@ -258,11 +259,11 @@ if (!function_exists('groupUrl')) {
      * @param null $path url adresine eklenecek bölüm
      * @return string
      */
-    function groupUrl($path = null):string
+    function groupUrl($path = null): string
     {
         $path = $path ? trim($path, '/') : '';
-        $group  = app()->resolve(Router::class)->getPrefix ?
-            app()->resolve(Router::class)->getPrefix : '';
+        $group  = app()->resolve(Router::class)->getPrefix() ?
+            app()->resolve(Router::class)->getPrefix() . '/' : '';
         return baseUrl($group . $path);
     }
 }

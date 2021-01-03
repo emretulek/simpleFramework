@@ -2,7 +2,6 @@
 
 namespace Core\Validation;
 
-use Core\Facades\Hash;
 
 /**
  * Class Filter
@@ -347,8 +346,6 @@ class Filter
                     $this->errorMessage('repassword');
                 }
             }
-
-            $this->input = Hash::password($this->input);
         } else {
             $this->errorMessage('password', 4, 16);
         }

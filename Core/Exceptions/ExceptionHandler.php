@@ -160,7 +160,7 @@ class ExceptionHandler
 
         $console_info = ['code' => $code, 'message' => $message, 'file' => $file, 'line' => $line, 'exception' => $exceptionType];
 
-        switch (conf('app.debug')) {
+        switch (config('app.debug')) {
             case 0:
                 // kullanıcılara önemli hatalar hakkında bilgi verme.
                 if (array_key_exists($code, self::ERROR)) {
@@ -208,7 +208,7 @@ class ExceptionHandler
     {
         $error_message = "[{$this->codeToString($code)}]\t[" . date("H:i:s d.m.Y") . "]\t{$message}\t{$file}\t{$line}\t" .
             $_SERVER['REMOTE_ADDR'] . "\t" . $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'] . PHP_EOL;
-        error_log($error_message, 3, ROOT . '/' . conf('path.error_log') . '/' . $this->codeToString($code) . '.log');
+        error_log($error_message, 3, ROOT . '/' . config('path.error_log') . '/' . $this->codeToString($code) . '.log');
     }
 
 

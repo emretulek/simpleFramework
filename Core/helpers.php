@@ -158,14 +158,14 @@ if (!function_exists('dot_array_del')) {
     }
 }
 
-if (!function_exists('conf')) {
+if (!function_exists('config')) {
     /**
      * Config sınıfının hızlı erişim methodu
      * @param $key
      * @param mixed $value
      * @return mixed
      */
-    function conf($key, $value = null)
+    function config($key, $value = null)
     {
        if($value === null){
            return app()->resolve(Config::class)->get($key);
@@ -248,7 +248,7 @@ if (!function_exists('baseUrl')) {
     function baseUrl($path = null):string
     {
         $path = $path ? trim($path, '/') : '';
-        return app()->resolve(Request::class) . $path;
+        return app()->resolve(Request::class)->baseUrl() . $path;
     }
 }
 

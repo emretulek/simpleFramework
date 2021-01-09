@@ -41,7 +41,6 @@ class Auth
         'userID',
         'username',
         'email',
-        'group',
         'password'
     ];
 
@@ -248,7 +247,7 @@ class Auth
     {
         /* Session hijacking  security */
         if ($this->app->resolve(Cookie::class)->get($this->tokenName) &&
-            $this->info($this->tokenName) != $this->app->resolve(Cookie::class)->get($this->tokenName)) {
+            $this->info($this->tokenName) !== $this->app->resolve(Cookie::class)->get($this->tokenName)) {
 
             $this->logout();
             return false;

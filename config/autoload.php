@@ -27,6 +27,7 @@ return [
         'hook' => Core\Facades\Hook::class,
         'cache' => Core\Facades\Cache::class,
         'logger' => Core\Facades\Logger::class,
+        'hash' => \Core\Facades\Hash::class,
         //helper alies
         'tag' => Helpers\Html\Tag::class,
         'meta' => Helpers\Html\Meta::class,

@@ -20,8 +20,8 @@ class MysqlQueryBuilder extends QueryBuilder {
     public function limit(int $length, int $start = 0):self
     {
         $this->limit = $start ?
-            ' LIMIT '. $start .','.$length :
-            ' LIMIT '.$length;
+            ' LIMIT ' . $length . ',' . $start :
+            ' LIMIT ' . $length;
 
         return $this;
     }

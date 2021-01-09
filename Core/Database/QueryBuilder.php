@@ -102,7 +102,9 @@ class QueryBuilder
 
         foreach ($columns as $key => $value) {
 
-            $query[] = $this->comparison($key, '=', $value);
+            if($value !== null) {
+                $query[] = $this->comparison($key, '=', $value);
+            }
         }
 
         $this->insert .= $this->insert ? ', ' . implode(", ", $query) : implode(", ", $query);
@@ -127,7 +129,9 @@ class QueryBuilder
 
         foreach ($columns as $key => $value) {
 
-            $query[] = $this->comparison($key, '=', $value);
+            if($value !== null) {
+                $query[] = $this->comparison($key, '=', $value);
+            }
         }
 
         $this->update .= $this->update ? ', ' . implode(", ", $query) : implode(", ", $query);
@@ -275,7 +279,7 @@ class QueryBuilder
     public function limit(int $length, int $start = 0): self
     {
         $this->limit = $start ?
-            ' LIMIT ' . $start . ',' . $length :
+            ' LIMIT ' . $length . ',' . $start :
             ' LIMIT ' . $length;
 
         return $this;

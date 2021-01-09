@@ -18,7 +18,7 @@ namespace Core\Facades;
  * @method static string makeWithKey(string $text, $key = null, $algo = null)
  * ----------------------------------------------------------------------------------
  * @see \Core\Crypt\Hash::password()
- * @method static false|string|null password(string $password, $use_algo = false)
+ * @method static false|string|null password(string $password)
  * ----------------------------------------------------------------------------------
  * @see \Core\Crypt\Hash::passwordCheck()
  * @method static string|false passwordCheck(string $password, string $hashedPassword, $use_algo = false)
@@ -37,6 +37,6 @@ class Hash extends Facade {
      */
     protected static function getFacadeAccessor(): string
     {
-        return Hash::class;
+        return \Core\Crypt\Hash::class;
     }
 }

@@ -349,7 +349,7 @@ if (!function_exists('redirect')) {
      * @param string $url yönlendirilecek sayfa adresi
      * @param null|int $code http header durum kodu default 302
      */
-    function redirect(string $url, $code = 200)
+    function redirect(string $url, $code = 302)
     {
         if (!headers_sent()) {
             if(filter_var($url, FILTER_VALIDATE_URL)){

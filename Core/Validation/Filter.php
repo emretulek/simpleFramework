@@ -43,7 +43,8 @@ class Filter
         'dateFormat' => 'Geçersiz tarih formatı.',
         'creditCard' => 'Geçersiz kredi kartı numarası.',
         'tcNo' => 'Geçersiz TC kimlik numarası.',
-        'equal' => 'Girilen değer istenen ile uyuşmuyor.'
+        'equal' => 'Girilen değer istenen ile uyuşmuyor.',
+        'in' => 'Lütfen belirtilen değerlerden birini seçin.'
     ];
 
     /**
@@ -569,6 +570,16 @@ class Filter
     {
         if($this->input !== $param){
             $this->errorMessage('equal');
+        }
+
+        return $this;
+    }
+
+
+    public function in(array $array, bool $strict = false)
+    {
+        if(!in_array($this->input, $array, $strict)){
+            $this->errorMessage('in');
         }
 
         return $this;

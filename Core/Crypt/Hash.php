@@ -67,7 +67,7 @@ class Hash
             return password_hash($password, PASSWORD_BCRYPT);
         }
 
-        return hash($this->hash_algo, $password, false);
+        return hash($this->password_hash, $password, false);
     }
 
 

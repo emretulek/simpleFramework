@@ -28,7 +28,7 @@ class App implements ArrayAccess
     /**
      * semantic version
      */
-    const VERSION = "3.0.5";
+    const VERSION = "3.1.0";
 
     /**
      * @var static

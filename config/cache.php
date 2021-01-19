@@ -17,7 +17,7 @@ return [
         'table' => 'cache'
     ],
 
-    //redis coming soon
+    //redis
     'redis' => [
         'driver' => 'redis',
         'server' => '127.0.0.1',

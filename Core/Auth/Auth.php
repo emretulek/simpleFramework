@@ -115,25 +115,35 @@ class Auth
      */
     public function login($password = null, $userInfo = [], $remember = 0): bool
     {
-        if ($password) {
-            $this->setUserForPassword($password, $userInfo);
-        } elseif (isset($userInfo['rememberme'])) {
-            $this->setUserForToken($userInfo);
+        if($this->check()){
+            $this->logout();
         }
 
-        if (isset($this->user)) {
+        if ($password) {
+            $result = $this->setUserForPassword($password, $userInfo);
+        } elseif (isset($userInfo['rememberme'])) {
+            $result = $this->setUserForToken($userInfo);
+        }else{
+            $result = false;
+        }
 
+        if ($result) {
             $this->generateUserSessions();
 
             if ($remember) {
-                $this->updateRememberToken($this->creatToken());
-                $this->creatRememberCookie($this->creatToken(), $remember);
+                $token = $this->creatToken();
+                $this->creatRememberCookie($token, $remember);
+                $this->table()
+                    ->where('userID', $this->user->userID)
+                    ->update(['rememberme' => $token]);
             }
 
-            return true;
+            $this->table()
+                ->where('userID', $this->user->userID)
+                ->update(['session_id' => session_id(), 'last_login' => '{{NOW()}}']);
         }
 
-        return false;
+        return $result;
     }
 
 
@@ -207,18 +217,6 @@ class Auth
         }
 
         return false;
-    }
-
-
-    /**
-     * @param string $token
-     * @throws SqlErrorException
-     */
-    protected function updateRememberToken(string $token)
-    {
-        $this->table()
-            ->where('userID', $this->user->userID)
-            ->update(['rememberme' => $token]);
     }
 
 

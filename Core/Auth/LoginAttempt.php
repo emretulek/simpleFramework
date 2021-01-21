@@ -31,7 +31,7 @@ trait LoginAttempt {
     {
         if ($this->loginAttempt) {
 
-            if (Cache::get('login_attempt_' . $username . $ip) > $this->loginAttemptMax) {
+            if (Cache::get('login_attempt_' . $username . $ip) >= $this->loginAttemptMax) {
 
                 return true;
             }
@@ -51,7 +51,7 @@ trait LoginAttempt {
 
             $count = $this->cache()->get('login_attempt_' . $username . $ip);
 
-            if ($count <= $this->loginAttemptMax) {
+            if ($count < $this->loginAttemptMax) {
 
                 $this->cache()->set('login_attempt_' . $username . $ip, $count + 1, $this->loginAttemptTimeout);
             }

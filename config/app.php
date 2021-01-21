@@ -67,12 +67,12 @@ return  array(
     /**
      * driver [file, database, null]
      */
-    'logger_driver' => 'null',
+    'logger_driver' => 'database',
 
     /**
      * cache.php
      * driver seçeneklerinden biri
      * [file, apcu, database, redis, memcached, null]
      */
-    'cache_driver' => 'null',
+    'cache_driver' => 'file',
 );

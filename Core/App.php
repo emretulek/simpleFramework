@@ -28,7 +28,7 @@ class App implements ArrayAccess
     /**
      * semantic version
      */
-    const VERSION = "3.0.5";
+    const VERSION = "3.1.1";
 
     /**
      * @var static
@@ -121,9 +121,9 @@ class App implements ArrayAccess
             //yükleme sırası önemlidir değiştirilmemeli
             $this->loadExceptionHandler();
             $this->loadFiles($this->config['autoload']['files']);
-            $this->loadServices($this->config['autoload']['services']);
-            $this->loadAlias($this->config['autoload']['aliases']);
             $this->loadFacades();
+            $this->loadAlias($this->config['autoload']['aliases']);
+            $this->loadServices($this->config['autoload']['services']);
             $this->loadRoutes($this->config['autoload']['routes']);
         }catch (Exception $e){
             $this->debug($e);

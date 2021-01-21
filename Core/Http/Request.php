@@ -175,7 +175,7 @@ class Request
     public function post(string $name = null)
     {
         array_walk_recursive($this->post, function (&$item){
-            $item = trim(strip_tags($item));
+            $item = trim($item);
         });
 
         if (is_null($name)) {

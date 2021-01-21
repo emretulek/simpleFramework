@@ -104,8 +104,8 @@ class DataTable {
     public function result():array
     {
         $this->response['data'] = $this->query->limit(intval($this->request['start']), intval($this->request['length']))->get(PDO::FETCH_ASSOC);
-        $this->response['recordsTotal'] = $this->recordsTotalQuery()->getVar();
-        $this->response['recordFiltered'] = count($this->response['data']);
+        $this->response['recordsTotal'] = (int) $this->recordsTotalQuery()->getVar();
+        $this->response['recordsFiltered'] = count($this->response['data']);
 
         return $this->response;
     }

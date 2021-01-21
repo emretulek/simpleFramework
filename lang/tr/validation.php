@@ -1,6 +1,6 @@
 <?php
 return [
-    'no_index' => 'Geçersiz index',
+    'no_index' => 'Zorunlu alan.',
     'required' => 'Zorunlu alan.',
     'email' => 'Geçersiz E-posta adresi.',
     'url' => 'Hatalı web adresi.',
@@ -25,4 +25,6 @@ return [
     'dateFormat' => 'Geçersiz tarih formatı.',
     'creditCard' => 'Geçersiz kredi kartı numarası.',
     'tcNo' => 'Geçersiz TC kimlik numarası.',
+    'equal' => 'Girilen değer istenen ile uyuşmuyor.',
+    'in' => 'Lütfen belirtilen değerlerden birini seçin.'
 ];

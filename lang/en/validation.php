@@ -28,4 +28,6 @@ return [
     'dateFormat' => 'Invalid date format.',
     'creditCard' => 'Invalid credit card number.',
     'tcNo' => 'Invalid TC number.',
+    'equal' => 'The entered value does not match the requested.',
+    'in' => 'Please choose one of the specified values.'
 ];

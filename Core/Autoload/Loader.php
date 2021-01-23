@@ -22,8 +22,8 @@ class Loader
     private function loadClass(string $class)
     {
         $nameSpaces = explode('\\', $class);
-        $classPath = implode(DIRECTORY_SEPARATOR, array_map('ucfirst', $nameSpaces));
-        $filePath = ROOT .DIRECTORY_SEPARATOR. $classPath . EXT;
+        $classPath = implode(DS, $nameSpaces);
+        $filePath = ROOT . DS . $classPath . EXT;
 
         if (is_readable_file($filePath)) {
             require_once($filePath);
@@ -35,8 +35,8 @@ class Loader
      */
     private function loadFile(array $files)
     {
-        foreach ($files as $file){
-            if(is_file($file)) {
+        foreach ($files as $file) {
+            if (is_file($file)) {
                 require_once($file);
             }
         }

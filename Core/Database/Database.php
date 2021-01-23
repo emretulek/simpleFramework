@@ -65,7 +65,7 @@ class Database {
      */
     public function table(string $table = ''):QueryBuilder
     {
-        $queryBuilder = __NAMESPACE__.'\\'.$this->config['driver']."QueryBuilder";
+        $queryBuilder = __NAMESPACE__.'\\'.ucfirst($this->config['driver'])."QueryBuilder";
         /**
          * @var QueryBuilder $queryBuilderInstance
          */

@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * @Created 09.12.2020 00:32:35
  * @Project index.php
@@ -29,7 +29,7 @@ class DatabaseServiceProvider extends ServiceProvider {
     {
         $this->app->singleton($name, function ($app) use ($driver){
 
-            $selectConnectionType = '\\Core\\Database\\'.$driver.'Connection';
+            $selectConnectionType = '\\Core\\Database\\'.ucfirst($driver).'Connection';
             $connectionConfig = $app->config['database'][$driver];
 
             return new Database(new $selectConnectionType($connectionConfig), $app);

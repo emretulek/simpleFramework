@@ -28,7 +28,7 @@ class App implements ArrayAccess
     /**
      * semantic version
      */
-    const VERSION = "3.1.1";
+    const VERSION = "3.2.0";
 
     /**
      * @var static
@@ -115,7 +115,23 @@ class App implements ArrayAccess
     {
         $this->basePath = $basePath;
 
-        $this->boot();
+        $this->basePath = rtrim($this->basePath, '\/');
+        $this->configPath = $this->basePath . $this->configPath;
+
+        $this->loadConfiguration($this->configPath);
+
+        static::$instance = $this;
+        $this->instance('app', $this);
+    }
+
+    /**
+     * @return void
+     */
+    public function boot()
+    {
+        if($this->boot){
+            return;
+        }
 
         try {
             //yükleme sırası önemlidir değiştirilmemeli
@@ -128,24 +144,6 @@ class App implements ArrayAccess
         }catch (Exception $e){
             $this->debug($e);
         }
-    }
-
-    /**
-     * @return void
-     */
-    public function boot()
-    {
-        if($this->boot){
-            return;
-        }
-
-        $this->basePath = rtrim($this->basePath, '\/');
-        $this->configPath = $this->basePath . $this->configPath;
-
-        $this->loadConfiguration($this->configPath);
-
-        static::$instance = $this;
-        $this->instance('app', $this);
 
         $this->boot = true;
     }

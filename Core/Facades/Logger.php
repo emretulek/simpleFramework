@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 15.12.2020 21:09:51
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Logger
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -41,9 +33,8 @@ namespace Core\Facades;
  * @mixin \Core\Log\Logger
  * @see \Core\Log\Logger
  */
-
-class Logger extends Facade {
-
+class Logger extends Facade
+{
     /**
      * @return string
      */

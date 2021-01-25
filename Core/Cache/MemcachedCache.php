@@ -1,22 +1,14 @@
-<?php 
-/**
- * @Created 11.12.2020 01:25:29
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class MemcachedCache
- * @package Core\Cache
- */
-
+<?php
 
 namespace Core\Cache;
-
 
 use Closure;
 use DateInterval;
 use DateTime;
 use Memcached;
 
-class MemcachedCache implements CacheInterface {
+class MemcachedCache implements CacheInterface
+{
 
     protected Memcached $memcached;
 
@@ -45,7 +37,7 @@ class MemcachedCache implements CacheInterface {
             return $value;
         }
 
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             return $default();
         }
 
@@ -91,9 +83,9 @@ class MemcachedCache implements CacheInterface {
             return $value;
         }
 
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             $value = $default();
-        }else{
+        } else {
             $value = $default;
         }
 
@@ -107,9 +99,9 @@ class MemcachedCache implements CacheInterface {
      */
     public function delete(string $key): bool
     {
-        $result =  $this->memcached->delete($key);
+        $result = $this->memcached->delete($key);
 
-        if ($this->memcached->getResultCode() == Memcached::RES_NOTFOUND){
+        if ($this->memcached->getResultCode() == Memcached::RES_NOTFOUND) {
             return true;
         }
 

@@ -3,10 +3,6 @@
 namespace Core\Validation;
 
 
-/**
- * Class Filter
- * İstemci tarafından gönderilen verilerin filtrelenmesinde kullanılır.
- */
 class Filter
 {
     private array $params;
@@ -55,7 +51,7 @@ class Filter
     {
         $this->params = $params;
 
-        if(static::$langMessages) {
+        if (static::$langMessages) {
             $this->messages = static::$langMessages;
         }
     }
@@ -79,7 +75,7 @@ class Filter
      * @param bool $required
      * @return $this
      */
-    public function input($key, $required = false):self
+    public function input($key, $required = false): self
     {
         $this->key = $key;
 
@@ -568,7 +564,7 @@ class Filter
      */
     public function equal($param)
     {
-        if($this->input !== $param){
+        if ($this->input !== $param) {
             $this->errorMessage('equal');
         }
 
@@ -578,7 +574,7 @@ class Filter
 
     public function in(array $array, bool $strict = false)
     {
-        if(!in_array($this->input, $array, $strict)){
+        if (!in_array($this->input, $array, $strict)) {
             $this->errorMessage('in');
         }
 

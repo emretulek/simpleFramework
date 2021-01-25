@@ -2,7 +2,6 @@
 
 namespace Core\View;
 
-
 use Core\App;
 use Core\Http\Response;
 use Exception;
@@ -39,7 +38,7 @@ class View
      * @param array $data
      * @return array
      */
-    public static function insertData(array $data):array
+    public static function insertData(array $data): array
     {
         return static::$insertedData = array_merge(static::$insertedData, $data);
     }
@@ -51,7 +50,7 @@ class View
      * @param array $data
      * @return View
      */
-    public function page(string $fileName, array $data = array()):self
+    public function page(string $fileName, array $data = array()): self
     {
         $this->data($data);
         $___page = $this->app->basePath . $this->app->config['path']['page'] . '/' . $fileName . EXT;
@@ -80,7 +79,7 @@ class View
      * @param string $ext
      * @return $this
      */
-    public function path(string $filePath, $data = array(), $ext = EXT):self
+    public function path(string $filePath, $data = array(), $ext = EXT): self
     {
         $this->data($data);
         $___part = $this->app->basePath . $this->app->config['path']['view'] . '/' . $filePath . $ext;
@@ -107,7 +106,7 @@ class View
      * @param array $data
      * @return View
      */
-    public function layout(string $fileName, $data = array()):self
+    public function layout(string $fileName, $data = array()): self
     {
         $this->data($data);
         $this->dynamicPage = $fileName;
@@ -133,7 +132,7 @@ class View
      * Layout methoduna aktarılan dinamik sayfa
      * @return $this
      */
-    public function getLayoutPage():self
+    public function getLayoutPage(): self
     {
         return $this->page($this->dynamicPage);
     }
@@ -144,7 +143,7 @@ class View
      * @param $data
      * @return $this
      */
-    public function json($data):self
+    public function json($data): self
     {
         ob_start();
         (new Response($data))->toJson()->send();
@@ -159,7 +158,7 @@ class View
      * @param null $headers
      * @return $this
      */
-    public function render($code = 200, $headers = null):self
+    public function render($code = 200, $headers = null): self
     {
         (new Response($this->getBuffer(), $code, $headers))->send();
         $this->buffer = [];
@@ -170,7 +169,7 @@ class View
      * render etmeden view içeriğini döndürür
      * @return string
      */
-    public function getBuffer():string
+    public function getBuffer(): string
     {
         return implode(PHP_EOL, $this->buffer);
     }
@@ -182,7 +181,7 @@ class View
      * @param string $layout
      * @return View
      */
-    public function setLayout(string $layout):self
+    public function setLayout(string $layout): self
     {
         $this->layoutName = $layout;
         return $this;
@@ -194,7 +193,7 @@ class View
      * @param $data
      * @return $this
      */
-    private function data($data):self
+    private function data($data): self
     {
         $this->data = array_merge($this->data, static::$insertedData);
         static::$insertedData = [];
@@ -210,7 +209,7 @@ class View
     /**
      * @return string
      */
-    public function __toString():string
+    public function __toString(): string
     {
         return $this->getBuffer();
     }

@@ -2,13 +2,10 @@
 
 namespace Core\Log;
 
-
-
 use RuntimeException;
 
-class FileLog Implements LoggerInterface
+class FileLog implements LoggerInterface
 {
-
     protected string $file = 'logger.log';
 
     /**
@@ -28,13 +25,13 @@ class FileLog Implements LoggerInterface
      * @param $level
      * @return string
      */
-    protected function formatter(string $message, array $data, string $level):string
+    protected function formatter(string $message, array $data, string $level): string
     {
         $type = "[{$level}]";
         $time = date("d.m.Y H:i:s");
         $data = json_encode($data);
 
-        return sprintf("%s\t%s\t%s\t%s".PHP_EOL, $time, $type, $message, $data);
+        return sprintf("%s\t%s\t%s\t%s" . PHP_EOL, $time, $type, $message, $data);
     }
 
     /**
@@ -45,17 +42,17 @@ class FileLog Implements LoggerInterface
      * @param $type
      * @return bool
      */
-    protected function writer($message, $data, $type):bool
+    protected function writer($message, $data, $type): bool
     {
         if (is_writable_dir(dirname($this->file))) {
 
             $handle = fopen($this->file, 'ab+');
             $log = $this->formatter($message, $data, $type);
 
-            if(fwrite($handle, $log, strlen($log))) {
+            if (fwrite($handle, $log, strlen($log))) {
                 return fclose($handle);
             }
-        }else {
+        } else {
             throw new RuntimeException($this->file . ' dosya yazılabilir değil.', E_WARNING);
         }
 

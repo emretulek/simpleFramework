@@ -1,15 +1,6 @@
-<?php 
-/**
- * @Created 15.12.2020 08:51:39
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Lang
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
-
 
 use Core\Language\Language;
 
@@ -65,9 +56,8 @@ use Core\Language\Language;
  * @mixin Language
  * @see Language
  */
-
-class Lang extends Facade {
-
+class Lang extends Facade
+{
     /**
      * @return string
      */

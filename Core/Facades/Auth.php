@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 17.12.2020 00:16:32
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Auth
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -56,9 +48,8 @@ namespace Core\Facades;
  * @mixin \Core\Auth\Auth
  * @see \Core\Auth\Auth
  */
-
-class Auth extends Facade {
-
+class Auth extends Facade
+{
     /**
      * @return string
      */

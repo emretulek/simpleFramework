@@ -1,18 +1,9 @@
-<?php 
-/**
- * @Created 02.01.2021 13:55:02
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class NullLog
- * @package Core\Log
- */
-
+<?php
 
 namespace Core\Log;
 
-
-class NullLog implements LoggerInterface {
-
+class NullLog implements LoggerInterface
+{
     /**
      * System is unusable.
      *

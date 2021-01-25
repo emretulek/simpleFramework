@@ -1,10 +1,8 @@
 <?php
 
-
 namespace Core\Middleware;
 
-
-Interface IMiddlewareBefore
+interface IMiddlewareBefore
 {
     function before();
 }

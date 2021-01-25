@@ -1,20 +1,11 @@
-<?php 
-/**
- * @Created 30.10.2020 01:29:23
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class UserGroupPerm
- * @package Core\Model
- */
-
+<?php
 
 namespace Core\Model;
 
-
 use Exception;
 
-class RolePermissions extends Model {
-
+class RolePermissions extends Model
+{
     protected string $table = 'role_permissions';
     protected string $pk = 'roleID';
 
@@ -28,7 +19,7 @@ class RolePermissions extends Model {
         try {
             self::insert(['roleID' => $roleID, 'permissionID' => $permID]);
             return true;
-        }catch (Exception $e){
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -40,9 +31,9 @@ class RolePermissions extends Model {
      */
     public function retrievePermission(int $permID, int $roleID = null)
     {
-        if($roleID){
+        if ($roleID) {
             return self::delete(['roleID' => $roleID, 'permissionID' => $permID]);
-        }else {
+        } else {
             return self::delete(['permissionID' => $permID]);
         }
     }

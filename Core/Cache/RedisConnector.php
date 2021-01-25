@@ -1,20 +1,12 @@
-<?php 
-/**
- * @Created 13.12.2020 20:13:06
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class RedisConnector
- * @package Core\Cache
- */
-
+<?php
 
 namespace Core\Cache;
-
 
 use Exception;
 use Redis;
 
-class RedisConnector {
+class RedisConnector
+{
 
     /**
      * @param string $server
@@ -23,36 +15,36 @@ class RedisConnector {
      * @return Redis
      * @throws Exception
      */
-    public function connect(string $server, int $port = 6379, array $options = []):Redis
+    public function connect(string $server, int $port = 6379, array $options = []): Redis
     {
-        if(!extension_loaded('redis')){
+        if (!extension_loaded('redis')) {
             throw new Exception("redis eklentisi kurulu değil.");
         }
 
         $redis = new Redis();
         $redis->connect($server, $port);
 
-        if(isset($options['auth']['pass'])){
+        if (isset($options['auth']['pass'])) {
             $redis->auth($options['auth']);
         }
 
         if (isset($options['database'])) {
-            $redis->select((int) $options['database']);
+            $redis->select((int)$options['database']);
         }
 
-        if (! empty($options['prefix'])) {
+        if (!empty($options['prefix'])) {
             $redis->setOption(Redis::OPT_PREFIX, $options['prefix']);
         }
 
-        if (! empty($options['read_timeout'])) {
+        if (!empty($options['read_timeout'])) {
             $redis->setOption(Redis::OPT_READ_TIMEOUT, $options['read_timeout']);
         }
 
-        if (! empty($options['scan'])) {
+        if (!empty($options['scan'])) {
             $redis->setOption(Redis::OPT_SCAN, $options['scan']);
         }
 
-        if (! empty($options['name'])) {
+        if (!empty($options['name'])) {
             $redis->client('SETNAME', $options['name']);
         }
 

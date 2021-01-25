@@ -2,7 +2,6 @@
 
 namespace Core\Facades;
 
-
 /**
  * @see \Core\Router\Router::global()
  * @method static \Core\Router\Router global(array $options)
@@ -82,10 +81,8 @@ namespace Core\Facades;
  * @mixin \Core\Router\Router
  * @see \Core\Router\Router
  */
-
-
-class Router extends Facade {
-
+class Router extends Facade
+{
     /**
      * @return string
      */

@@ -2,14 +2,8 @@
 
 namespace Core\Session;
 
-
-/**
- * Class Session
- * Kolay session yönetimi sağlar
- */
 class Session
 {
-
     /**
      * Oturum ayarlarını yükleyerek oturumu başlatır.
      *
@@ -21,7 +15,7 @@ class Session
      * @param array $options ['samesite' => 'Strict']
      * @return bool
      */
-    public function start($lifetime = 0, $path = '/', $domain = null, $secure = false, $httponly = true, array $options = ['samesite' => 'Strict']):bool
+    public function start($lifetime = 0, $path = '/', $domain = null, $secure = false, $httponly = true, array $options = ['samesite' => 'Strict']): bool
     {
         if (!$this->status()) {
             session_set_cookie_params($lifetime, $path, $domain, $secure, $httponly);
@@ -45,7 +39,7 @@ class Session
      * @param $value
      * @return bool
      */
-    public function set(string $name, $value):bool
+    public function set(string $name, $value): bool
     {
         if ($this->status()) {
             dot_aray_set($_SESSION, $name, $value);
@@ -75,7 +69,7 @@ class Session
      * @param string $name nokta ile birleşitirilmiş session indexi (index1.index2)
      * @return bool
      */
-    public function remove(string $name):bool
+    public function remove(string $name): bool
     {
         if ($this->status()) {
             return dot_array_del($_SESSION, $name);
@@ -93,7 +87,7 @@ class Session
      * @param int $lifecycle
      * @return bool
      */
-    public function tempSet(string $name, $value, int $lifecycle = 1):bool
+    public function tempSet(string $name, $value, int $lifecycle = 1): bool
     {
         if ($this->status()) {
             $_SESSION['__TEMPRORY__']['__TIMES__'][$name] = 0;
@@ -139,7 +133,7 @@ class Session
     /**
      * @return bool
      */
-    public function status():bool
+    public function status(): bool
     {
         return session_status() === PHP_SESSION_ACTIVE;
     }
@@ -147,9 +141,9 @@ class Session
     /**
      * Tüm oturum bilgilerini siler.
      */
-    public function destroy():bool
+    public function destroy(): bool
     {
-        if($this->status()) {
+        if ($this->status()) {
             return session_destroy();
         }
 

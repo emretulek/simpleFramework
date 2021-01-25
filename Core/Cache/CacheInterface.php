@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Core\Cache;
 
 use Closure;
@@ -10,7 +9,7 @@ use Closure;
  * Interface CacheInterface
  * @package Core\Cache
  */
-Interface CacheInterface
+interface CacheInterface
 {
 
     /**
@@ -31,7 +30,7 @@ Interface CacheInterface
      * @return bool
      * @throws InvalidArgumentException
      */
-    public function set(string $key, $value, $ttl = null):bool;
+    public function set(string $key, $value, $ttl = null): bool;
 
 
     /**
@@ -43,7 +42,7 @@ Interface CacheInterface
      * @return bool
      * @throws InvalidArgumentException
      */
-    public function add(string $key, $value, $ttl = null):bool;
+    public function add(string $key, $value, $ttl = null): bool;
 
     /**
      * Önbellekte veri varsa getirir yoksa oluşturuğ default değeri döndürür
@@ -61,13 +60,13 @@ Interface CacheInterface
      * @return bool
      * @throws InvalidArgumentException
      */
-    public function delete(string $key):bool;
+    public function delete(string $key): bool;
 
     /**
      * Tüm önbelleği temizler
      * @return bool
      */
-    public function clear():bool;
+    public function clear(): bool;
 
     /**
      * Çoklu önbellek listesi
@@ -75,7 +74,7 @@ Interface CacheInterface
      * @return array A list of key
      * @throws InvalidArgumentException
      */
-    public function getMultiple(array $keys):array;
+    public function getMultiple(array $keys): array;
 
     /**
      * Çoklu önbellekleme
@@ -84,7 +83,7 @@ Interface CacheInterface
      * @return bool
      * @throws InvalidArgumentException
      */
-    public function setMultiple(array $items, $ttl = null):bool;
+    public function setMultiple(array $items, $ttl = null): bool;
 
     /**
      * Çoklu önbellekten veri silme
@@ -92,15 +91,15 @@ Interface CacheInterface
      * @return bool
      * @throws InvalidArgumentException
      */
-    public function deleteMultiple(array $keys):bool;
+    public function deleteMultiple(array $keys): bool;
 
     /**
      * Önbellekte anahtarın olup olmadığını kontrol eder
-     * @param string$key
+     * @param string $key
      * @return bool
      * @throws InvalidArgumentException
      */
-    public function has(string $key):bool;
+    public function has(string $key): bool;
 
     /**
      * @param string $key

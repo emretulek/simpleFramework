@@ -1,11 +1,4 @@
 <?php
-/**
- * @Created 19.10.2020 20:00:33
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Eloquent
- * @package Core\Database
- */
 
 namespace Core\Database;
 
@@ -15,7 +8,6 @@ use PDO;
 
 class QueryBuilder
 {
-
     protected Database $database;
     protected array $params = [];
     protected string $table = '';
@@ -102,7 +94,7 @@ class QueryBuilder
 
         foreach ($columns as $key => $value) {
 
-            if($value !== null) {
+            if ($value !== null) {
                 $query[] = $this->comparison($key, '=', $value);
             }
         }
@@ -129,7 +121,7 @@ class QueryBuilder
 
         foreach ($columns as $key => $value) {
 
-            if($value !== null) {
+            if ($value !== null) {
                 $query[] = $this->comparison($key, '=', $value);
             }
         }
@@ -157,9 +149,9 @@ class QueryBuilder
 
         if (is_array($columns)) {
             $this->where($columns);
-        }elseif($this->pk){
+        } elseif ($this->pk) {
             $this->where($this->pk, $columns);
-        }else{
+        } else {
             throw new InvalidArgumentException("\$column [column_name => value] ilişkili bir dizi olmalı.");
         }
 
@@ -180,9 +172,9 @@ class QueryBuilder
     {
         if (is_array($columns)) {
             return $this->where($columns)->update(['deleted_at' => '{{Now()}}']);
-        }elseif($this->pk){
+        } elseif ($this->pk) {
             return $this->where($this->pk, $columns)->update(['deleted_at' => '{{Now()}}']);
-        }else{
+        } else {
             throw new InvalidArgumentException("\$column [column_name => value] ilişkili bir dizi olmalı.");
         }
     }
@@ -313,9 +305,13 @@ class QueryBuilder
             $type = "ASC";
         }
 
-        $this->order .= $this->order ?
-            ', ' . $this->quoteColumn($column) . ' ' . $type :
-            ' ORDER BY ' . $this->quoteColumn($column) . ' ' . $type;
+        if($column) {
+            $this->order .= $this->order ?
+                ', ' . $this->quoteColumn($column) . ' ' . $type :
+                ' ORDER BY ' . $this->quoteColumn($column) . ' ' . $type;
+        }else{
+            $this->order = "";
+        }
 
         return $this;
     }
@@ -501,13 +497,13 @@ class QueryBuilder
         if (preg_match("/^\{\{(.+)\}\}$/", $param, $matches)) {
             $query = $this->quoteColumn($column) . ' ' . $operant . ' ' . $matches[1];
         } else {
-            if($param === null){
-                if($operant == '=') {
+            if ($param === null) {
+                if ($operant == '=') {
                     $query = $this->quoteColumn($column) . ' ' . 'IS NULL';
-                }else{
+                } else {
                     $query = $this->quoteColumn($column) . ' ' . 'IS NOT NULL';
                 }
-            }else {
+            } else {
                 $paramName = $this->newParamName();
                 $query = $this->quoteColumn($column) . ' ' . $operant . ' ' . $paramName;
                 $this->params[$paramName] = $param;

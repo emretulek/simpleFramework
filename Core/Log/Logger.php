@@ -2,8 +2,7 @@
 
 namespace Core\Log;
 
-
-Class Logger implements LoggerInterface
+class Logger implements LoggerInterface
 {
     protected LoggerInterface $logger;
 

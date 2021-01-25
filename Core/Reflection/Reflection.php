@@ -1,15 +1,6 @@
 <?php
-/**
- * @Created 04.12.2020 01:53:47
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Reflection
- * @package Core\Reflection
- */
-
 
 namespace Core\Reflection;
-
 
 use Core\App;
 use ReflectionException;
@@ -18,7 +9,6 @@ use ReflectionMethod;
 
 class Reflection
 {
-
     private App $app;
 
     /**

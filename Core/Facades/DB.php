@@ -1,15 +1,6 @@
-<?php 
-/**
- * @Created 09.12.2020 19:31:44
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class DB
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
-
 
 use Core\Database\Database;
 use Core\Database\QueryBuilder;
@@ -67,8 +58,8 @@ use PDOStatement;
  * @method static PDOStatement stm()
  *--------------------------------------------------------------------------------------------
  */
-class DB extends Facade {
-
+class DB extends Facade
+{
     /**
      * @return string
      */

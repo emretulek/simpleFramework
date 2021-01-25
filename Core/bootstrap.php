@@ -14,7 +14,6 @@ if(is_file(ROOT. '/vendor/autoload.php')) {
 
 $app = new App(ROOT);
 
-
 /**
  * başlangıç yerel ayarlar
  */

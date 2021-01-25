@@ -1,19 +1,11 @@
-<?php 
-/**
- * @Created 09.12.2020 00:48:51
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class MysqlConnection
- * @package Core\Database
- */
-
+<?php
 
 namespace Core\Database;
 
 use PDO;
 
-class MysqlConnection implements ConnectionInterface {
-
+class MysqlConnection implements ConnectionInterface
+{
     private string $driver;
     private string $host;
     private string $port;
@@ -41,9 +33,9 @@ class MysqlConnection implements ConnectionInterface {
         $this->options = $config['options'];
 
         //set dsn
-        $this->dsn = $this->driver.':host='.$this->host;
-        $this->dsn .= $this->port ? ';port='.$this->port : '';
-        $this->dsn .= ';dbname='.$this->database;
+        $this->dsn = $this->driver . ':host=' . $this->host;
+        $this->dsn .= $this->port ? ';port=' . $this->port : '';
+        $this->dsn .= ';dbname=' . $this->database;
         $this->config = $config;
         $this->config['dsn'] = $this->dsn;
     }

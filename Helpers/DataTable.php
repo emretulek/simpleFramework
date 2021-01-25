@@ -1,12 +1,4 @@
 <?php 
-/**
- * @Created 21.10.2020 20:29:04
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class DataTable
- * @package Helpers
- */
-
 
 namespace Helpers;
 
@@ -20,7 +12,7 @@ class DataTable {
     private array $request = [];
     private array $response = [
         'recordsTotal' => 0,
-        'recordFiltered' => 0,
+        'recordsFiltered' => 0,
         'data' => []
     ];
 
@@ -40,22 +32,19 @@ class DataTable {
         return $this->query = DB::table($table);
     }
 
-
     /**
      * Column key is javascript data column name (example), value is mysql query column name (t.example)
      * @param array $columns
      */
     public function orderable(array $columns)
     {
-        $this->request['columns'] = $this->request['columns'] ?? [];
+        $this->request['order'] = $this->request['order'] ?? [];
 
-        foreach ($this->request['columns'] as $key => $column){
+        foreach ($this->request['order'] as $key => $order){
 
-            if($column['orderable'] == 'true' && in_array($column['data'], array_keys($columns))){
+            if(isset($order['column']) && array_key_exists($order['column'], $columns)){
 
-                if(isset($this->request['order'][$key]['column'])){
-                    $this->query->order($columns[$column['data']], $this->request['order'][$key]['dir']);
-                }
+                $this->query->order("")->order($columns[$order['column']], $order['dir']);
             }
         }
     }
@@ -70,30 +59,42 @@ class DataTable {
     {
         $this->request['columns'] = $this->request['columns'] ?? [];
 
-        foreach ($this->request['columns'] as $key => $column){
+        $searchQuery = clone $this->query;
+        $search = false;
 
-            if($column['searchable'] == 'true' && in_array($column['data'], array_keys($columns))){
+        $searchQuery->cover("and", function ($query) use ($columns, $minLength, &$search){
+            foreach ($this->request['columns'] as $key => $column){
 
-                if(!empty($column['search']['values']) && strlen($column['search']['values']) >= $minLength){
-                    $this->query->orWhere($column, 'like' , '%'.$column['search']['values'].'%');
-                }
+                if($column['searchable'] == 'true' && array_key_exists($column['data'], $columns)){
 
-                if(!empty($this->request['search']['value']) && strlen($this->request['search']['value']) >= $minLength){
-                    $this->query->orWhere($columns[$column['data']], 'like' , '%'.$this->request['search']['value'].'%');
+                    if(!empty($column['search']['value']) && strlen($column['search']['value']) >= $minLength){
+                        $query->orWhere($column, 'like' , '%'.$column['search']['value'].'%');
+                        $search = true;
+                    }
+
+                    if(!empty($this->request['search']['value']) && strlen($this->request['search']['value']) >= $minLength){
+                        $query->orWhere($columns[$column['data']], 'like' , '%'.$this->request['search']['value'].'%');
+                        $search = true;
+                    }
                 }
             }
+        });
+
+        //arama varsa ve sonuç sayısını değiştirmişse filtrelenmiş veri sayısını alır
+        if($search){
+            $this->query = clone $searchQuery;
+            $this->response['recordsFiltered'] = $searchQuery->select("Count(1)", true)->getVar();
         }
     }
 
     /**
-     * @return QueryBuilder
+     * @return int
+     * @throws \Core\Database\SqlErrorException
      */
-    protected function recordsTotalQuery():QueryBuilder
+    protected function recordsTotalQuery():int
     {
         $recordsTotalQuery = clone $this->query;
-        $recordsTotalQuery->select('Count(1)', true);
-
-        return $recordsTotalQuery;
+        return $recordsTotalQuery->select('Count(1)', true)->getVar();
     }
 
 
@@ -103,9 +104,9 @@ class DataTable {
      */
     public function result():array
     {
-        $this->response['data'] = $this->query->limit(intval($this->request['start']), intval($this->request['length']))->get(PDO::FETCH_ASSOC);
-        $this->response['recordsTotal'] = (int) $this->recordsTotalQuery()->getVar();
-        $this->response['recordsFiltered'] = count($this->response['data']);
+        $this->response['recordsTotal'] = (int) $this->recordsTotalQuery();
+        $this->response['data'] = $this->query->limit(intval($this->request['start']), intval($this->request['length']))->get(PDO::FETCH_NUM);
+        $this->response['recordsFiltered'] = $this->response['recordsFiltered'] ? $this->response['recordsFiltered'] : $this->response['recordsTotal'];
 
         return $this->response;
     }
@@ -122,12 +123,12 @@ $dataTable->table('users u')
 ->order("w.updated_at");
 
 $dataTable->orderable([
-'withdrawID' => 'w.withdrawID',
-'nameSurname' => 'u.nameSurname',
-'userEmail' => 'u.userEmail',
-'status' => 'w.status',
-'created_at' => 'w.created_at',
-'updated_at' => 'w.updated_at',
+'0' => 'w.withdrawID',
+'1' => 'u.nameSurname',
+'2' => 'u.userEmail',
+'3' => 'w.status',
+'4' => 'w.created_at',
+'5' => 'w.updated_at',
 ]);
 $dataTable->searchable([
 'nameSurname' => 'u.nameSurname',

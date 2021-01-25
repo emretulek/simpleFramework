@@ -1,5 +1,4 @@
-<?php 
-
+<?php
 
 namespace Core\Facades;
 
@@ -22,9 +21,8 @@ namespace Core\Facades;
  * @mixin \Core\Config\Config
  * @see \Core\Config\Config
  */
-
-class Config extends Facade {
-
+class Config extends Facade
+{
     /**
      * @return string
      */

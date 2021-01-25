@@ -1,11 +1,4 @@
 <?php
-/**
- * @Created 21.10.2020 13:22:37
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Model
- * @package Core
- */
 
 namespace Core\Model;
 
@@ -13,7 +6,6 @@ use Core\App;
 use Core\Database\Database;
 use Core\Database\QueryBuilder;
 use Exception;
-
 
 /**
  * @see QueryBuilder::pk()

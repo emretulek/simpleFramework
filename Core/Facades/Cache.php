@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 14.12.2020 04:29:59
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Cache
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -50,9 +42,8 @@ namespace Core\Facades;
  * @mixin \Core\Cache\Cache
  * @see \Core\Cache\Cache
  */
-
-class Cache extends Facade {
-
+class Cache extends Facade
+{
     /**
      * @return string
      */

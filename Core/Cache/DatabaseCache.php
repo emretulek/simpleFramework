@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Core\Cache;
-
 
 use Closure;
 use Core\Database\Database;
@@ -167,7 +165,7 @@ class DatabaseCache implements CacheInterface
         foreach ($keys as $key) {
             if ($item = $this->get($key)) {
                 $items[$key] = $item;
-            }else{
+            } else {
                 $items[$key] = null;
             }
         }
@@ -226,7 +224,7 @@ class DatabaseCache implements CacheInterface
      */
     public function has(string $key): bool
     {
-        return (bool) $this->table()->select('COUNT(1)')->where('key', $key)->getVar();
+        return (bool)$this->table()->select('COUNT(1)')->where('key', $key)->getVar();
     }
 
 
@@ -239,9 +237,9 @@ class DatabaseCache implements CacheInterface
     {
         $ttl = $this->timeout(null);
 
-        if(!$this->add($key, $value)){
+        if (!$this->add($key, $value)) {
             $item = $this->get($key);
-            $value = (int) $item + $value;
+            $value = (int)$item + $value;
             $this->set($key, $value, $ttl);
         }
 
@@ -257,9 +255,9 @@ class DatabaseCache implements CacheInterface
     {
         $ttl = $this->timeout(null);
 
-        if(!$this->add($key, $value)){
+        if (!$this->add($key, $value)) {
             $item = $this->get($key);
-            $value = (int) $item - $value;
+            $value = (int)$item - $value;
             $this->set($key, $value, $ttl);
         }
 

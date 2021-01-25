@@ -2,10 +2,8 @@
 
 namespace Services;
 
-
 use Core\Services\ServiceProvider;
 use Lang;
-
 
 class LanguageService extends ServiceProvider
 {

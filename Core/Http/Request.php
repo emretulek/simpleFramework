@@ -2,12 +2,6 @@
 
 namespace Core\Http;
 
-
-
-/**
- * Class Request
- * Sunucuya yapılan isteklere erişim sağlar
- */
 class Request
 {
     /**
@@ -58,17 +52,17 @@ class Request
     /**
      * @return string
      */
-    public function path():string
+    public function path(): string
     {
         $request_uri = urldecode(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT));
-        return (string) parse_url(trim($request_uri, '/'), PHP_URL_PATH);
+        return (string)parse_url(trim($request_uri, '/'), PHP_URL_PATH);
     }
 
     /**
      * Yapılan isteği döndürür.
      * @return string
      */
-    public function requestUri():string
+    public function requestUri(): string
     {
         $path = preg_replace("@^" . trim($this->basePath, '/') . "/@i", '/', $this->path() . '/', 1);
         return rtrim(preg_replace("#/+#", "/", $path), '/');
@@ -80,17 +74,17 @@ class Request
      * @param $uri
      * @return bool
      */
-    public function matchUri($uri):bool
+    public function matchUri($uri): bool
     {
         $uri = trim($uri, '/');
-        return (bool) preg_match('#^' . $uri . '$#', $this->requestUri());
+        return (bool)preg_match('#^' . $uri . '$#', $this->requestUri());
     }
 
     /**
      * Mevcut adres satırını döndürür.
      * @return string
      */
-    public function currentUrl():string
+    public function currentUrl(): string
     {
         $queryString = $_SERVER['QUERY_STRING'] ? '?' . urldecode($_SERVER['QUERY_STRING']) : "";
         return trim($this->baseUrl(), '/') . '/' . $this->requestUri() . $queryString;
@@ -100,7 +94,7 @@ class Request
      * Site adresini döndürür.
      * @return string
      */
-    public function baseUrl():string
+    public function baseUrl(): string
     {
         return $this->scheme() . '://' . self::host() . rtrim($this->basePath, '/') . '/';
     }
@@ -136,7 +130,7 @@ class Request
      */
     public function request(string $name = null)
     {
-        if (is_null($name)){
+        if (is_null($name)) {
             return $this->request;
         }
 
@@ -153,7 +147,7 @@ class Request
      */
     public function get(string $name = null)
     {
-        array_walk_recursive($this->get, function (&$item){
+        array_walk_recursive($this->get, function (&$item) {
             $item = trim(strip_tags($item));
         });
 
@@ -174,7 +168,7 @@ class Request
      */
     public function post(string $name = null)
     {
-        array_walk_recursive($this->post, function (&$item){
+        array_walk_recursive($this->post, function (&$item) {
             $item = trim($item);
         });
 
@@ -194,7 +188,7 @@ class Request
      * belirtilmezse tüm diziyi döndürür. FILES yoksa yada index yoksa false döner.
      * @return array
      */
-    public function files(string $name = null):array
+    public function files(string $name = null): array
     {
         $sort_files = [];
 
@@ -229,7 +223,7 @@ class Request
      */
     public function cookie(string $name = null)
     {
-        array_walk_recursive($this->cookie, function (&$item){
+        array_walk_recursive($this->cookie, function (&$item) {
             $item = trim(strip_tags($item));
         });
 
@@ -244,7 +238,7 @@ class Request
      * request raw data
      * @return string
      */
-    public function raw():string
+    public function raw(): string
     {
         if ($data = file_get_contents('php://input')) {
             return $data;
@@ -277,7 +271,7 @@ class Request
      * @param $method = 'get'
      * @return bool
      */
-    public function isAjax(string $method = null):bool
+    public function isAjax(string $method = null): bool
     {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
             if ($this->method($method)) {
@@ -293,7 +287,7 @@ class Request
      *
      * @return string
      */
-    public function scheme():string
+    public function scheme(): string
     {
         return isset($_SERVER['HTTPS']) ? 'https' : 'http';
     }
@@ -304,7 +298,7 @@ class Request
      *
      * @return string
      */
-    public function host():string
+    public function host(): string
     {
         return $_SERVER['SERVER_NAME'] ?? '';
     }
@@ -316,7 +310,7 @@ class Request
      * @param bool $basic
      * @return string
      */
-    public function local($basic = false):string
+    public function local($basic = false): string
     {
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             $local = preg_split("/[,;]/", $_SERVER['HTTP_ACCEPT_LANGUAGE']);
@@ -336,7 +330,7 @@ class Request
      * Useragent bilgisini döndürür.
      * @return string
      */
-    public function userAgent():string
+    public function userAgent(): string
     {
         return $this->server('user-agent');
     }
@@ -346,7 +340,7 @@ class Request
      * Referer bilgisini döndürür.
      * @return string
      */
-    public function referer():string
+    public function referer(): string
     {
         $referer = $this->server('referer');
 
@@ -369,7 +363,7 @@ class Request
      *
      * @return string
      */
-    public function ip():string
+    public function ip(): string
     {
         return $this->server('remote-addr') ?? '127.0.0.1';
     }
@@ -380,7 +374,7 @@ class Request
      *
      * @return string
      */
-    public function forwardedIp():string
+    public function forwardedIp(): string
     {
         $ip = $this->server('client-ip');
 
@@ -406,11 +400,11 @@ class Request
      * @param $value
      * @return mixed
      */
-    public function server($value):string
+    public function server($value): string
     {
         $value = str_replace('-', '_', $value);
         $serverVariable = $_SERVER[strtoupper($value)] ?? $_SERVER['HTTP_' . strtoupper($value)] ?? null;
-        return (string) filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        return (string)filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     }
 }
 

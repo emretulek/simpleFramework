@@ -1,15 +1,6 @@
-<?php 
-/**
- * @Created 08.12.2020 15:46:48
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class View
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
-
 
 /**
  * @see \Core\View\View::insertData()
@@ -42,9 +33,8 @@ namespace Core\Facades;
  * @mixin \Core\View\View
  * @see \Core\View\View
  */
-
-class View extends Facade {
-
+class View extends Facade
+{
     /**
      * @return string
      */

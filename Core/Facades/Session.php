@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 08.12.2020 15:15:46
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Session
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -41,8 +33,8 @@ namespace Core\Facades;
  * @mixin \Core\Session\Session
  * @see \Core\Session\Session
  */
-class Session extends Facade {
-
+class Session extends Facade
+{
     /**
      * @return string
      */

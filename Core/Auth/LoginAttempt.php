@@ -1,11 +1,4 @@
-<?php 
-/**
- * @Created 19.01.2021 14:47:24
- * @Project gorevyap
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class LoginAttempt
- * @package Core\Auth
- */
+<?php
 
 
 namespace Core\Auth;
@@ -14,7 +7,8 @@ namespace Core\Auth;
 use Cache;
 use Core\Cache\CacheInterface;
 
-trait LoginAttempt {
+trait LoginAttempt
+{
 
     protected bool $loginAttempt = true;
     protected int $loginAttemptMax = 3;
@@ -27,7 +21,7 @@ trait LoginAttempt {
      * @param string $ip
      * @return bool
      */
-    private function checkloginAttempt(string $username, string $ip):bool
+    private function checkloginAttempt(string $username, string $ip): bool
     {
         if ($this->loginAttempt) {
 
@@ -75,7 +69,7 @@ trait LoginAttempt {
     /**
      * @return CacheInterface
      */
-    private function cache():CacheInterface
+    private function cache(): CacheInterface
     {
         return app()->resolve(\Core\Cache\Cache::class);
     }

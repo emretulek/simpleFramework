@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 15.12.2020 00:09:15
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Csrf
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -35,9 +27,8 @@ namespace Core\Facades;
  * @mixin \Core\Csrf\Csrf
  * @see \Core\Csrf\Csrf
  */
-
-class Csrf extends Facade {
-
+class Csrf extends Facade
+{
     /**
      * @return string
      */

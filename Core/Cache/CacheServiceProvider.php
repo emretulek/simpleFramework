@@ -1,20 +1,12 @@
-<?php 
-/**
- * @Created 13.12.2020 17:54:35
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class CacheServiceProvider
- * @package Core\Cache
- */
-
+<?php
 
 namespace Core\Cache;
-
 
 use Core\Database\Database;
 use Core\Services\ServiceProvider;
 
-class CacheServiceProvider extends ServiceProvider {
+class CacheServiceProvider extends ServiceProvider
+{
 
     public function register()
     {
@@ -26,9 +18,9 @@ class CacheServiceProvider extends ServiceProvider {
         $this->registerNullCache();
 
         //default cache driver registered
-        $this->app->singleton(Cache::class, function ($app){
+        $this->app->singleton(Cache::class, function ($app) {
 
-            $defaultDriver = 'Core\\Cache\\'.ucfirst($app->config['app']['cache_driver']).'Cache';
+            $defaultDriver = 'Core\\Cache\\' . ucfirst($app->config['app']['cache_driver']) . 'Cache';
 
             return new Cache($this->app->resolve($defaultDriver));
         });
@@ -39,14 +31,14 @@ class CacheServiceProvider extends ServiceProvider {
      */
     protected function registerFileCache()
     {
-        $this->app->singleton(FileCache::class, function($app){
-           return new FileCache($app->config['cache']['file']);
+        $this->app->singleton(FileCache::class, function ($app) {
+            return new FileCache($app->config['cache']['file']);
         });
     }
 
     protected function registerApcuCache()
     {
-        $this->app->singleton(ApcuCache::class, function(){
+        $this->app->singleton(ApcuCache::class, function () {
             return new ApcuCache();
         });
     }
@@ -56,7 +48,7 @@ class CacheServiceProvider extends ServiceProvider {
      */
     protected function registerMemcachedCache()
     {
-        $this->app->singleton(MemcachedCache::class, function($app){
+        $this->app->singleton(MemcachedCache::class, function ($app) {
             return new MemcachedCache(new MemcachedConnector(), $app->config['cache']['memcached']);
         });
     }
@@ -66,7 +58,7 @@ class CacheServiceProvider extends ServiceProvider {
      */
     protected function registerDatabaseCache()
     {
-        $this->app->singleton(DatabaseCache::class, function($app){
+        $this->app->singleton(DatabaseCache::class, function ($app) {
             return new DatabaseCache($this->app->resolve(Database::class), $app->config['cache']['database']);
         });
     }
@@ -76,7 +68,7 @@ class CacheServiceProvider extends ServiceProvider {
      */
     protected function registerRedisCache()
     {
-        $this->app->singleton(RedisCache::class, function($app){
+        $this->app->singleton(RedisCache::class, function ($app) {
             return new RedisCache(new RedisConnector(), $app->config['cache']['redis']);
         });
     }
@@ -86,7 +78,7 @@ class CacheServiceProvider extends ServiceProvider {
      */
     protected function registerNullCache()
     {
-        $this->app->singleton(NullCache::class, function(){
+        $this->app->singleton(NullCache::class, function () {
             return new NullCache();
         });
     }

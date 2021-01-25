@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Core\Crypt;
-
 
 use Exception;
 
@@ -31,7 +29,7 @@ class Crypt
      * @return string
      * @throws Exception
      */
-    public function encrypt(string $text):string
+    public function encrypt(string $text): string
     {
         $iv_len = openssl_cipher_iv_length($this->crypt_algo);
         $iv = openssl_random_pseudo_bytes($iv_len);
@@ -63,7 +61,7 @@ class Crypt
 
             throw new Exception("Şifreleme çözülemiyor.", E_WARNING);
         }
-        if (!hash_equals($this->hash($encrypted['iv'].$encrypted['encrypted']), $encrypted['hash'])) {
+        if (!hash_equals($this->hash($encrypted['iv'] . $encrypted['encrypted']), $encrypted['hash'])) {
 
             return false;
         }
@@ -77,7 +75,7 @@ class Crypt
      * @return string
      * @throws Exception
      */
-    public function encryptSerial($veriable):string
+    public function encryptSerial($veriable): string
     {
         $veriable = serialize($veriable);
         return $this->encrypt($veriable);
@@ -100,7 +98,7 @@ class Crypt
      * @param $text
      * @return string
      */
-    private function hash($text):string
+    private function hash($text): string
     {
         return hash_hmac($this->hash_algo, $text, $this->secretKey, false);
     }

@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 08.12.2020 15:54:36
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Request
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -77,9 +69,8 @@ namespace Core\Facades;
  * @mixin \Core\Http\Request
  * @see \Core\Http\Request
  */
-
-class Request extends Facade {
-
+class Request extends Facade
+{
     /**
      * @return string
      */

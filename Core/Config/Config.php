@@ -2,9 +2,6 @@
 
 namespace Core\Config;
 
-/**
- * Class Config
- */
 class Config
 {
     private array $configs;
@@ -46,7 +43,7 @@ class Config
      * @param string $key
      * @return bool
      */
-    public function has(string $key):bool
+    public function has(string $key): bool
     {
         return dot_aray_get($this->configs, $key) !== null;
     }
@@ -55,7 +52,7 @@ class Config
     /**
      * @return array
      */
-    public function all():array
+    public function all(): array
     {
         return $this->configs;
     }
@@ -66,7 +63,7 @@ class Config
      * @param string $key dizi indexlerinin (.) ile birleştirilmiş isimleri (index1.index2.index3).
      * @return bool
      */
-    public function remove(string $key):bool
+    public function remove(string $key): bool
     {
         return dot_array_del($this->configs, $key);
     }

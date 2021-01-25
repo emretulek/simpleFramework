@@ -1,19 +1,9 @@
 <?php
-/**
- * @Created 30.10.2020 01:27:36
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class UserGroups
- * @package Core\Model
- */
-
 
 namespace Core\Model;
 
-
 class Roles extends Model
 {
-
     protected string $table = 'user_roles r';
     protected string $pk = 'r.roleID';
 

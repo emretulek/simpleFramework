@@ -4,10 +4,6 @@ namespace Core\Cookie;
 
 use Core\Http\Request;
 
-/**
- * Class Cookie
- * Kolay cookie yönetimi sağlar.
- */
 class Cookie
 {
     protected Request $request;
@@ -30,9 +26,9 @@ class Cookie
      * @param string $sameSite Strict, Lax, None
      * @return bool
      */
-    public function set(string $name, string $value, $lifetime = "+1 Month", $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict'):bool
+    public function set(string $name, string $value, $lifetime = "+1 Month", $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict'): bool
     {
-        if($secure == null){
+        if ($secure == null) {
             $secure = $this->request->scheme() === 'https';
         }
 
@@ -65,7 +61,7 @@ class Cookie
      * @param mixed $name nokta ile birleşitirilmiş cookie indexi (index1.index2)
      * @return bool
      */
-    public function remove(string $name):bool
+    public function remove(string $name): bool
     {
         return $this->set($name, "", -1);
     }
@@ -74,7 +70,7 @@ class Cookie
     /**
      * Domain ve subdomain altındaki tüm cookileri siler.
      */
-    public function destroy():bool
+    public function destroy(): bool
     {
         $stats = [];
 
@@ -99,7 +95,7 @@ class Cookie
      * @param string $name nokta ile birleşitirilmiş cookie indexi (index1.index2)
      * @return string
      */
-    private function arrayCookieName(string $name):string
+    private function arrayCookieName(string $name): string
     {
         $keys = explode(".", $name);
         $name = array_shift($keys);
@@ -119,7 +115,7 @@ class Cookie
      */
     private function expires($time)
     {
-        if(is_numeric($time)){
+        if (is_numeric($time)) {
             return time() + $time;
         }
 

@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 14.12.2020 19:32:28
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Crypt
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -26,9 +18,8 @@ namespace Core\Facades;
  * @mixin \Core\Crypt\Crypt
  * @see \Core\Crypt\Crypt
  */
-
-class Crypt extends Facade {
-
+class Crypt extends Facade
+{
     /**
      * @return string
      */

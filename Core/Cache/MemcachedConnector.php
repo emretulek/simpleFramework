@@ -2,10 +2,8 @@
 
 namespace Core\Cache;
 
-
 use Memcached;
 use RuntimeException;
-
 
 class MemcachedConnector
 {
@@ -17,7 +15,7 @@ class MemcachedConnector
      * @param array $sasl
      * @return Memcached
      */
-    public function connect(array $servers, $connectionId = null, array $options = [], array $sasl = []):Memcached
+    public function connect(array $servers, $connectionId = null, array $options = [], array $sasl = []): Memcached
     {
         if (!extension_loaded('memcached')) {
             throw new RuntimeException('memcached eklentisi kurulu değil.');
@@ -26,7 +24,7 @@ class MemcachedConnector
         $memcached = new Memcached($connectionId);
 
         //set username password
-        if(count($sasl) === 2){
+        if (count($sasl) === 2) {
             $memcached->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
             $memcached->setSaslAuthData($sasl['username'], $sasl['password']);
         }
@@ -41,7 +39,7 @@ class MemcachedConnector
         }
 
         //varsa ayarlar
-        if($options){
+        if ($options) {
             $memcached->setOptions($options);
         }
 

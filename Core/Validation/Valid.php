@@ -4,9 +4,8 @@ namespace Core\Validation;
 
 use DateTime;
 
-Class Valid
+class Valid
 {
-
     /**
      * true, yes, on, ok, evet, tamam değerlerine true aksi halde false döndürür
      *
@@ -33,16 +32,16 @@ Class Valid
         if (($input = filter_var($input, FILTER_VALIDATE_FLOAT)) !== false) {
 
             if ($min === null && $max === null) {
-                return (float) $input;
+                return (float)$input;
             }
             if ($min !== null && $max === null && $input >= $min) {
-                return (float) $input;
+                return (float)$input;
             }
             if ($max !== null && $min === null && $input <= $max) {
-                return (float) $input;
+                return (float)$input;
             }
             if ($min !== null && $max !== null && $input >= $min && $input <= $max) {
-                return (float) $input;
+                return (float)$input;
             }
         }
 
@@ -61,16 +60,16 @@ Class Valid
         if (($input = filter_var($input, FILTER_VALIDATE_INT)) !== false) {
 
             if ($min === null && $max === null) {
-                return (int) $input;
+                return (int)$input;
             }
             if ($min !== null && $max === null && $input >= $min) {
-                return (int) $input;
+                return (int)$input;
             }
             if ($max !== null && $min === null && $input <= $max) {
-                return (int) $input;
+                return (int)$input;
             }
             if ($min !== null && $max !== null && $input >= $min && $input <= $max) {
-                return (int) $input;
+                return (int)$input;
             }
         }
 
@@ -190,7 +189,7 @@ Class Valid
      */
     public static function username($username, $pattern = '/^[\w]{4,64}$/i')
     {
-        return preg_match($pattern, $username) ? (string) $username : false;
+        return preg_match($pattern, $username) ? (string)$username : false;
     }
 
 
@@ -203,7 +202,7 @@ Class Valid
      */
     public static function name($name, $pattern = '/^(?:\p{L}\s?){2,64}$/iu')
     {
-        return preg_match($pattern, $name) ? (string) $name : false;
+        return preg_match($pattern, $name) ? (string)$name : false;
     }
 
     /**
@@ -215,7 +214,7 @@ Class Valid
      */
     public static function filename($filename, $pattern = '/^[^\s\.][\w\-\.\s]{4,255}$/iu')
     {
-        return preg_match($pattern, $filename) ? (string) $filename : false;
+        return preg_match($pattern, $filename) ? (string)$filename : false;
     }
 
 
@@ -229,7 +228,7 @@ Class Valid
      */
     public static function length($input, int $min = 1, int $max = null)
     {
-        $length = (int) mb_strlen($input);
+        $length = (int)mb_strlen($input);
 
         if ($min != null && $max == null && $length >= $min) {
             return $length;
@@ -294,17 +293,17 @@ Class Valid
      */
     public static function creditCard(string $cardNumber)
     {
-        $cleanNumbers = str_split(preg_replace("/[^\d]/", "",$cardNumber));
+        $cleanNumbers = str_split(preg_replace("/[^\d]/", "", $cardNumber));
         $numbers = $cleanNumbers;
         $lastNumber = array_pop($numbers);
         $numbersDesc = array_reverse($numbers);
         $numbersDescDouble = [];
 
-        foreach ($numbersDesc as $key => $item){
-            if($key % 2 == 0){
+        foreach ($numbersDesc as $key => $item) {
+            if ($key % 2 == 0) {
                 $newItem = $item * 2;
                 $numbersDescDouble[] = $newItem > 9 ? $newItem - 9 : $newItem;
-            }else{
+            } else {
                 $numbersDescDouble[] = $item;
             }
         }
@@ -322,7 +321,7 @@ Class Valid
      */
     public static function tcNo(string $input)
     {
-        if(strlen($input) == 11 && $input[0] != 0) {
+        if (strlen($input) == 11 && $input[0] != 0) {
 
             $tcno = str_split($input);
             $no11 = array_pop($tcno);

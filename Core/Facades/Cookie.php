@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 08.12.2020 18:34:22
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Cookie
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -26,9 +18,8 @@ namespace Core\Facades;
  * @mixin \Core\Cookie\Cookie
  * @see \Core\Cookie\Cookie
  */
-
-class Cookie extends Facade {
-
+class Cookie extends Facade
+{
     /**
      * @return string
      */

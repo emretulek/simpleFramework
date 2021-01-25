@@ -1,12 +1,9 @@
 <?php
 
-
 namespace Core\Crypt;
-
 
 class Hash
 {
-
     private string $secretKey;
     private string $hash_algo;
     private $password_hash;
@@ -31,7 +28,7 @@ class Hash
      * @param null $algo
      * @return string
      */
-    public function makeWithKey(string $text, $key = null, $algo = null):string
+    public function makeWithKey(string $text, $key = null, $algo = null): string
     {
         $key = $key ?? $this->secretKey;
         $algo = $algo ?? $this->hash_algo;
@@ -47,7 +44,7 @@ class Hash
      * @param null $algo
      * @return string
      */
-    public function make(string $text, $algo = null):string
+    public function make(string $text, $algo = null): string
     {
         $algo = $algo ?? $this->hash_algo;
 
@@ -86,8 +83,8 @@ class Hash
             if ($hashedPassword = password_verify($password, $hashedPassword)) {
                 return $this->passwordRehash($password, $hashedPassword);
             }
-        }else {
-            if(hash($this->password_hash, $password, false) == $hashedPassword){
+        } else {
+            if (hash($this->password_hash, $password, false) == $hashedPassword) {
                 return $hashedPassword;
             }
         }
@@ -103,7 +100,7 @@ class Hash
      * @param $hashedPassword
      * @return string
      */
-    public function passwordRehash(string $password, string $hashedPassword):string
+    public function passwordRehash(string $password, string $hashedPassword): string
     {
         if (password_needs_rehash($hashedPassword, PASSWORD_BCRYPT)) {
             return password_hash($password, PASSWORD_BCRYPT);

@@ -7,10 +7,8 @@ use Core\Database\QueryBuilder;
 use Exception;
 use RuntimeException;
 
-
-class DatabaseLog Implements LoggerInterface
+class DatabaseLog implements LoggerInterface
 {
-
     protected string $table = 'logger';
     protected Database $database;
 
@@ -32,6 +30,7 @@ class DatabaseLog Implements LoggerInterface
     {
         return $this->database->table($this->table);
     }
+
     /**
      * Log yazma işlemini gerçekleştirir
      *
@@ -40,16 +39,16 @@ class DatabaseLog Implements LoggerInterface
      * @param string $level
      * @return bool
      */
-    protected function writer(string $message, array $data, string $level):bool
+    protected function writer(string $message, array $data, string $level): bool
     {
         try {
             $data = json_encode($data);
-            return (bool) $this->table()->insert([
+            return (bool)$this->table()->insert([
                 'message' => $message,
                 'data' => $data,
                 'level' => $level
             ]);
-        }catch (Exception $e){
+        } catch (Exception $e) {
             throw new RuntimeException($e->getMessage(), E_WARNING);
         }
     }

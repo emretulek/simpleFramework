@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Core\Exceptions;
 
 use Core\Http\Response;
@@ -154,7 +153,7 @@ class ExceptionHandler
         $code = $exception->getCode();
         $message = $exception->getMessage();
         $location = $this->getLocation($exception);
-        array_unshift($location,['file' => $e->getFile(), 'line' => $e->getLine()]);
+        array_unshift($location, ['file' => $e->getFile(), 'line' => $e->getLine()]);
         $file = $location[0]['file'];
         $line = $location[0]['line'];
 
@@ -223,7 +222,7 @@ class ExceptionHandler
 
         if ($trace) {
             foreach ($trace as $item) {
-                if(isset($item['file'], $item['line'])) {
+                if (isset($item['file'], $item['line'])) {
                     $visibleTrace[] = [
                         'file' => $item['file'],
                         'line' => $item['line']

@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Core\Cache;
-
 
 use Closure;
 use DateInterval;
@@ -18,7 +16,7 @@ class FileCache implements CacheInterface
     {
         $this->path = $config['path'];
 
-        if(!is_readable_dir($this->path) && !is_writable_dir($this->path)){
+        if (!is_readable_dir($this->path) && !is_writable_dir($this->path)) {
             throw new Exception("Cache dizini ({$this->path}) okuma ve yazma izinleri verilmedi.");
         }
 
@@ -35,11 +33,11 @@ class FileCache implements CacheInterface
      */
     public function get(string $key, $default = null)
     {
-        if($fileInfo = $this->getFileInfo($key)){
-           return $fileInfo['content'];
+        if ($fileInfo = $this->getFileInfo($key)) {
+            return $fileInfo['content'];
         }
 
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             return $default();
         }
 
@@ -58,10 +56,10 @@ class FileCache implements CacheInterface
     public function set(string $key, $value, $ttl = null): bool
     {
         $file = $this->setFileName($key);
-        $content = $this->timeout($ttl).PHP_EOL;
+        $content = $this->timeout($ttl) . PHP_EOL;
         $content .= serialize($value);
 
-        return (bool) file_put_contents($file, $content);
+        return (bool)file_put_contents($file, $content);
     }
 
     /**
@@ -77,7 +75,7 @@ class FileCache implements CacheInterface
     {
         $file = $this->setFileName($key);
 
-        if(is_readable_file($file)){
+        if (is_readable_file($file)) {
             return false;
         }
 
@@ -93,13 +91,13 @@ class FileCache implements CacheInterface
      */
     public function getSet(string $key, $ttl = null, $default = null)
     {
-        if($fileInfo = $this->getFileInfo($key)){
+        if ($fileInfo = $this->getFileInfo($key)) {
             return $fileInfo['content'];
         }
 
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             $value = $default();
-        }else{
+        } else {
             $value = $default;
         }
 
@@ -119,7 +117,7 @@ class FileCache implements CacheInterface
     {
         $file = $this->setFileName($key);
 
-        if(is_writable_file($file)){
+        if (is_writable_file($file)) {
             return unlink($file);
         }
 
@@ -137,7 +135,7 @@ class FileCache implements CacheInterface
             foreach ($files as $file) {
                 unlink($file);
             }
-        }catch (Exception $e){
+        } catch (Exception $e) {
             return false;
         }
 
@@ -154,7 +152,7 @@ class FileCache implements CacheInterface
     {
         $items = [];
 
-        foreach ($keys as $key){
+        foreach ($keys as $key) {
             $items[$key] = $this->get($key);
         }
 
@@ -171,7 +169,7 @@ class FileCache implements CacheInterface
     public function setMultiple(array $items, $ttl = null): bool
     {
         $result = [];
-        foreach ($items as $key => $value){
+        foreach ($items as $key => $value) {
             $result[$key] = $this->set($key, $value, $ttl);
         }
 
@@ -187,7 +185,7 @@ class FileCache implements CacheInterface
     public function deleteMultiple(array $keys): bool
     {
         $result = [];
-        foreach ($keys as $key){
+        foreach ($keys as $key) {
             $result[$key] = $this->delete($key);
         }
 
@@ -202,7 +200,7 @@ class FileCache implements CacheInterface
      */
     public function has(string $key): bool
     {
-        if($this->getFileInfo($key)){
+        if ($this->getFileInfo($key)) {
             return true;
         }
 
@@ -218,7 +216,7 @@ class FileCache implements CacheInterface
     {
         $valueOld = $this->get($key);
 
-        if($valueOld !== null || $valueOld === false){
+        if ($valueOld !== null || $valueOld === false) {
             $valueNew = $valueOld + $value;
             $this->set($key, $valueNew);
             return $valueNew;
@@ -237,7 +235,7 @@ class FileCache implements CacheInterface
     {
         $valueOld = $this->get($key);
 
-        if($valueOld !== null || $valueOld === false){
+        if ($valueOld !== null || $valueOld === false) {
             $valueNew = $valueOld - $value;
             $this->set($key, $valueNew);
             return $valueNew;
@@ -251,7 +249,7 @@ class FileCache implements CacheInterface
      * @param $key
      * @return string
      */
-    private function setFileName($key):string
+    private function setFileName($key): string
     {
         return $this->path . '/' . md5($key) . '.cache';
     }
@@ -265,13 +263,13 @@ class FileCache implements CacheInterface
     {
         $file = $this->setFileName($key);
 
-        if(is_readable_file($file)) {
+        if (is_readable_file($file)) {
             $content = file_get_contents($file);
             $partOfContent = explode(PHP_EOL, $content, 2);
             $expire = array_shift($partOfContent);
             $value = unserialize($partOfContent[0]);
 
-            if($expire > time()) {
+            if ($expire > time()) {
                 return ['expires' => $expire, 'content' => $value];
             }
 
@@ -285,11 +283,11 @@ class FileCache implements CacheInterface
      * @param float $gc
      * @param float|int $maxLifeTime
      */
-    private function fileCacheGc($gc = 0.001, $maxLifeTime = 60 * 60 * 24 * 30):void
+    private function fileCacheGc($gc = 0.001, $maxLifeTime = 60 * 60 * 24 * 30): void
     {
         $files = glob($this->path . '/*.cache');
 
-        if(count($files) == 0){
+        if (count($files) == 0) {
             return;
         }
 
@@ -298,12 +296,12 @@ class FileCache implements CacheInterface
 
         foreach ($files as $file) {
 
-            if(is_readable_file($file) && filemtime($file) < time() - $maxLifeTime) {
+            if (is_readable_file($file) && filemtime($file) < time() - $maxLifeTime) {
                 $content = file_get_contents($file);
                 $partOfContent = explode(PHP_EOL, $content, 1);
                 $expire = array_shift($partOfContent);
 
-                if($expire < time()){
+                if ($expire < time()) {
                     unlink($file);
                 }
             }

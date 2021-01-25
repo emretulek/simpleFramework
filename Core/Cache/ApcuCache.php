@@ -1,11 +1,4 @@
-<?php 
-/**
- * @Created 13.12.2020 02:27:29
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class ApcuCache
- * @package Core\Cache
- */
+<?php
 
 
 namespace Core\Cache;
@@ -22,11 +15,11 @@ class ApcuCache implements CacheInterface
      */
     public function __construct()
     {
-        if(!extension_loaded("apcu")){
+        if (!extension_loaded("apcu")) {
             throw new RuntimeException('apcu eklentisi kurulu değil.');
         }
 
-        if(!apcu_enabled()){
+        if (!apcu_enabled()) {
             throw new RuntimeException('apcu kullanılabilir değil.');
         }
     }
@@ -40,11 +33,11 @@ class ApcuCache implements CacheInterface
      */
     public function get(string $key, $default = null)
     {
-        if($value = apcu_fetch($key, $success)){
+        if ($value = apcu_fetch($key, $success)) {
             return $value;
         }
 
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             return $default();
         }
 
@@ -89,8 +82,8 @@ class ApcuCache implements CacheInterface
      */
     public function getSet(string $key, $ttl = null, $default = null)
     {
-        if(!$default instanceof Closure){
-            $default = function () use ($default){
+        if (!$default instanceof Closure) {
+            $default = function () use ($default) {
                 return $default;
             };
         }

@@ -2,10 +2,8 @@
 
 namespace Core\Controller;
 
-
 use Core\App;
 use Core\View\View;
-
 
 class Controller
 {
@@ -20,9 +18,9 @@ class Controller
     /**
      * @return View
      */
-    final protected function view():View
+    final protected function view(): View
     {
-         return $this->app()->resolve(View::class);
+        return $this->app()->resolve(View::class);
     }
 }
 

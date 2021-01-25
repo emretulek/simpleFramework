@@ -1,19 +1,11 @@
-<?php 
-/**
- * @Created 26.12.2020 17:02:33
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class NullCache
- * @package Core\Cache
- */
-
+<?php
 
 namespace Core\Cache;
 
-
 use Closure;
 
-class NullCache implements CacheInterface {
+class NullCache implements CacheInterface
+{
 
     /**
      *  Önbellekten ilgili anahtara ait değeri döndürür
@@ -24,7 +16,7 @@ class NullCache implements CacheInterface {
      */
     public function get(string $key, $default = null)
     {
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             return $default();
         }
 
@@ -68,7 +60,7 @@ class NullCache implements CacheInterface {
      */
     public function getSet(string $key, $ttl = null, $default = null)
     {
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             return $default();
         }
 

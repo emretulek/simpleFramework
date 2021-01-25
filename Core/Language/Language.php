@@ -8,11 +8,6 @@ use Core\Router\Router;
 use Core\Session\Session;
 use RuntimeException;
 
-/**
- * Class Language
- * Uygulamaya session üzerinden çoklu dil desteği kazandırır.
- * Language->setActive('tr') methodu çağırılmadan aktif olmayacaktır.
- */
 class Language
 {
     public static bool $isLoaded = false;
@@ -33,7 +28,7 @@ class Language
         $this->request = $app->resolve(Request::class);
         $this->session = $app->resolve(Session::class);
         $this->router = $app->resolve(Router::class);
-        $this->path = $app->basePath.$app->config['path']['language'];
+        $this->path = $app->basePath . $app->config['path']['language'];
         $this->config = $app->config['app']['language'];
     }
 
@@ -59,7 +54,7 @@ class Language
      * Aktif dilin adı
      * @return string
      */
-    public function getName():string
+    public function getName(): string
     {
         return $this->active['name'];
     }
@@ -88,7 +83,7 @@ class Language
      * @param $key
      * @return bool
      */
-    public function setDefault($key):bool
+    public function setDefault($key): bool
     {
         if ($this->exists($key)) {
 
@@ -109,7 +104,7 @@ class Language
      * Varsayılan dil
      * @return array
      */
-    public function getDefault():array
+    public function getDefault(): array
     {
         return $this->default;
     }
@@ -121,7 +116,7 @@ class Language
      * @param string $key
      * @return bool
      */
-    public function setActive(string $key):bool
+    public function setActive(string $key): bool
     {
         if ($this->exists($key)) {
 
@@ -141,7 +136,7 @@ class Language
      *
      * Aktif dil özelliklerini döndürür
      */
-    public function getActive():array
+    public function getActive(): array
     {
         return $this->session->get('_lang') ?? $this->default;
     }
@@ -157,7 +152,7 @@ class Language
     public function addFile(string $key, string $file_path)
     {
         if (is_readable_file($file_path)) {
-            $fileName = pathinfo($file_path,  PATHINFO_FILENAME);
+            $fileName = pathinfo($file_path, PATHINFO_FILENAME);
             return $this->translate[$key][$fileName] = require($file_path);
         }
 
@@ -172,13 +167,13 @@ class Language
      */
     private function loadFiles($key)
     {
-        $fullPath = $this->path. '/' . $key;
+        $fullPath = $this->path . '/' . $key;
 
-        if(is_readable_dir($fullPath)) {
+        if (is_readable_dir($fullPath)) {
             $files = array_diff(scandir($fullPath), ['..', '.']);
 
             foreach ($files as $file) {
-                $this->addFile($key, $fullPath.'/'.$file);
+                $this->addFile($key, $fullPath . '/' . $file);
             }
         }
     }
@@ -193,11 +188,11 @@ class Language
      */
     public function translate(string $key, ...$args)
     {
-        if($translated = dot_aray_get($this->translate[$this->active['key']], $key)){
+        if ($translated = dot_aray_get($this->translate[$this->active['key']], $key)) {
             return is_array($translated) ? $translated : vsprintf($translated, $args);
         }
 
-        if($default = dot_aray_get($this->translate[$this->default['key']], $key)){
+        if ($default = dot_aray_get($this->translate[$this->default['key']], $key)) {
             return is_array($translated) ? $translated : vsprintf($translated, $args);
         }
 
@@ -226,7 +221,7 @@ class Language
      * @param string $lang_key dil anahtarı.
      * @return bool
      */
-    public function exists(string $lang_key):bool
+    public function exists(string $lang_key): bool
     {
         if (array_key_exists($lang_key, $this->languages)) {
             return true;
@@ -265,13 +260,13 @@ class Language
     {
         $segments = $this->request->segments();
 
-        if(count($segments) > 0) {
+        if (count($segments) > 0) {
 
             $language = array_shift($segments);
 
             //default dil ise adres satırında gösterme
             if ($language == $this->default['key']) {
-                redirect($this->request->baseUrl().implode('/', $segments), 301);
+                redirect($this->request->baseUrl() . implode('/', $segments), 301);
                 return;
             }
 
@@ -285,7 +280,7 @@ class Language
      * Seçili dil default dil ile aynı ise boş dönecektir.
      * @return string
      */
-    public function routePrefix():string
+    public function routePrefix(): string
     {
         return $this->active['key'] == $this->default['key'] ? '' : $this->active['key'];
     }

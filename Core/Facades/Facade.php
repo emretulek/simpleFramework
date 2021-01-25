@@ -1,22 +1,13 @@
-<?php 
-/**
- * @Created 03.12.2020 00:11:27
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Facade
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
-
 
 use Core\App;
 use RuntimeException;
 use stdClass;
 
-abstract class Facade {
-
+abstract class Facade
+{
     /**
      * @var App
      */
@@ -30,7 +21,7 @@ abstract class Facade {
     /**
      * @return string
      */
-    abstract protected static function getFacadeAccessor():string;
+    abstract protected static function getFacadeAccessor(): string;
 
     /**
      * {@inheritDoc}
@@ -45,7 +36,7 @@ abstract class Facade {
      * @param string $mainClass
      * @return object
      */
-    protected static function resolveFacadeInstance(string $mainClass):object
+    protected static function resolveFacadeInstance(string $mainClass): object
     {
         if (isset(static::$resolvedInstance[$mainClass])) {
             return static::$resolvedInstance[$mainClass];
@@ -55,7 +46,7 @@ abstract class Facade {
             return $instance;
         }
 
-        return (object) null;
+        return (object)null;
     }
 
 
@@ -86,7 +77,7 @@ abstract class Facade {
     {
         $instance = static::getFacadeRoot();
 
-        if (! $instance) {
+        if (!$instance) {
             throw new RuntimeException('A facade root has not been set.');
         }
 

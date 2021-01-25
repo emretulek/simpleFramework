@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 14.12.2020 19:38:11
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Hash
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
@@ -29,9 +21,8 @@ namespace Core\Facades;
  * @mixin \Core\Crypt\Hash
  * @see \Core\Crypt\Hash
  */
-
-class Hash extends Facade {
-
+class Hash extends Facade
+{
     /**
      * @return string
      */

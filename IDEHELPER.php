@@ -9,15 +9,15 @@ class Csrf extends Core\Facades\Csrf {}
 class View extends  Core\Facades\View {}
 
 class Config extends \Core\Facades\Config{}
-class Hook extends \Core\Hook\Hook{}
+class Hook extends \Core\Facades\Hook{}
 class Session extends \Core\Facades\Session {}
 class Cookie extends \Core\Facades\Cookie {}
 class Auth extends \Core\Facades\Auth{}
 class Cache extends \Core\Facades\Cache {}
 class Logger extends \Core\Facades\Logger{}
 
-class Crypt extends \Core\facades\Crypt{}
-class Hash extends \Core\facades\Hash{}
+class Crypt extends \Core\Facades\Crypt{}
+class Hash extends \Core\Facades\Hash{}
 
 class Tag extends Helpers\Html\Tag {}
 class Meta extends Helpers\Html\Meta {}

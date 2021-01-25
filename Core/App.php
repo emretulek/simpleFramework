@@ -1,15 +1,6 @@
 <?php
-/**
- * @Created 01.12.2020 01:08:43
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class App
- * @package Core
- */
-
 
 namespace Core;
-
 
 use ArrayAccess;
 use Closure;
@@ -129,7 +120,7 @@ class App implements ArrayAccess
      */
     public function boot()
     {
-        if($this->boot){
+        if ($this->boot) {
             return;
         }
 
@@ -141,7 +132,7 @@ class App implements ArrayAccess
             $this->loadAlias($this->config['autoload']['aliases']);
             $this->loadServices($this->config['autoload']['services']);
             $this->loadRoutes($this->config['autoload']['routes']);
-        }catch (Exception $e){
+        } catch (Exception $e) {
             $this->debug($e);
         }
 
@@ -153,7 +144,7 @@ class App implements ArrayAccess
      * @param string $path
      * @return array
      */
-    protected function loadConfiguration(string $path):array
+    protected function loadConfiguration(string $path): array
     {
         $configs = new LoadConfigFiles($path);
 
@@ -164,7 +155,7 @@ class App implements ArrayAccess
      * App self instance
      * @return static
      */
-    public static function getInstance():App
+    public static function getInstance(): App
     {
         return static::$instance ??= new static();
     }
@@ -174,16 +165,16 @@ class App implements ArrayAccess
      * @param string $className
      * @return mixed|object
      */
-    public function resolve(string $className):object
+    public function resolve(string $className): object
     {
-        if(array_key_exists($className, $this->instances)){
+        if (array_key_exists($className, $this->instances)) {
             return $this->instances[$className];
         }
 
-        if($this->isBinding($className)){
-            if($this->bindings[$className]['shared']){
+        if ($this->isBinding($className)) {
+            if ($this->bindings[$className]['shared']) {
                 return $this->instances[$className] = $this->bindings[$className]['closure']($this);
-            }else{
+            } else {
                 return $this->bindings[$className]['closure']($this);
             }
         }
@@ -210,7 +201,7 @@ class App implements ArrayAccess
     public function bind(string $name, Closure $closure = null, bool $shared = false)
     {
         if (is_null($closure)) {
-            $closure = function () use ($name){
+            $closure = function () use ($name) {
                 return new $name;
             };
         }
@@ -226,22 +217,22 @@ class App implements ArrayAccess
      * @param string $name
      * @return bool
      */
-    public function isBinding(string $name):bool
+    public function isBinding(string $name): bool
     {
         return array_key_exists($name, $this->bindings);
     }
 
 
     /**
-     * @deprecated
      * @param string $className
      * @param string $method
      * @param array $args
      * @return mixed
+     * @deprecated
      */
     public function callBindingClassWithMethod(string $className, string $method, array $args = [])
     {
-        if($instance = $this->resolve($className)){
+        if ($instance = $this->resolve($className)) {
 
             $reflection = new Reflection\Reflection($this);
             $methodParam = $reflection->setMethodParameters($className, $method, $args);
@@ -328,7 +319,7 @@ class App implements ArrayAccess
      */
     protected function loadServices(array $services)
     {
-       $this->services += $services;
+        $this->services += $services;
 
         try {
             foreach ($this->services as $serviceProvider) {
@@ -413,7 +404,7 @@ class App implements ArrayAccess
      * @param mixed $offset
      * @return bool
      */
-    public function offsetExists($offset):bool
+    public function offsetExists($offset): bool
     {
         return $this->has($offset);
     }

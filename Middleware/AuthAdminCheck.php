@@ -1,14 +1,15 @@
 <?php
+
 namespace Middleware;
 
 use Auth;
 use Core\Middleware\IMiddlewareBefore;
 
-Class AuthAdminCheck Implements IMiddlewareBefore {
-
+class AuthAdminCheck implements IMiddlewareBefore
+{
     public function before()
     {
-        if(!Auth::guard("admin")){
+        if (!Auth::guard("admin")) {
             viewPath('errors/403')->render();
             exit;
         }

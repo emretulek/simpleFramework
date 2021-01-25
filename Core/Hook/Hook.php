@@ -2,10 +2,8 @@
 
 namespace Core\Hook;
 
-
 class Hook
 {
-
     protected static array $storages = [];
 
     /**
@@ -17,9 +15,9 @@ class Hook
      */
     public function add(string $name, callable $callable, int $priority = 50): bool
     {
-        if(isset(self::$storages[$name][$priority])) {
+        if (isset(self::$storages[$name][$priority])) {
             self::$storages[$name][] = $callable;
-        }else{
+        } else {
             self::$storages[$name][$priority] = $callable;
         }
 
@@ -45,7 +43,7 @@ class Hook
      * @param $name
      * @return bool
      */
-    public function exists($name):bool
+    public function exists($name): bool
     {
         return isset(self::$storages[$name]);
     }
@@ -54,7 +52,7 @@ class Hook
      * Tüm kancaların listesini döndürür
      * @return array
      */
-    public function list():array
+    public function list(): array
     {
         return self::$storages;
     }

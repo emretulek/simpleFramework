@@ -2,7 +2,6 @@
 
 namespace Core\Http;
 
-
 use InvalidArgumentException;
 
 class Response
@@ -44,7 +43,7 @@ class Response
      * @param int $code
      * @return $this
      */
-    public function code(int $code):self
+    public function code(int $code): self
     {
         $this->response['code'] = $code;
         return $this;
@@ -77,7 +76,7 @@ class Response
      * @param null $options
      * @return $this
      */
-    public function toJson($options = null):self
+    public function toJson($options = null): self
     {
         $this->headers(['Content-Type' => 'application/json']);
 
@@ -106,7 +105,7 @@ class Response
      * Yanıt gövdesini döndürür
      * @return string
      */
-    public function getBody():string
+    public function getBody(): string
     {
         if (is_resource($this->response['content'])) {
 
@@ -116,7 +115,7 @@ class Response
             $this->toJson();
         }
 
-        return (string) $this->response['content'];
+        return (string)$this->response['content'];
     }
 
     /**

@@ -1,18 +1,30 @@
-<?php 
-/**
- * @Created 15.12.2020 00:35:38
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Hook
- * @package Core\Facades
- */
-
+<?php
 
 namespace Core\Facades;
 
-
-class Hook extends Facade {
-
+/**
+ * Class Hook
+ * @package Core\Facades
+ * -------------------------------------------------------------------------------
+ * @see \Core\Hook\Hook::add()
+ * @method static bool add(string $name, callable $callable, int $priority = 50)
+ * -------------------------------------------------------------------------------
+ * @see \Core\Hook\Hook::remove()
+ * @method static void remove($name)
+ * -------------------------------------------------------------------------------
+ * @see \Core\Hook\Hook::exists()
+ * @method static bool exists($name)
+ * --------------------------------------------------------------------------------
+ * @see \Core\Hook\Hook::list()
+ * @method static array list()
+ * --------------------------------------------------------------------------------
+ * @see \Core\Hook\Hook::exec()
+ * @method static mixed exec(string $name, $output)
+ * --------------------------------------------------------------------------------
+ * @see \Core\Hook\Hook
+ */
+class Hook extends Facade
+{
     /**
      * @return string
      */

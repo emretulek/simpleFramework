@@ -1,20 +1,12 @@
-<?php 
-/**
- * @Created 13.12.2020 20:13:26
- * @Project index.php
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class RedisCache
- * @package Core\Cache
- */
-
+<?php
 
 namespace Core\Cache;
-
 
 use Closure;
 use Redis;
 
-class RedisCache implements CacheInterface {
+class RedisCache implements CacheInterface
+{
 
     protected Redis $redis;
 
@@ -22,6 +14,7 @@ class RedisCache implements CacheInterface {
     {
         $this->redis = $redis->connect($config['server'], $config['port'], $config['options']);
     }
+
     /**
      *  Önbellekten ilgili anahtara ait değeri döndürür
      * @param string $key
@@ -31,11 +24,11 @@ class RedisCache implements CacheInterface {
      */
     public function get(string $key, $default = null)
     {
-        if($value = $this->redis->get($key)){
+        if ($value = $this->redis->get($key)) {
             return unserialize($value);
         }
 
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             return $default();
         }
 
@@ -53,7 +46,7 @@ class RedisCache implements CacheInterface {
      */
     public function set(string $key, $value, $ttl = null): bool
     {
-        return (bool) $this->redis->set($key, serialize($value), $this->timeout($ttl));
+        return (bool)$this->redis->set($key, serialize($value), $this->timeout($ttl));
     }
 
     /**
@@ -67,7 +60,7 @@ class RedisCache implements CacheInterface {
      */
     public function add(string $key, $value, $ttl = null): bool
     {
-        if($this->get($key)){
+        if ($this->get($key)) {
             return false;
         }
 
@@ -83,13 +76,13 @@ class RedisCache implements CacheInterface {
      */
     public function getSet(string $key, $ttl = null, $default = null)
     {
-        if($value = $this->get($key)){
+        if ($value = $this->get($key)) {
             return $value;
         }
 
-        if($default instanceof Closure){
+        if ($default instanceof Closure) {
             $value = $default();
-        }else{
+        } else {
             $value = $default;
         }
 
@@ -131,7 +124,7 @@ class RedisCache implements CacheInterface {
         $values = $this->redis->mget($keys);
 
         foreach ($values as $index => $value) {
-            $results[$keys[$index]] = ! is_null($value) ? unserialize($value) : null;
+            $results[$keys[$index]] = !is_null($value) ? unserialize($value) : null;
         }
 
         return $results;
@@ -148,7 +141,7 @@ class RedisCache implements CacheInterface {
     {
         $this->redis->multi();
         $result = [];
-        foreach ($items as $key => $value){
+        foreach ($items as $key => $value) {
             $result[] = $this->set($key, $value, $ttl);
         }
         $this->redis->exec();
@@ -175,7 +168,7 @@ class RedisCache implements CacheInterface {
      */
     public function has(string $key): bool
     {
-        return (bool) $this->redis->exists('key');
+        return (bool)$this->redis->exists('key');
     }
 
     /**
@@ -204,10 +197,10 @@ class RedisCache implements CacheInterface {
      */
     protected function timeout($ttl)
     {
-       if(is_numeric($ttl)){
-           return $ttl > 0 ? $ttl : 1;
-       }
+        if (is_numeric($ttl)) {
+            return $ttl > 0 ? $ttl : 1;
+        }
 
-       return null;
+        return null;
     }
 }

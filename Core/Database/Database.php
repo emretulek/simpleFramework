@@ -1,12 +1,4 @@
-<?php 
-/**
- * @Created 18.05.2020 08:09:39
- * @Project simpleFramework
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Database
- * @package Core\Database
- */
-
+<?php
 
 namespace Core\Database;
 
@@ -15,7 +7,8 @@ use PDO;
 use PDOException;
 use PDOStatement;
 
-class Database {
+class Database
+{
 
     public App $app;
     private PDO $pdo;
@@ -39,7 +32,7 @@ class Database {
             $this->pdo = $connection->connection();
             $this->config = $this->connection->config;
         } catch (PDOException $e) {
-            throw new SqlErrorException($this->connection->config['driver']." veritabanı bağlantısı kurulamıyor.", E_ERROR, $e);
+            throw new SqlErrorException($this->connection->config['driver'] . " veritabanı bağlantısı kurulamıyor.", E_ERROR, $e);
         }
     }
 
@@ -49,9 +42,9 @@ class Database {
      * @return $this
      * @throws SqlErrorException
      */
-    public function selectDB(string $database):Database
+    public function selectDB(string $database): Database
     {
-        if($this->pdo->exec("USE $database") === false){
+        if ($this->pdo->exec("USE $database") === false) {
             throw new SqlErrorException("Veritabanı seçilemedi.", E_ERROR);
         }
 
@@ -63,9 +56,9 @@ class Database {
      * @param string $table
      * @return QueryBuilder
      */
-    public function table(string $table = ''):QueryBuilder
+    public function table(string $table = ''): QueryBuilder
     {
-        $queryBuilder = __NAMESPACE__.'\\'.ucfirst($this->config['driver'])."QueryBuilder";
+        $queryBuilder = __NAMESPACE__ . '\\' . ucfirst($this->config['driver']) . "QueryBuilder";
         /**
          * @var QueryBuilder $queryBuilderInstance
          */
@@ -81,13 +74,13 @@ class Database {
      * @return PDOStatement
      * @throws SqlErrorException
      */
-    public function bindQuery($query, array $bindings = null, array $options = []):PDOStatement
+    public function bindQuery($query, array $bindings = null, array $options = []): PDOStatement
     {
         $this->stm = $this->pdo->prepare($query, $options);
         $this->stm->execute($bindings);
         $sqlError = $this->stm->errorInfo();
 
-        if(isset($sqlError[1])){
+        if (isset($sqlError[1])) {
             throw new SqlErrorException("Sql error code({$sqlError[0]}/{$sqlError[1]}) Error: {$sqlError[2]}", E_ERROR);
         }
 
@@ -227,7 +220,7 @@ class Database {
      * Aktif PDO nesnesi
      * @return PDO
      */
-    public function pdo():PDO
+    public function pdo(): PDO
     {
         return $this->pdo;
     }
@@ -236,7 +229,7 @@ class Database {
      * Aktif PDOStatement nesnesi
      * @return PDOStatement
      */
-    public function stm():PDOStatement
+    public function stm(): PDOStatement
     {
         return $this->stm;
     }

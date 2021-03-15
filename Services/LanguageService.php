@@ -3,14 +3,14 @@
 namespace Services;
 
 use Core\Services\ServiceProvider;
-use Lang;
+use Language;
 
 class LanguageService extends ServiceProvider
 {
     public function boot()
     {
-        Lang::load();
+        Language::load();
 //        //kullanılabilir diller arasına ingilizce ekleniyor
-//        Lang::add('en', 'English', 'EN-us');
+//        Language::add('en', 'English', 'EN-us');
     }
 }

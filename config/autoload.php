@@ -22,7 +22,7 @@ return [
         'cookie' => Core\Facades\Cookie::class,
         'view' => Core\Facades\View::class,
         'db' => Core\Facades\DB::class,
-        'lang' => Core\Facades\Lang::class,
+        'language' => Core\Facades\Language::class,
         'auth' => Core\Facades\Auth::class,
         'hook' => Core\Facades\Hook::class,
         'cache' => Core\Facades\Cache::class,

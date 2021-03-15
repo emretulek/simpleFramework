@@ -23,8 +23,6 @@ class Response
         $this->content($content);
         $this->code($code);
         $this->headers($headers);
-
-        return $this;
     }
 
     /**

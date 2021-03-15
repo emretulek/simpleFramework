@@ -24,10 +24,10 @@ use Exception;
  * @method static int|array|bool update(array $columns)
  *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::delete()
- * @method static int|array delete($columns = null, $param = null)
+ * @method static int|array delete($columns, bool $force = false)
  * *   -------------------------------------------------------------------------
  * @see QueryBuilder::softDelete()
- * @method static int|array|bool softDelete($columns = null, $param = null)
+ * @method static int|array|bool softDelete($columns)
  *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::where()
  * @method static QueryBuilder where($column, $operant = null, $param = null)
@@ -99,7 +99,8 @@ abstract class Model
     protected string $table = "";
     protected string $pk = "";
     protected bool $softDelete = false;
-    protected array $errors = [];
+    protected static array $errors = [];
+    protected static bool $throw = false;
 
     public function __construct()
     {
@@ -154,15 +155,23 @@ abstract class Model
     /**
      * @param $message
      * @param string $key
-     * @return void
+     * @return false
+     * @throws ModelException
      */
-    final protected function setError($message, $key = '')
+    final protected function setError($message, $key = ''):bool
     {
         if ($key) {
-            $this->errors[$key] = $message;
+            self::$errors[$key] = $message;
         } else {
-            $this->errors[] = $message;
+            self::$errors[] = $message;
         }
+
+        if(self::$throw){
+            self::$throw = false;
+            throw new ModelException($message, E_WARNING);
+        }
+
+        return false;
     }
 
     /**
@@ -170,15 +179,26 @@ abstract class Model
      */
     final public function getErrors(): array
     {
-        return $this->errors;
+        $errors = self::$errors;
+        self::$errors = [];
+        return $errors;
     }
 
     /**
      * @return string
      */
-    final public function getLastError(): string
+    final public function getLastError(): ?string
     {
-        return end($this->errors);
+        return array_pop(self::$errors);
+    }
+
+    /**
+     * @return $this
+     */
+    final public function throw():self
+    {
+        self::$throw = true;
+        return $this;
     }
 }
 

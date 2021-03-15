@@ -18,6 +18,29 @@ if (!function_exists('app')) {
     }
 }
 
+if (!function_exists('response')) {
+    /**
+     * @param null $content
+     * @param int $code
+     * @param array|null $headers
+     * @return Response
+     */
+    function response($content = null, $code = 200, array $headers = null):Response
+    {
+        return new Response($content, $code, $headers);
+    }
+}
+
+if (!function_exists('request')) {
+    /**
+     * @return Request
+     */
+    function request():Request
+    {
+        return app()->resolve(Request::class);
+    }
+}
+
 if (!function_exists('debug')) {
     /**
      * @param Throwable $throwable
@@ -25,16 +48,6 @@ if (!function_exists('debug')) {
     function debug(Throwable $throwable):void
     {
         app()->debug($throwable);
-    }
-}
-
-if (!function_exists('lang')) {
-    /**
-     * @return Language
-     */
-    function lang():Language
-    {
-        return app()->resolve(Language::class);
     }
 }
 
@@ -64,27 +77,25 @@ if (!function_exists('dump')) {
     {
         $trace = debug_backtrace();
         echo '<style>';
-        echo 'body{background-color:#292929}
-                .debug-container{margin: 15px;background-color: #000000;color: #f9a825;padding: 5px;font-family: Arial, sans-serif;}
-                .debug-title{margin: 0;padding: 10px;background-color: #1f1f1f;color: #bb86fc;}
-                .debug-message {padding: 15px;}
-                .debug-footer {background-color: #352c2d;padding: 10px;color: #ff7597;}';
+        echo '  .debug-container{margin:15px;background-color:#ffffff;color:#6a34bf;padding:5px;font-family: sans-serif;
+        box-shadow:0 2px 5px #00000045;overflow-y:auto;position:relative;z-index:9999}
+                .debug-title{margin:0;padding:10px;background-color:#692ebc;color:#ffffff}
+                .debug-message{margin:5px 0;padding:15px;color:#6a34bf;box-shadow:0 0 5px #00000045 inset}
+                .debug-footer{background-color:#eeeeee;padding:10px;color:#ff7597;display:flex;justify-content:space-between;margin:0 0 5px}';
         echo '</style>';
         echo '<div class="debug-container">' . PHP_EOL;
 
         foreach ($params as $key => $param) {
 
-            echo '<h3 class="debug-title">Dump <small>paramater(' . ($key + 1) . ')</small></h3>';
-            echo '<pre>' . PHP_EOL;
-            echo '<div class="debug-message">';
+            echo '<h3 class="debug-title">Dump <small>paramater(' . ($key + 1) . ')</small></h3>' . PHP_EOL;
+            echo '<pre class="debug-message">' . PHP_EOL;
             var_dump($param);
-            echo '</div>' . PHP_EOL;
             echo '</pre>' . PHP_EOL;
         }
-        echo '<div class="debug-footer">' . PHP_EOL;
-        echo ' <b>File:</b> ' . $trace[0]['file'];
-        echo ' <b>Line:</b> ' . $trace[0]['line'];
-        echo '</div>';
+        echo '<pre class="debug-footer">' . PHP_EOL;
+        echo '<span>File: ' . $trace[0]['file'] . '</span> ';
+        echo '<span>Line: ' . $trace[0]['line'] . '</span> ' . PHP_EOL;
+        echo '</pre>';
         echo '</div>';
     }
 }
@@ -176,15 +187,26 @@ if (!function_exists('config')) {
     }
 }
 
+if (!function_exists('lang')) {
+    /**
+     * @return Language
+     */
+    function language():Language
+    {
+        return app()->resolve(Language::class);
+    }
+}
+
 if (!function_exists('__')) {
     /**
      * Akitf dildeki çeviriyi yazdırır, aktif dilde yoksa default dil, default yoksa boş döner
      * @param $key
      * @param mixed ...$args
+     * @return array|string
      */
     function __($key, ...$args)
     {
-        echo lang()->translate($key, $args);
+        return language()->translate($key, ...$args);
     }
 }
 
@@ -257,28 +279,33 @@ if (!function_exists('baseUrl')) {
 if (!function_exists('groupUrl')) {
     /**
      * @param null $path url adresine eklenecek bölüm
+     * @param array|null $params
      * @return string
      */
-    function groupUrl($path = null): string
+    function groupUrl($path = null, array $params = null): string
     {
         $path = $path ? trim($path, '/') : '';
+
         $group  = app()->resolve(Router::class)->getPrefix() ?
             app()->resolve(Router::class)->getPrefix() . '/' : '';
-        return baseUrl($group . $path);
+        return baseUrl($group . $path . build_query($params));
     }
 }
 
 
-if (!function_exists('assetsUrl')) {
+if (!function_exists('assets')) {
     /**
      * Assets dizini altında dosya yolu
      *
      * @param null $path url adresine eklenecek bölüm
+     * @param array|null $params
      * @return string
      */
-    function assetsUrl($path = null):string
+    function assets($path = null, array $params = null):string
     {
-        return baseUrl(app()->config['path']['assets']) . '/' . $path;
+        $path = $path ? trim($path, '/') : '';
+
+        return baseUrl(app()->config['path']['assets']) . '/' . $path . build_query($params);
     }
 }
 
@@ -288,10 +315,16 @@ if (!function_exists('src')) {
      * Assets dizini altında dosya yolu
      *
      * @param null $path url adresine eklenecek bölüm
+     * @param null $params
+     * @return string
      */
-    function src($path = null)
+    function src($path = null, $params = null): string
     {
-        echo assetsUrl($path);
+        if(preg_match("#^https?://#", $path, $match)){
+            return $path . build_query($params);
+        }
+
+        return assets($path, $params);
     }
 }
 
@@ -307,22 +340,34 @@ if (!function_exists('url')) {
      */
     function url(string $path = null, array $params = array()):string
     {
-        $parameters = $params ? '?' . http_build_query($params) : '';
         $path = trim($path, '/');
 
         //http veya https varsa dış bağlantı olarak değerlendir
         if(preg_match("#^https?://#", $path, $match)){
-            return $path.$parameters;
+            return $path.build_query($params);
         }
 
         //dil desteği aktifse url yapısını ona göre oluştur
         if (Language::$isLoaded) {
-            if(lang()->getDefault()['key'] != lang()->getKey()) {
-                return baseUrl(lang()->getKey() . '/' . $path . $parameters);
+            if(language()->getDefault()['key'] != language()->getKey()) {
+                return baseUrl(language()->getKey() . '/' . $path . build_query($params));
             }
         }
 
-        return baseUrl($path . $parameters);
+        return baseUrl($path . build_query($params));
+    }
+}
+
+
+if (!function_exists('build_query')) {
+
+    /**
+     * @param array $params
+     * @return string
+     */
+    function build_query(array $params = array()): string
+    {
+        return $params ? '?' . http_build_query($params) : '';
     }
 }
 
@@ -334,10 +379,11 @@ if (!function_exists('href')) {
      *
      * @param string|null $path url adresi (dil anahtarı olmadan)
      * @param array $params varsa get parametreleri
+     * @return string
      */
-    function href(string $path = null, array $params = array())
+    function href(string $path = null, array $params = array()): string
     {
-        echo url($path, $params);
+        return url($path, $params);
     }
 }
 
@@ -353,9 +399,9 @@ if (!function_exists('redirect')) {
     {
         if (!headers_sent()) {
             if(filter_var($url, FILTER_VALIDATE_URL)){
-                (new Response())->redirect($url, $code);
+                response()->redirect($url, $code);
             }else{
-                (new Response())->redirect(url($url), $code);
+                response()->redirect(url($url), $code);
             }
         }else {
             echo '<meta http-equiv = "refresh" content = "0; url = ' . url($url) . '" />';
@@ -368,6 +414,19 @@ if (!function_exists('redirect')) {
 #endregion
 
 #region View Helpers
+if (!function_exists('view')) {
+    /**
+     * class Core\View
+     *
+     * @return View
+     */
+    function view():View
+    {
+        return app()->resolve(View::class);
+    }
+}
+
+
 if (!function_exists('page')) {
     /**
      * Core\View::page metodunun eş değeri
@@ -378,12 +437,11 @@ if (!function_exists('page')) {
      */
     function page($fileName, $data = array()):View
     {
-        $view = app()->resolve(View::class);
-        return $view->page($fileName, $data);
+        return view()->page($fileName, $data);
     }
 }
 
-if (!function_exists('viewPath')) {
+if (!function_exists('partial')) {
     /**
      * Core\View::part metodunun eş değeri
      *
@@ -392,10 +450,9 @@ if (!function_exists('viewPath')) {
      * @param string $ext
      * @return View
      */
-    function viewPath($fileName, $data = array(), string $ext = EXT):View
+    function partial($fileName, $data = array(), string $ext = EXT):View
     {
-        $view = app()->resolve(View::class);
-        return $view->path($fileName, $data, $ext);
+        return view()->path($fileName, $data, $ext);
     }
 }
 
@@ -408,8 +465,7 @@ if (!function_exists('json')) {
      */
     function json($data):View
     {
-        $view = app()->resolve(View::class);
-        return $view->json($data);
+        return view()->json($data);
     }
 }
 
@@ -425,8 +481,7 @@ if (!function_exists('jsonSuccess')) {
      */
     function jsonSuccess($message = null, $location = null, $data = null):View
     {
-        $view = app()->resolve(View::class);
-        return $view->json(['status' => 'success', 'message' => $message, 'location' => $location, 'data' => $data]);
+        return view()->json(['status' => 'success', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
 }
 
@@ -441,8 +496,7 @@ if (!function_exists('jsonError')) {
      */
     function jsonError($message = null, $location = null, $data = null):View
     {
-        $view = app()->resolve(View::class);
-        return $view->json(['status' => 'error', 'message' => $message, 'location' => $location, 'data' => $data]);
+        return view()->json(['status' => 'error', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
 }
 
@@ -456,8 +510,7 @@ if (!function_exists('layout')) {
      */
     function layout($fileName, $data = array()):View
     {
-        $view = app()->resolve(View::class);
-        return $view->layout($fileName, $data);
+        return view()->layout($fileName, $data);
     }
 }
 
@@ -470,8 +523,7 @@ if (!function_exists('setLayout')) {
      */
     function setLayout($layout):View
     {
-        $view = app()->resolve(View::class);
-        return $view->setLayout($layout);
+        return view()->setLayout($layout);
     }
 }
 #endregion

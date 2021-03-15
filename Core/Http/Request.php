@@ -55,7 +55,10 @@ class Request
     public function path(): string
     {
         $request_uri = urldecode(filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_DEFAULT));
-        return (string)parse_url(trim($request_uri, '/'), PHP_URL_PATH);
+        $path = parse_url($request_uri, PHP_URL_PATH);
+        $path = preg_replace('#/+#', '/', $path);
+        $path = preg_replace('#\.+#', '.', $path);
+        return (string) trim($path, '/');
     }
 
     /**
@@ -65,7 +68,7 @@ class Request
     public function requestUri(): string
     {
         $path = preg_replace("@^" . trim($this->basePath, '/') . "/@i", '/', $this->path() . '/', 1);
-        return rtrim(preg_replace("#/+#", "/", $path), '/');
+        return trim($path, '/');
     }
 
 
@@ -76,7 +79,7 @@ class Request
      */
     public function matchUri($uri): bool
     {
-        $uri = trim($uri, '/');
+        $uri = ltrim($uri, '/');
         return (bool)preg_match('#^' . $uri . '$#', $this->requestUri());
     }
 
@@ -109,7 +112,9 @@ class Request
     {
         $queryString = preg_replace("#^(/index\.php)#i", "", $this->requestUri());
         $queryString = trim($queryString, "/");
-        $segments = array_values(array_filter(explode("/", $queryString)));
+        $segments = array_values(array_filter(explode("/", $queryString), function ($item) {
+            return $item !== null && $item !== '';
+        }));
 
         if (is_null($key)) {
             return $segments;
@@ -205,12 +210,12 @@ class Request
                     ];
                 }
             } else {
-                $sort_files[$input_name][] = $inputs;
+                $sort_files[$input_name] = $inputs;
             }
         }
 
         if ($name) {
-            return dot_aray_get($sort_files, $name);
+            return dot_aray_get($sort_files, $name) ?? [];
         }
 
         return $sort_files;

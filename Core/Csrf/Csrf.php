@@ -13,6 +13,9 @@ class Csrf
     private Session $session;
     private Cookie $cookie;
 
+    //default 5dk
+    private int $tokenTimeout = 60 * 5;
+
     public function __construct(App $app)
     {
         $this->request = $app->resolve(Request::class);
@@ -25,14 +28,14 @@ class Csrf
      * $_SESSION old_csrf_token, csrf_token
      * $_COOKIE csrf_token
      */
-    public function generateToken(): string
+    public function generateToken()
     {
-        $token = md5(uniqid());
-        $this->session->set('old_csrf_token', $this->session->get('csrf_token'));
-        $this->session->set('csrf_token', $token);
-        $this->cookie->set('csrf_token', $token, 60 * 60, '/', null, false, false);
-
-        return $token;
+        if($this->session->get('csrf_token_timeout') < time()) {
+            $token = md5(uniqid());
+            $this->session->set('csrf_token', $token);
+            $this->session->set('csrf_token_timeout', time() + $this->tokenTimeout);
+            $this->cookie->set('csrf_token', $token, $this->tokenTimeout, '/', null, false, false);
+        }
     }
 
 
@@ -45,14 +48,6 @@ class Csrf
         return $this->session->get('csrf_token');
     }
 
-    /**
-     * bir önceki token değerini döndürür
-     * @return bool|string
-     */
-    public function old_token()
-    {
-        return $this->session->get('old_csrf_token');
-    }
 
     /**
      * POST veya GET işlemlerinde CSRF yoksa false, varsa true döner
@@ -60,7 +55,7 @@ class Csrf
      */
     public function check(): bool
     {
-        if ($this->request->request('csrf_token') == $this->old_token() && $this->isSelfReferer()) {
+        if ($this->request->request('csrf_token') == $this->token() && $this->isSelfReferer()) {
             return false;
         }
 
@@ -73,10 +68,8 @@ class Csrf
      */
     public function checkPost(): bool
     {
-        if ($this->request->method('post')) {
-            if ($this->request->post('csrf_token') == $this->old_token() && $this->isSelfReferer()) {
-                return false;
-            }
+        if ($this->request->post('csrf_token') == $this->token() && $this->isSelfReferer()) {
+            return false;
         }
 
         return true;
@@ -89,10 +82,8 @@ class Csrf
      */
     public function checkGet(): bool
     {
-        if ($this->request->method('get')) {
-            if ($this->request->post('csrf_token') == $this->old_token() && $this->isSelfReferer()) {
-                return false;
-            }
+        if ($this->request->get('csrf_token') == $this->token() && $this->isSelfReferer()) {
+            return false;
         }
 
         return true;
@@ -105,7 +96,7 @@ class Csrf
      */
     public function checkCookie(): bool
     {
-        if ($this->cookie->get('csrf_token') == $this->old_token() && $this->isSelfReferer()) {
+        if ($this->cookie->get('csrf_token') == $this->token() && $this->isSelfReferer()) {
             if ($this->request->server('cache-control') != 'max-age=0') {
                 return false;
             }

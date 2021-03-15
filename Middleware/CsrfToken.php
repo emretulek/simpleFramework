@@ -1,14 +1,18 @@
-<?php
+<?php 
 
 namespace Middleware;
+
 
 use Csrf;
 use Core\Middleware\IMiddlewareBefore;
 
-class CsrfToken implements IMiddlewareBefore
-{
+class CsrfToken implements IMiddlewareBefore {
+
     function before()
     {
-        Csrf::generateToken();
+        if (Csrf::checkPost()) {
+            echo jsonError("Csrf protection.", "");
+            exit;
+        }
     }
 }

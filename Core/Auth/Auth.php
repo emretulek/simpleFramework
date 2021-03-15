@@ -33,14 +33,10 @@ class Auth
      * @var array
      */
     public array $userWhere = [
-        'deleted_at' => null,
-        'status' => 1
+        'deleted_at' => null
     ];
 
     protected array $noStoreSession = [
-        'userID',
-        'username',
-        'email',
         'password'
     ];
 
@@ -115,10 +111,6 @@ class Auth
      */
     public function login($password = null, $userInfo = [], $remember = 0): bool
     {
-        if($this->check()){
-            $this->logout();
-        }
-
         if ($password) {
             $result = $this->setUserForPassword($password, $userInfo);
         } elseif (isset($userInfo['rememberme'])) {
@@ -153,17 +145,17 @@ class Auth
     protected function generateUserSessions()
     {
         $this->authSession('LOGIN', true);
-        $this->authSessionUser('id', $this->user->userID);
-        $this->authSessionUser('username', $this->user->username);
-        $this->authSessionUser('email', $this->user->email);
-        $this->authSessionUser('roleID', $this->user->roleID);
-        $this->authSessionUser('permissions', $this->userPermissions());
-        $this->authSessionUser($this->tokenName, $this->creatToken());
-        $this->authSessionUser('ip', $this->app->resolve(Request::class)->ip());
+        $this->authSession('id', $this->user->userID);
+        $this->authSession('username', $this->user->username);
+        $this->authSession('email', $this->user->email);
+        $this->authSession('roleID', $this->user->roleID);
+        $this->authSession('permissions', $this->userPermissions());
+        $this->authSession($this->tokenName, $this->creatToken());
+        $this->authSession('ip', $this->request()->ip());
 
         foreach ($this->user as $key => $value) {
             if (!in_array($key, $this->noStoreSession)) {
-                $this->authSessionUser($key, $value);
+                $this->authSession($key, $value);
             }
         }
     }
@@ -213,7 +205,10 @@ class Auth
 
         if ($user = $query->where($userInfo)->getRow()) {
             $this->user = $user;
-            return true;
+            /* Session hijacking  security */
+            if($this->creatToken() === $this->user->rememberme){
+                return true;
+            }
         }
 
         return false;
@@ -226,11 +221,9 @@ class Auth
      */
     public function rememberMe()
     {
-        $usertoken = $this->app->resolve(Cookie::class)->get($this->tokenName);
+        if ($this->cookie()->get($this->tokenName) && !$this->check()) {
 
-        if ($usertoken && $this->authSession('LOGIN') == false) {
-
-            return $this->login(null, ['rememberme' => $usertoken]);
+            return $this->login(null, ['rememberme' => $this->cookie()->get($this->tokenName)]);
         }
 
         return false;
@@ -243,15 +236,7 @@ class Auth
      */
     public function check(): bool
     {
-        /* Session hijacking  security */
-        if ($this->app->resolve(Cookie::class)->get($this->tokenName) &&
-            $this->info($this->tokenName) !== $this->app->resolve(Cookie::class)->get($this->tokenName)) {
-
-            $this->logout();
-            return false;
-        }
-
-        return (bool)$this->authSession('LOGIN');
+        return (bool) $this->authSession('LOGIN');
     }
 
     /**
@@ -263,26 +248,12 @@ class Auth
     }
 
     /**
-     * $_SESSSION['AUTH']['USER'] değişkeninden kullanıcı bilgilerine erişir.
-     * @param null $key
-     * @return mixed
-     */
-    public function info($key = null)
-    {
-        if ($key === null) {
-            return $this->authSession('USER');
-        }
-        return $this->authSessionUser($key);
-    }
-
-
-    /**
      * Sessiondan id değerini döndürür.
      * @return bool|mixed
      */
     public function userID(): int
     {
-        return $this->authSessionUser('id');
+        return $this->authSession('id');
     }
 
     /**
@@ -290,7 +261,7 @@ class Auth
      */
     public function role()
     {
-        return $this->authSessionUser('roleID');
+        return $this->authSession('roleID');
     }
 
     /**
@@ -299,7 +270,7 @@ class Auth
      */
     public function roleName()
     {
-        return $this->authSessionUser('permissions.role_name');
+        return $this->authSession('permissions.role_name');
     }
 
 
@@ -331,7 +302,7 @@ class Auth
     {
         if ($this->check()) {
             $permissions = is_array($permissions) ? $permissions : [$permissions];
-            $perm = array_intersect($permissions, $this->info('permissions.permissions'));
+            $perm = array_intersect($permissions, $this->authSession('permissions.permissions'));
 
             if ($perm == $permissions) {
                 return true;
@@ -350,12 +321,12 @@ class Auth
      */
     public function logout(bool $clear_all = false)
     {
-        $this->app->resolve(Session::class)->remove('AUTH');
-        $this->app->resolve(Cookie::class)->remove($this->tokenName);
+        $this->session()->remove('AUTH');
+        $this->cookie()->remove($this->tokenName);
 
         if ($clear_all) {
-            $this->app->resolve(Session::class)->destroy();
-            $this->app->resolve(Cookie::class)->destroy();
+            $this->session()->destroy();
+            $this->cookie()->destroy();
         }
     }
 
@@ -367,7 +338,7 @@ class Auth
      */
     protected function creatRememberCookie(string $token, $lifetime)
     {
-        $this->app->resolve(Cookie::class)->set($this->tokenName, $token, $lifetime);
+        $this->cookie()->set($this->tokenName, $token, $lifetime);
     }
 
 
@@ -421,24 +392,15 @@ class Auth
      * @param null $value
      * @return bool|mixed
      */
-    protected function authSessionUser($key, $value = null)
-    {
-        return $this->authSession('USER.' . $key, $value);
-    }
-
-    /**
-     * @param $key
-     * @param null $value
-     * @return bool|mixed
-     */
-    protected function authSession($key, $value = null)
+    public function authSession($key, $value = null)
     {
         if ($value === null) {
-            return $this->app->resolve(Session::class)->get('AUTH.' . $key);
+            return $this->session()->get('AUTH.USER.' . $key);
         } else {
-            return $this->app->resolve(Session::class)->set('AUTH.' . $key, $value);
+            return $this->session()->set('AUTH.USER.' . $key, $value);
         }
     }
+
 
     /**
      * @return QueryBuilder
@@ -446,6 +408,31 @@ class Auth
     protected function table(): QueryBuilder
     {
         return $this->app->resolve(Database::class)->table($this->table);
+    }
+
+
+    /**
+     * @return Session
+     */
+    protected function session():Session
+    {
+        return $this->app->resolve(Session::class);
+    }
+
+    /**
+     * @return Cookie
+     */
+    protected function cookie():Cookie
+    {
+        return $this->app->resolve(Cookie::class);
+    }
+
+    /**
+     * @return Request
+     */
+    protected function request():Request
+    {
+        return $this->app->resolve(Request::class);
     }
 }
 

@@ -49,7 +49,6 @@ class Crypt
     /**
      * @param string $encodedText
      * @return false|string
-     * @throws Exception
      */
     public function decrypt(string $encodedText)
     {
@@ -58,11 +57,9 @@ class Crypt
         $encrypted['iv'] = base64_decode($encrypted['iv']);
 
         if (!is_array($encrypted) || !isset($encrypted['encrypted'], $encrypted['iv'], $encrypted['hash'])) {
-
-            throw new Exception("Şifreleme çözülemiyor.", E_WARNING);
+            return false;
         }
         if (!hash_equals($this->hash($encrypted['iv'] . $encrypted['encrypted']), $encrypted['hash'])) {
-
             return false;
         }
 

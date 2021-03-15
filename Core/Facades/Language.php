@@ -2,7 +2,6 @@
 
 namespace Core\Facades;
 
-use Core\Language\Language;
 
 /**
  * @see Language::load()
@@ -56,13 +55,13 @@ use Core\Language\Language;
  * @mixin Language
  * @see Language
  */
-class Lang extends Facade
+class Language extends Facade
 {
     /**
      * @return string
      */
     protected static function getFacadeAccessor(): string
     {
-        return Language::class;
+        return \Core\Language\Language::class;
     }
 }

@@ -3,7 +3,7 @@ class Router extends Core\Facades\Router {}
 class Request extends Core\Facades\Request {}
 class DB extends Core\Facades\DB {}
 class Valid extends Core\Validation\Valid {}
-class Lang extends Core\Facades\Lang {}
+class Language extends Core\Facades\Language {}
 class Csrf extends Core\Facades\Csrf {}
 
 class View extends  Core\Facades\View {}

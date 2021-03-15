@@ -123,12 +123,12 @@ $dataTable->table('users u')
 ->order("w.updated_at");
 
 $dataTable->orderable([
-'0' => 'w.withdrawID',
-'1' => 'u.nameSurname',
-'2' => 'u.userEmail',
-'3' => 'w.status',
-'4' => 'w.created_at',
-'5' => 'w.updated_at',
+'withdrawID' => 'w.withdrawID',
+'nameSurname' => 'u.nameSurname',
+'userEmail' => 'u.userEmail',
+'status' => 'w.status',
+'created_at' => 'w.created_at',
+'updated_at' => 'w.updated_at',
 ]);
 $dataTable->searchable([
 'nameSurname' => 'u.nameSurname',

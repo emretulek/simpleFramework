@@ -1,4 +1,7 @@
 <?php
+/**
+ * Core/Filter::class türkçe dil dosyası
+ */
 return [
     'no_index' => 'Zorunlu alan.',
     'required' => 'Zorunlu alan.',

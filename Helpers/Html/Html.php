@@ -1,11 +1,4 @@
 <?php 
-/**
- * @Created 14.05.2020 03:33:27
- * @Project simpleFramework
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Html
- * @package Helpers\Html
- */
 
 
 namespace Helpers\Html;
@@ -105,7 +98,7 @@ class Html {
                     $opt = new Tag('option');
                     $opt->val($groupKey)->text($groupVal);
 
-                    if($groupKey == $selectedOption){
+                    if($groupKey == $selectedOption && $selectedOption !== null){
                         $opt->attr('selected', 'selected');
                     }
 
@@ -118,7 +111,7 @@ class Html {
                 $opt = new Tag('option');
                 $opt->val($key)->text($val);
 
-                if($key == $selectedOption){
+                if($key == $selectedOption && $selectedOption !== null){
                     $opt->attr('selected', 'selected');
                 }
 
@@ -144,7 +137,7 @@ class Html {
             ->attr('name', $name)
             ->val($value);
 
-        if($checked === true || (string) $checked == $value){
+        if(($checked === true || (string) $checked == $value) && $value !== null){
             $tag->attr('checked', 'checked');
         }
 
@@ -166,7 +159,7 @@ class Html {
             ->attr('name', $name)
             ->val($value);
 
-        if($checked === true || (string) $checked == $value){
+        if(($checked === true || (string) $checked == $value) && $value !== null){
             $tag->attr('checked', 'checked');
         }
 

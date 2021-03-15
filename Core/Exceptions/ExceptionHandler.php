@@ -117,27 +117,26 @@ class ExceptionHandler
      * @param null $location
      * @param null $exceptionType
      */
-    protected function print($message, $code, $location = null, $exceptionType = null)
+    protected function print($message, $code, $location = [], $exceptionType = null)
     {
         echo '<style>';
-        echo 'body{background-color:#292929}
-                .error-container{margin: 15px;background-color: #000000;color: #eee;padding: 5px;font-family: Arial, sans-serif;}
-                .error-title{margin: 0;padding: 10px;background-color: #1f1f1f;color: #bb86fc;}.error-type {float: right;}
-                .error-message {padding: 15px;}
-                .error-footer {background-color: #352c2d;padding: 10px;color: #ff7597;}';
+        echo '  .error-container{margin:15px;background-color:#ffffff;color:#6a34bf;padding:5px;font-family: sans-serif;
+        box-shadow:0 2px 5px #00000045;overflow-y:auto;position:relative;z-index:9999}
+                .error-title{margin:0;padding:10px;background-color:#692ebc;color:#ffffff}
+                .error-type{float:right;color:#cab8e9}
+                .error-message{margin:5px 0;padding:15px;color:#6a34bf;box-shadow:0 0 5px #00000045 inset}
+                .error-footer{background-color:#eeeeee;padding:10px;color:#ff7597;display:flex;justify-content:space-between;margin:0 0 5px}';
         echo '</style>';
         echo '<div class="error-container">' . PHP_EOL;
         echo '<h3 class="error-title">' . PHP_EOL;
         echo '<small class="error-type">' . $exceptionType . '</small>' . $this->codeToString($code) . PHP_EOL;
         echo '</h3>' . PHP_EOL;
-        echo '<div class="error-message">';
-        echo '<pre>' . $message . '</pre>' . PHP_EOL;
-        echo '</div>' . PHP_EOL;
+        echo '<div class="error-message">'.$message.'</div>' . PHP_EOL;
         foreach ($location as $value):
-            echo '<div class="error-footer">' . PHP_EOL;
-            echo '<b>File:</b> ' . $value['file'] . '&nbsp;&nbsp;' . PHP_EOL;
-            echo '<b>Line:</b> ' . $value['line'] . PHP_EOL;
-            echo '</div>';
+            echo '<pre class="error-footer">' . PHP_EOL;
+            echo '<span>File: ' . $value['file'] . '</span> ';
+            echo '<span>Line: ' . $value['line'] . '</span> ' . PHP_EOL;
+            echo '</pre>';
         endforeach;
         echo '</div>';
     }
@@ -149,14 +148,14 @@ class ExceptionHandler
     public function debug(Throwable $e)
     {
         $exception = $e->getPrevious() ?? $e;
-        $exceptionType = get_class($exception);
-        $code = $exception->getCode();
+        $exceptionType = get_class($e);
+        $code = $e->getCode();
         $message = $exception->getMessage();
         $location = $this->getLocation($exception);
-        array_unshift($location, ['file' => $e->getFile(), 'line' => $e->getLine()]);
+        $firstCatchLocation[] = ['file' => $e->getFile(), 'line' => $e->getLine()];
+        array_splice( $location, 1, 0, $firstCatchLocation);
         $file = $location[0]['file'];
         $line = $location[0]['line'];
-
         $console_info = ['code' => $code, 'message' => $message, 'file' => $file, 'line' => $line, 'exception' => $exceptionType];
 
         switch (config('app.debug')) {
@@ -165,7 +164,7 @@ class ExceptionHandler
                 if (array_key_exists($code, self::ERROR)) {
                     ob_end_clean();
                     ob_start();
-                    $this->print("Something went wrong. You can get detailed information in debug mode.", $code, $location, $exceptionType);
+                    $this->print("Something went wrong. You can get detailed information in debug mode.", $code);
                     $content = ob_get_clean();
                     echo new Response($content, 500);
                     exit;
@@ -220,6 +219,11 @@ class ExceptionHandler
         $trace = $throwable->getTrace();
         $visibleTrace = [];
 
+        $visibleTrace[] = [
+            'file' => $throwable->getFile(),
+            'line' => $throwable->getLine()
+        ];
+
         if ($trace) {
             foreach ($trace as $item) {
                 if (isset($item['file'], $item['line'])) {
@@ -229,13 +233,8 @@ class ExceptionHandler
                     ];
                 }
             }
-
-            return $visibleTrace;
         }
 
-        return $visibleTrace[] = [
-            'file' => $throwable->getFile(),
-            'line' => $throwable->getLine()
-        ];
+        return $visibleTrace;
     }
 }

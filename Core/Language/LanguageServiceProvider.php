@@ -8,8 +8,8 @@ class LanguageServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        $this->app->singleton(Language::class, function ($app) {
-            return new Language($app);
+        $this->app->singleton(Language::class, function () {
+            return new Language();
         });
     }
 }

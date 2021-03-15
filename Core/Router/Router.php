@@ -3,23 +3,21 @@
 namespace Core\Router;
 
 use Core\App;
+use Core\Exceptions\ExceptionHandler;
 use Core\Http\HttpMethodNotAllowed;
 use Core\Http\HttpNotFound;
 use Core\Http\Request;
 use ArgumentCountError;
 use Closure;
 use Core\Http\Response;
+use Core\Model\ModelException;
 use Core\Reflection\Reflection;
 use Core\View\View;
 use Exception;
 use ReflectionException;
 use ReflectionMethod;
 
-/**
- * @class Router
- *
- * Gelen http isteklerini düzenler ve yönlendirir.
- */
+
 class Router
 {
     private App $app;
@@ -181,7 +179,7 @@ class Router
      * Yeni bir yönlendirme ekler.
      *
      * @param string $pattern yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @param null $method zorlanacak istek türü POST, GET
      * @return Router
      */
@@ -221,11 +219,11 @@ class Router
         $segments = $this->request->segments();
         $segments = array_slice($segments, count($this->methodPrefix));
         $controller = isset($segments[0]) ? array_shift($segments) : null;
-        $controller = substr($controller, 0, 2) == '__' ? null : $controller;
         $method = isset($segments[0]) ? array_shift($segments) : null;
-        $params = $segments ? implode('/', array_map(fn($item) => '{*}', $segments)) : '';
-
-        $pattern = '/' . $controller . '/' . $method . '/' . $params;
+        $method = preg_replace('/^_+/', '_', $method);
+        $params = implode('/', array_map(fn($item) => '{*}', $segments));
+        $params = $params ? '/'.$params : '';
+        $pattern = rtrim('/' . $controller . '/' . $method, '/');
         $pattern = preg_replace("#[^\w\d/]#iu", "", $pattern);
         $pattern = preg_quote($pattern);
 
@@ -250,7 +248,7 @@ class Router
      * @method Router::addRoute 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS' tüm istek türlerini kabul eder
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @return Router
      */
     public function any(string $pattern, $cmp): self
@@ -262,7 +260,7 @@ class Router
      * @method Router::addRoute GET okuma
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @return Router
      */
     public function get(string $pattern, $cmp): self
@@ -274,7 +272,7 @@ class Router
      * @method Router::addRoute POST oluşturma
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @return Router
      */
     public function post(string $pattern, $cmp): self
@@ -286,7 +284,7 @@ class Router
      * @method Router::addRoute PUT güncelleme
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @return Router
      */
     public function put(string $pattern, $cmp): self
@@ -298,7 +296,7 @@ class Router
      * @method Router::addRoute DELETE silme
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @return Router
      */
     public function delete(string $pattern, $cmp): self
@@ -310,7 +308,7 @@ class Router
      * @method Router::addRoute PATCH kısmi güncelleme
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @return Router
      */
     public function patch(string $pattern, $cmp): self
@@ -322,7 +320,7 @@ class Router
      * @method Router::addRoute HEAD üst bilgi
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @return Router
      */
     public function head(string $pattern, $cmp): self
@@ -334,7 +332,7 @@ class Router
      * @method Router::addRoute OPTIONS seçenekler
      *
      * @param string $pattern Yönlendirilecek istek deseni (regex)
-     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller TODO controller@method
+     * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
      * @return self
      */
     public function options(string $pattern, $cmp): self
@@ -426,7 +424,7 @@ class Router
                         }
                     }
 
-
+                    //if response view or response class
                     if ($response instanceof View || $response instanceof Response) {
                         echo $response;
                     } else {
@@ -439,15 +437,22 @@ class Router
 
             throw new HttpNotFound('No match router.', E_NOTICE);
 
-        } catch (HttpNotFound $e) {
+        } catch (ModelException $e) {
+            $this->app->debug($e);
+            return ;
+        }catch (HttpNotFound $e) {
             $this->app->debug($e);
             return self::errors(404);
         } catch (HttpMethodNotAllowed $e) {
             $this->app->debug($e);
             return self::errors(405);
         } catch (Exception $e) {
-            $this->app->debug($e);
-            return self::errors(500);
+            if(array_key_exists($e->getCode(), ExceptionHandler::NOTICE)){
+                $this->app->debug($e);
+            }else{
+                $this->app->debug($e);
+                return self::errors(500);
+            }
         }
     }
 
@@ -456,7 +461,7 @@ class Router
      * @param callable $callback
      * @param $args
      * @return Response|View|null
-     * @throws HttpNotFound
+     * @throws HttpNotFound|ModelException
      */
     private function startCallback(callable $callback, $args)
     {
@@ -475,7 +480,7 @@ class Router
      * @param $route
      * @param $matches
      * @return mixed
-     * @throws HttpNotFound
+     * @throws HttpNotFound|ModelException
      */
     private function startController($route, $matches)
     {
@@ -574,6 +579,10 @@ class Router
         } else {
             $this->params = [$params];
         }
+
+        $this->params = array_map(function ($param){
+            return trim(strip_tags($param));
+        }, $this->params);
     }
 
     /**
@@ -638,6 +647,9 @@ class Router
         array_walk($this->routes, function ($item) use ($searchName, &$matchedRoutes) {
 
             if (preg_match('#^' . $searchName . '$#', $item['name'])) {
+                if($item['cmp'] instanceof Closure){
+                    $item['cmp'] = 'Clouser';
+                }
                 $matchedRoutes[] = $item;
             }
         });
@@ -657,6 +669,14 @@ class Router
     }
 
     /**
+     * @return View
+     */
+    public function view():View
+    {
+        return $this->app->resolve(View::class);
+    }
+
+    /**
      * Router custom errors
      *
      * @param $http_code
@@ -665,18 +685,14 @@ class Router
      */
     public function errors($http_code, callable $callback = null)
     {
-        /**
-         * @var $view View
-         **/
-        $view = $this->app->resolve(View::class);
         if ($callback instanceof Closure) {
             $this->errors[$http_code] = $callback;
             return $this;
         }
 
         if (empty($this->errors[$http_code])) {
-            $this->errors[$http_code] = function () use ($view, $http_code) {
-                $view->path('errors/' . $http_code, null)->render($http_code);
+            $this->errors[$http_code] = function () use ($http_code) {
+                return $this->view()->path('errors/' . $http_code, null)->render($http_code);
             };
         }
 

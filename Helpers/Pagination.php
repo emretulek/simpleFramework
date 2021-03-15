@@ -1,15 +1,6 @@
 <?php
 namespace Helpers;
 
-/**
- * @Created 15.05.2020 21:46:48
- * @Project simpleFramework
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Pagination
- * @package Helpers
- * @property-read int $start
- * @property-read int $limit
- */
 
 class Pagination {
 

@@ -20,13 +20,11 @@ class Database
     /**
      * Database constructor.
      * @param ConnectionInterface $connection
-     * @param App $app
      * @throws SqlErrorException
      */
-    public function __construct(ConnectionInterface $connection, App $app)
+    public function __construct(ConnectionInterface $connection)
     {
         $this->connection = $connection;
-        $this->app = $app;
 
         try {
             $this->pdo = $connection->connection();

@@ -254,7 +254,7 @@ class Language
 
     /**
      * Url üzerinden aktif dili belirler, aktif dil default dil ile aynı ise url yapısında gösterilmez.
-     * @TODO site.com/en-us/contact or site.com/en/contact
+     * @example  site.com/en-us/contact or site.com/en/contact
      */
     public function useUrl()
     {

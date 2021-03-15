@@ -7,7 +7,7 @@ class Filter
 {
     private array $params;
     private bool $required = false;
-    private ?string $input = NULL;
+    private $input = NULL;
     private ?string $key = NULL;
     private array $error = [];
 
@@ -40,7 +40,8 @@ class Filter
         'creditCard' => 'Geçersiz kredi kartı numarası.',
         'tcNo' => 'Geçersiz TC kimlik numarası.',
         'equal' => 'Girilen değer istenen ile uyuşmuyor.',
-        'in' => 'Lütfen belirtilen değerlerden birini seçin.'
+        'in' => 'Lütfen belirtilen değerlerden birini seçin.',
+        'has_file' => 'Lütfen dosya seçiniz.'
     ];
 
     /**
@@ -62,7 +63,7 @@ class Filter
      * farklı diller için farklı mesaj dizileri
      * @param array $messages
      */
-    public static function setMessages(array $messages)
+    public static function setMessages(array $messages):void
     {
         static::$langMessages = $messages;
     }
@@ -95,7 +96,7 @@ class Filter
     /**
      * @param $required
      */
-    private function is_required($required)
+    private function is_required($required):void
     {
         $this->required = $required;
 
@@ -110,7 +111,7 @@ class Filter
      * @param null $max
      * @return $this
      */
-    public function float($min = null, $max = null)
+    public function float($min = null, $max = null):self
     {
         if (!Valid::float($this->input, $min, $max) && $max === null) {
             $this->errorMessage('min', $min);
@@ -133,7 +134,7 @@ class Filter
      * @param null $max
      * @return $this
      */
-    public function int($min = null, $max = null)
+    public function int($min = null, $max = null):self
     {
         if (!Valid::int($this->input, $min, $max) && $max === null) {
             $this->errorMessage('min', $min);
@@ -154,7 +155,7 @@ class Filter
      * IPv4 adres kontrolü yapar
      * @return $this
      */
-    public function ipv4()
+    public function ipv4():self
     {
         if (!Valid::ipv4($this->input)) {
             $this->errorMessage('ipv4');
@@ -167,7 +168,7 @@ class Filter
      * IPv6 adres kontrolü yapar
      * @return $this
      */
-    public function ipv6()
+    public function ipv6():self
     {
         if (!Valid::ipv6($this->input)) {
             $this->errorMessage('ipv6');
@@ -180,7 +181,7 @@ class Filter
      * IP adres kontrolü yapar
      * @return $this
      */
-    public function ip()
+    public function ip():self
     {
         if (!Valid::ipv6($this->input)) {
             $this->errorMessage('ip');
@@ -193,7 +194,7 @@ class Filter
      * Mac adres kontrolü yapar
      * @return $this
      */
-    public function mac()
+    public function mac():self
     {
         if (!Valid::mac($this->input)) {
             $this->errorMessage('mac');
@@ -207,7 +208,7 @@ class Filter
      *
      * @return $this
      */
-    public function url()
+    public function url():self
     {
         if (!Valid::url($this->input)) {
             $this->errorMessage('url');
@@ -221,7 +222,7 @@ class Filter
      *
      * @return $this
      */
-    public function domain()
+    public function domain():self
     {
         if (!Valid::domain($this->input)) {
             $this->errorMessage('domain');
@@ -235,7 +236,7 @@ class Filter
      *
      * @return $this
      */
-    public function email()
+    public function email():self
     {
         if (!Valid::email($this->input)) {
             $this->errorMessage('email');
@@ -250,7 +251,7 @@ class Filter
      * Geçerli bir telefon numarası değilse hata mesajı oluşturur.
      * @return $this
      */
-    public function phone()
+    public function phone():self
     {
         $this->input = preg_replace("/[^0-9+\-]/", "", $this->input);
         $this->input = preg_replace("/[\-]{1,}/", "-", $this->input);
@@ -269,7 +270,7 @@ class Filter
      * @param string $format
      * @return $this
      */
-    public function date(string $format = "Y-m-d H:i:s")
+    public function date(string $format = "Y-m-d H:i:s"):self
     {
         if (!$date = Valid::date($this->input, $format)) {
             $this->errorMessage('dateFormat');
@@ -284,7 +285,7 @@ class Filter
      *
      * @return $this
      */
-    public function username()
+    public function username():self
     {
         if (!Valid::username($this->input)) {
             $this->errorMessage('username', 4, 64);
@@ -300,7 +301,7 @@ class Filter
      *
      * @return $this
      */
-    public function name()
+    public function name():self
     {
         if (!Valid::name($this->input)) {
             $this->errorMessage('name', 2, 64);
@@ -316,7 +317,7 @@ class Filter
      *
      * @return $this
      */
-    public function filename()
+    public function filename():self
     {
         if (!Valid::filename($this->input)) {
             $this->errorMessage('filename');
@@ -333,7 +334,7 @@ class Filter
      * @param string|null $repassword şifre uyumunun kontrol edileceği index.
      * @return $this
      */
-    public function password(string $repassword = null)
+    public function password(string $repassword = null):self
     {
         if (Valid::length($this->input, 4, 16)) {
 
@@ -354,7 +355,7 @@ class Filter
      * Geçerli bir kredi kartı numarası değilse hata mesajı oluşturur
      * @return $this
      */
-    public function creditCard()
+    public function creditCard():self
     {
         if (!Valid::creditCard($this->input)) {
             $this->errorMessage('creditCard');
@@ -368,7 +369,7 @@ class Filter
      * TC kimlik no algoritmasını geçemezse hata mesajı oluşturur
      * @return $this
      */
-    public function tcNo()
+    public function tcNo():self
     {
         if (!Valid::tcNo($this->input)) {
             $this->errorMessage('tcNo');
@@ -384,7 +385,7 @@ class Filter
      * @param ?int $max
      * @return $this
      */
-    public function length(int $min = null, int $max = null)
+    public function length(int $min = null, int $max = null):self
     {
         if (!Valid::length($this->input, $min, $max) && $max === null) {
             $this->errorMessage('min_len', $min);
@@ -406,7 +407,7 @@ class Filter
      * @param $pattern
      * @return $this
      */
-    public function regex($pattern)
+    public function regex($pattern):self
     {
         if (!preg_match($pattern, $this->input)) {
             $this->errorMessage('regex', $pattern);
@@ -422,7 +423,7 @@ class Filter
      * @param bool $unicode
      * @return $this
      */
-    public function toAlpha($unicode = false)
+    public function toAlpha($unicode = false):self
     {
         $pattern = '/[^a-z]/i';
         $pattern = $unicode ? '/[^\p{L}]/i' : $pattern;
@@ -438,7 +439,7 @@ class Filter
      *
      * @return $this
      */
-    public function toNumber()
+    public function toNumber():self
     {
         $this->input = preg_replace('/[^0-9]/', '', $this->input);
 
@@ -452,7 +453,7 @@ class Filter
      * @param bool $unicode
      * @return $this
      */
-    public function toAlnum($unicode = false)
+    public function toAlnum($unicode = false):self
     {
         $pattern = '/[^a-z0-9]/i';
         $pattern = $unicode ? '/[^\p{L}0-9]/i' : $pattern;
@@ -467,7 +468,7 @@ class Filter
      * @param $allowed
      * @return $this
      */
-    public function toText(array $allowed = null)
+    public function toText(array $allowed = null):self
     {
         $this->input = strip_tags($this->input, $allowed);
         return $this;
@@ -478,7 +479,7 @@ class Filter
      * Maksimum 1 boşluk karakteri
      * @return $this
      */
-    public function spaceOne()
+    public function spaceOne():self
     {
         $this->input = preg_replace("/\s+/u", " ", $this->input);
         return $this;
@@ -489,7 +490,7 @@ class Filter
      *
      * @return $this
      */
-    public function toHtmlEntity()
+    public function toHtmlEntity():self
     {
         $this->input = htmlentities($this->input, ENT_NOQUOTES, "UTF-8");
         return $this;
@@ -501,7 +502,7 @@ class Filter
      * @link https://stackoverflow.com/a/1741568
      * @return $this
      */
-    public function toSecureHtml()
+    public function toSecureHtml():self
     {
         // Fix &entity\n;
         $data = str_replace(array('&amp;', '&lt;', '&gt;'), array('&amp;amp;', '&amp;lt;', '&amp;gt;'), $this->input);
@@ -539,10 +540,10 @@ class Filter
 
     /**
      * Türkçe karakterleri çevirip özel karakterleri silerek temiz bir url yapısı oluştutur.
-     * @param string $allowed
+     * @param ?string $allowed
      * @return $this
      */
-    public function toPermaLink(string $allowed = null)
+    public function toPermaLink(string $allowed = null):self
     {
         $tr = array("Ç", "ç", "Ğ", "ğ", "İ", "ı", "Ö", "ö", "Ş", "ş", "Ü", "ü");
         $en = array("C", "c", "G", "g", "I", "i", "O", "o", "S", "s", "U", "u");
@@ -562,7 +563,7 @@ class Filter
      * @param $param
      * @return $this
      */
-    public function equal($param)
+    public function equal($param):self
     {
         if ($this->input !== $param) {
             $this->errorMessage('equal');
@@ -572,10 +573,42 @@ class Filter
     }
 
 
-    public function in(array $array, bool $strict = false)
+    /**
+     * gelen değer dizi içinde var mı kontrol eder
+     * @param array $array
+     * @param bool $strict
+     * @return $this
+     */
+    public function in(array $array, bool $strict = false):self
     {
         if (!in_array($this->input, $array, $strict)) {
             $this->errorMessage('in');
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @param $requestFiles [Request::files(name)]
+     * @return $this
+     */
+    public function hasFile($requestFiles):self
+    {
+        if(empty($requestFiles)){
+            $this->errorMessage('has_file');
+        }elseif(isset($requestFiles["error"]) && $requestFiles["error"] === UPLOAD_ERR_NO_FILE){
+            $this->errorMessage('has_file');
+        }elseif (isset($requestFiles[0]['error']) && $requestFiles[0]["error"] === UPLOAD_ERR_NO_FILE){
+            $this->errorMessage('has_file');
+        }else{
+            unset($this->error[$this->key]);
+        }
+
+        $this->input = isset($this->error[$this->key]) ? [] : $requestFiles;
+
+        if($this->required == false){
+            unset($this->error[$this->key]);
         }
 
         return $this;
@@ -588,7 +621,7 @@ class Filter
      * @param $label
      * @return $this
      */
-    public function label($label)
+    public function label($label):self
     {
         if (isset($this->error[$this->key])) {
             $this->error[$this->key] = '<b>' . $label . '</b> ' . $this->error[$this->key];
@@ -603,7 +636,7 @@ class Filter
      * @param string|null $error_message
      * @return $this
      */
-    public function message(string $error_message)
+    public function message(string $error_message):self
     {
         if (isset($this->error[$this->key])) {
             $this->error[$this->key] = $error_message;
@@ -615,7 +648,7 @@ class Filter
     /**
      * Filtre edilen veriyi döndürür.
      *
-     * @return null
+     * @return mixed
      */
     public function result()
     {
@@ -629,7 +662,11 @@ class Filter
     }
 
 
-    private function errorMessage($key, ...$args)
+    /**
+     * @param $key
+     * @param mixed ...$args
+     */
+    private function errorMessage($key, ...$args):void
     {
         if (array_key_exists($key, $this->messages)) {
             $this->error[$this->key] = vsprintf($this->messages[$key], $args);

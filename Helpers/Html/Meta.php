@@ -1,11 +1,4 @@
 <?php 
-/**
- * @Created 14.05.2020 06:53:27
- * @Project simpleFramework
- * @Author Mehmet Emre Tülek <memretulek@gmail.com>
- * @Class Meta
- * @package Helpers\Html
- */
 
 
 namespace Helpers\Html;

@@ -2,9 +2,9 @@
 
 namespace Core\Database;
 
-use ErrorException;
+use Exception;
 
-class SqlErrorException extends ErrorException
+class SqlErrorException extends Exception
 {
 
 }

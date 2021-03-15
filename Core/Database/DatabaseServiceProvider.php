@@ -24,7 +24,7 @@ class DatabaseServiceProvider extends ServiceProvider
             $selectConnectionType = '\\Core\\Database\\' . ucfirst($driver) . 'Connection';
             $connectionConfig = $app->config['database'][$driver];
 
-            return new Database(new $selectConnectionType($connectionConfig), $app);
+            return new Database(new $selectConnectionType($connectionConfig));
         });
     }
 }

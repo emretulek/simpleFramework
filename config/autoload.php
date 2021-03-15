@@ -28,13 +28,14 @@ return [
         'cache' => Core\Facades\Cache::class,
         'logger' => Core\Facades\Logger::class,
         'hash' => \Core\Facades\Hash::class,
+        'csrf' => \Core\Facades\Csrf::class,
         //helper alies
         'tag' => Helpers\Html\Tag::class,
         'meta' => Helpers\Html\Meta::class,
         'html' => Helpers\Html\Html::class,
     ],
     'services' => [
-        'default' => Services\DefaultServiceProvider::class,
+        //'default' => Services\DefaultServiceProvider::class,
         //'language' => Services\LanguageService::class,
     ],
     'routes' => [

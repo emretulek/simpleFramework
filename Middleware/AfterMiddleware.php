@@ -3,11 +3,7 @@
 namespace Middleware;
 
 
-use Core\Http\HttpNotFound;
-use Core\Middleware\IMiddlewareAfter;
-
-class AfterMiddleware implements IMiddlewareAfter {
-
+class AfterMiddleware {
 
     function after($response)
     {

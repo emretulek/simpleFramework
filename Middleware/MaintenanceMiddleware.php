@@ -6,14 +6,13 @@ namespace Middleware;
 
 
 use Auth;
-use Core\Middleware\IMiddlewareBefore;
 use Router;
 
-class MaintenanceMiddleware implements IMiddlewareBefore {
+class MaintenanceMiddleware {
 
     function before()
     {
-        if($maintanence = config('settings.system_maintenance')){
+        if(config('settings.system_maintenance')){
             if(Auth::guard('admin')){
                 return;
             }
@@ -23,7 +22,6 @@ class MaintenanceMiddleware implements IMiddlewareBefore {
             if(!Router::matchName('maintenance')){
                 redirect('/maintenance');
             }
-            return;
         }
     }
 }

@@ -9,6 +9,9 @@ namespace Core\Facades;
  * @see \Core\Csrf\Csrf::token()
  * @method static string token()
  * ---------------------------------------------
+ * @see \Core\Csrf\Csrf::refreshToken()
+ * @method static string refreshToken()
+ * ---------------------------------------------
  * @see \Core\Csrf\Csrf::old_token()
  * @method static string old_token()
  * ---------------------------------------------

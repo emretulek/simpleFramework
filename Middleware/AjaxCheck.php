@@ -2,10 +2,9 @@
 namespace Middleware;
 
 use Core\Http\HttpMethodNotAllowed;
-use Core\Middleware\IMiddlewareBefore;
 use Request;
 
-Class AjaxCheck Implements IMiddlewareBefore {
+Class AjaxCheck {
 
     /**
      * @throws HttpMethodNotAllowed

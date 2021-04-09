@@ -1,5 +1,4 @@
 <?php
-
 use Core\App;
 
 define('EXT', '.php');

@@ -215,12 +215,12 @@ if (!function_exists('counter')) {
      * Özellikle döngü sıra numaralrında kullanılmak üzere her kullanılışta
      * başlangıç sayısnı belirtilen miktarda arttırır.
      *
-     * @param int $count
+     * @param ?int $count
      * @param int $step
      * @param int $start
      * @return int
      */
-    function counter(int &$count, int $step = 1, int $start = 1):int
+    function counter(?int &$count, int $step = 1, int $start = 1):int
     {
         $count = is_null($count) ? $start : $count + $step;
         return $count;
@@ -362,10 +362,10 @@ if (!function_exists('url')) {
 if (!function_exists('build_query')) {
 
     /**
-     * @param array $params
+     * @param ?array $params
      * @return string
      */
-    function build_query(array $params = array()): string
+    function build_query(array $params = null): string
     {
         return $params ? '?' . http_build_query($params) : '';
     }
@@ -497,6 +497,21 @@ if (!function_exists('jsonError')) {
     function jsonError($message = null, $location = null, $data = null):View
     {
         return view()->json(['status' => 'error', 'message' => $message, 'location' => $location, 'data' => $data]);
+    }
+}
+
+if (!function_exists('jsonWarning')) {
+    /**
+     * Json verisini warning olarak render eder
+     *
+     * @param null $message
+     * @param null $location
+     * @param null $data
+     * @return View
+     */
+    function jsonWarning($message = null, $location = null, $data = null):View
+    {
+        return view()->json(['status' => 'warning', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
 }
 

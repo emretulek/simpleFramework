@@ -4,9 +4,8 @@ namespace Middleware;
 
 
 use Csrf;
-use Core\Middleware\IMiddlewareBefore;
 
-class CsrfToken implements IMiddlewareBefore {
+class CsrfToken {
 
     function before()
     {

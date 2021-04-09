@@ -33,7 +33,8 @@ class Auth
      * @var array
      */
     public array $userWhere = [
-        'deleted_at' => null
+        'deleted_at' => null,
+        'status' => 1
     ];
 
     protected array $noStoreSession = [
@@ -130,9 +131,11 @@ class Auth
                     ->update(['rememberme' => $token]);
             }
 
-            $this->table()
-                ->where('userID', $this->user->userID)
-                ->update(['session_id' => session_id(), 'last_login' => '{{NOW()}}']);
+            $this->table()->where('userID', $this->user->userID)->update([
+                    'session_id' => session_id(),
+                    'last_login' => '{{NOW()}}',
+                    'ip' => $this->request()->ip()
+                ]);
         }
 
         return $result;

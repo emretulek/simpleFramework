@@ -41,13 +41,13 @@ namespace Core\Facades;
  * @method static bool exists(string $lang_key)
  * -----------------------------------------------------------------------
  * @see Language::add()
- * @method static void add(string $key, string $name, string $locale)
+ * @method static void add(string $key, string $name, string $locale = null)
  * ------------------------------------------------------------------------
  * @see Language::remove()
  * @method static void remove(string $lang_key)
  * ------------------------------------------------------------------------
- * @see Language::useUrl()
- * @method static void useUrl()
+ * @see Language::list()
+ * @method static array list()
  * -----------------------------------------------------------------------
  * @see Language::routePrefix()
  * @method static string routePrefix()

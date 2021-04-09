@@ -2,7 +2,7 @@
   "name": "emretulek/simple-framework",
   "description": "Basit ve kullanisli php framework",
   "type": "project",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "autoload": {
     "psr-4": {
       "": ""

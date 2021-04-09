@@ -2,7 +2,6 @@
 
 namespace Core;
 
-use ArrayAccess;
 use Closure;
 use Core\Config\LoadConfigFiles;
 use Core\Exceptions\ExceptionHandler;
@@ -14,12 +13,12 @@ use ReflectionClass;
 use RuntimeException;
 use Throwable;
 
-class App implements ArrayAccess
+class App
 {
     /**
      * semantic version
      */
-    const VERSION = "3.3.0";
+    const VERSION = "3.4.0";
 
     /**
      * @var static
@@ -397,43 +396,5 @@ class App implements ArrayAccess
     public function __set($name, $value)
     {
         $this[$name] = $value;
-    }
-
-
-    /**
-     * @param mixed $offset
-     * @return bool
-     */
-    public function offsetExists($offset): bool
-    {
-        return $this->has($offset);
-    }
-
-    /**
-     * @param mixed $offset
-     * @return mixed
-     */
-    public function offsetGet($offset): object
-    {
-        return $this->resolve($offset);
-    }
-
-    /**
-     * @param mixed $offset
-     * @param mixed $value
-     */
-    public function offsetSet($offset, $value)
-    {
-        $this->bind($offset, $value instanceof Closure ? $value : function () use ($value) {
-            return $value;
-        });
-    }
-
-    /**
-     * @param mixed $offset
-     */
-    public function offsetUnset($offset)
-    {
-        unset($this->bindings[$offset], $this->instances[$offset]);
     }
 }

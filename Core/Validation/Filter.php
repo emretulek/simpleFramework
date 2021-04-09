@@ -41,19 +41,25 @@ class Filter
         'tcNo' => 'Geçersiz TC kimlik numarası.',
         'equal' => 'Girilen değer istenen ile uyuşmuyor.',
         'in' => 'Lütfen belirtilen değerlerden birini seçin.',
-        'has_file' => 'Lütfen dosya seçiniz.'
+        'has_file' => 'Lütfen dosya seçiniz.',
+        'max_file_uploads' => 'Aynı anda en fazla %s dosya yükleyebilirsiniz.'
     ];
 
     /**
      * Filter constructor.
      * @param array $params elemanları filtrelenecek dizi
+     * @param array $langMessages
      */
-    public function __construct(array $params)
+    public function __construct(array $params, $langMessages = [])
     {
         $this->params = $params;
 
         if (static::$langMessages) {
             $this->messages = static::$langMessages;
+        }
+
+        if($langMessages){
+            $this->messages = $langMessages;
         }
     }
 

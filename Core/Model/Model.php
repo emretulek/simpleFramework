@@ -94,7 +94,6 @@ use Exception;
  */
 abstract class Model
 {
-    protected App $app;
     protected static array $instance;
     protected string $table = "";
     protected string $pk = "";
@@ -102,10 +101,6 @@ abstract class Model
     protected static array $errors = [];
     protected static bool $throw = false;
 
-    public function __construct()
-    {
-        $this->app = App::getInstance();
-    }
 
     /**
      * @return mixed|static
@@ -123,11 +118,9 @@ abstract class Model
      */
     final public static function __callStatic($methods, $arguments)
     {
-        $database = self::static()->app->resolve(Database::class);
-
         if (method_exists(QueryBuilder::class, $methods)) {
 
-            $queryBuilder = $database->table(self::static()->table);
+            $queryBuilder = self::database()->table(self::static()->table);
 
             if (self::static()->table) {
 
@@ -147,10 +140,18 @@ abstract class Model
 
             return $queryBuilder->$methods(...$arguments);
         } else {
-            throw new Exception('Method ' . $methods . ' not found in ' . get_class($database));
+            throw new Exception('Method ' . $methods . ' not found in ' . get_class(self::database()));
         }
     }
 
+
+    /**
+     * @return Database
+     */
+    public static function database():Database
+    {
+        return App::getInstance()->resolve(Database::class);
+    }
 
     /**
      * @param $message

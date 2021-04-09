@@ -4,9 +4,8 @@ namespace Middleware;
 
 
 use Auth;
-use Core\Middleware\IMiddlewareBefore;
 
-class OnlyWithoutLoginMiddleware implements IMiddlewareBefore {
+class OnlyWithoutLoginMiddleware {
 
     public function before()
     {

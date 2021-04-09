@@ -16,6 +16,7 @@ use Core\View\View;
 use Exception;
 use ReflectionException;
 use ReflectionMethod;
+use TypeError;
 
 
 class Router
@@ -372,7 +373,7 @@ class Router
 
             return call_user_func_array([new $controller, $method], $classRefParameters);
 
-        } catch (ArgumentCountError $e) {
+        } catch (ArgumentCountError | TypeError $e) {//TODO badrequest olarak değişecek
             throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
         } catch (ReflectionException $e) {
             throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);

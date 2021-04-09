@@ -27,15 +27,26 @@ class Csrf
      * Csrf için token oluşturup cookie ve sessiona atar
      * $_SESSION old_csrf_token, csrf_token
      * $_COOKIE csrf_token
+     * @param bool $refresh
      */
-    public function generateToken()
+    public function generateToken($refresh = false)
     {
-        if($this->session->get('csrf_token_timeout') < time()) {
+        if($this->session->get('csrf_token_timeout') < time() || $refresh == true) {
             $token = md5(uniqid());
             $this->session->set('csrf_token', $token);
             $this->session->set('csrf_token_timeout', time() + $this->tokenTimeout);
             $this->cookie->set('csrf_token', $token, $this->tokenTimeout, '/', null, false, false);
         }
+    }
+
+
+    /**
+     * @return false|mixed
+     */
+    public function refreshToken()
+    {
+        $this->generateToken(true);
+        return $this->session->get('csrf_token');
     }
 
 

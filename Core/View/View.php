@@ -167,11 +167,17 @@ class View
 
     /**
      * render etmeden view içeriğini döndürür
+     * @param bool $clear
      * @return string
      */
-    public function getBuffer(): string
+    public function getBuffer($clear = true): string
     {
-        return implode(PHP_EOL, $this->buffer);
+        $buffer = implode(PHP_EOL, $this->buffer);
+
+        if($clear === true){
+            $this->buffer = [];
+        }
+        return $buffer;
     }
 
 

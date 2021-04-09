@@ -110,6 +110,7 @@ class QueryBuilder
 
     /**
      * @param array $columns
+     * @param bool $force
      * @return array|bool|int
      * @throws SqlErrorException
      */

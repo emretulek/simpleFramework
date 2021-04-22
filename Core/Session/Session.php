@@ -2,27 +2,42 @@
 
 namespace Core\Session;
 
+use Core\App;
+use Core\Http\Request;
+
 class Session
 {
+
+    private array $config;
+
+    public function __construct(SessionManager $manager, App $app)
+    {
+        $this->config = $app->config['session'];
+
+        if (!$this->status()) {
+
+            session_set_save_handler($manager->getDefaultDriver(), true);
+
+            if(!empty($this->config['cookie_params'])) {
+
+                if(isset($this->config['cookie_params']['secure']) && $this->config['cookie_params']['secure'] == null){
+                    $this->config['cookie_params']['secure'] = $app->resolve(Request::class)->scheme() == 'https';
+                }
+
+                session_set_cookie_params($this->config['cookie_params']);
+            }
+        }
+    }
+
+
     /**
-     * Oturum ayarlarını yükleyerek oturumu başlatır.
-     *
-     * @param int $lifetime Oturumun ömrünü beliler.
-     * @param string $path oturum verilerinin kaydedileceği dizin.
-     * @param null $domain oturumun geçerli olduğu alan
-     * @param bool $secure true değeri atanırsa https etki alanında çalışır.
-     * @param bool $httponly oturum verilerine istemci tarafından erişim kısıtlanır.
-     * @param array $options ['samesite' => 'Strict']
      * @return bool
      */
-    public function start($lifetime = 0, $path = '/', $domain = null, $secure = false, $httponly = true, array $options = ['samesite' => 'Strict']): bool
+    public function start(): bool
     {
         if (!$this->status()) {
-            session_set_cookie_params($lifetime, $path, $domain, $secure, $httponly);
-            foreach ($options as $option => $value) {
-                session_set_cookie_params([$option => $value]);
-            }
-            $started = session_start();
+
+            $started = session_start($this->config['options']);
             $this->tempClear();
 
             return $started;
@@ -144,6 +159,13 @@ class Session
     public function destroy(): bool
     {
         if ($this->status()) {
+            if (ini_get("session.use_cookies")) {
+                $params = session_get_cookie_params();
+                setcookie(session_name(), '', time() - 42000,
+                    $params["path"], $params["domain"],
+                    $params["secure"], $params["httponly"]
+                );
+            }
             return session_destroy();
         }
 

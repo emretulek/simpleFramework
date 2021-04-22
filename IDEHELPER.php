@@ -5,6 +5,7 @@ class DB extends Core\Facades\DB {}
 class Valid extends Core\Validation\Valid {}
 class Language extends Core\Facades\Language {}
 class Csrf extends Core\Facades\Csrf {}
+class Era extends Core\Era\Era {}
 
 class View extends  Core\Facades\View {}
 

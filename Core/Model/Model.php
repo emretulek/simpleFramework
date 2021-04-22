@@ -21,7 +21,7 @@ use Exception;
  * @method static int|array insert(array $columns)
  * *  -------------------------------------------------------------------------
  * @see QueryBuilder::update()
- * @method static int|array|bool update(array $columns)
+ * @method static int|array|bool update($column, $param = false, bool $force = false)
  *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::delete()
  * @method static int|array delete($columns, bool $force = false)

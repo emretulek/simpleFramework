@@ -1,12 +1,14 @@
 <?php
 
-namespace Core\Cache;
+namespace Core\Connector;
 
 use Memcached;
 use RuntimeException;
 
 class MemcachedConnector
 {
+    protected Memcached $memcached;
+
     /**
      * Memcached connection
      * @param array $servers
@@ -21,18 +23,18 @@ class MemcachedConnector
             throw new RuntimeException('memcached eklentisi kurulu değil.');
         }
 
-        $memcached = new Memcached($connectionId);
+        $this->memcached = new Memcached($connectionId);
 
         //set username password
         if (count($sasl) === 2) {
-            $memcached->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
-            $memcached->setSaslAuthData($sasl['username'], $sasl['password']);
+            $this->memcached->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
+            $this->memcached->setSaslAuthData($sasl['username'], $sasl['password']);
         }
 
         //var olan bağlantı kullanılmıyorsa server ekle
-        if (!$memcached->getServerList()) {
+        if (!$this->memcached->getServerList()) {
             foreach ($servers as $server) {
-                $memcached->addServer(
+                $this->memcached->addServer(
                     $server['host'], $server['port'], $server['weight']
                 );
             }
@@ -40,9 +42,9 @@ class MemcachedConnector
 
         //varsa ayarlar
         if ($options) {
-            $memcached->setOptions($options);
+            $this->memcached->setOptions($options);
         }
 
-        return $memcached;
+        return $this->memcached;
     }
 }

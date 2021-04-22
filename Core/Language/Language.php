@@ -3,27 +3,30 @@
 namespace Core\Language;
 
 use Core\App;
+use Core\Cookie\Cookie;
 use Core\Http\Request;
 use Core\Session\Session;
 use RuntimeException;
 
 class Language
 {
-    public static bool $isLoaded = false;
+    public string $routePrefix = '';
 
-    private Request $request;
-    private Session $session;
+    private App $app;
     private string $path;
     private array $config;
-    private array $default;
+    private string $default;
+    private string $active;
+
+    private string $useSession = '';
+    private string $useCookie = '';
 
     private array $languages = [];
     private array $translate = [];
 
     public function __construct(App $app)
     {
-        $this->request = $app->resolve(Request::class);
-        $this->session = $app->resolve(Session::class);
+        $this->app = $app;
         $this->path = $app->basePath . $app->config['path']['language'];
         $this->config = $app->config['app']['language'];
 
@@ -45,33 +48,6 @@ class Language
         $this->setDefault($this->config['key']);
     }
 
-    /**
-     * Aktif dilin adı
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->getActive()['name'];
-    }
-
-    /**
-     * Aktif dilin anahtarı
-     * @return mixed
-     */
-    public function getKey()
-    {
-        return $this->getActive()['key'];
-    }
-
-    /**
-     * Aktif dil locale değeri [TR-tr, EN-en]
-     * @return mixed
-     */
-    public function getLocale()
-    {
-        return $this->getActive()['locale'];
-    }
-
 
     /**
      * Ön tanımlı dili ayarlar
@@ -82,12 +58,8 @@ class Language
     {
         if ($this->exists($key)) {
 
-            $this->default = [
-                'key' => $key,
-                'name' => $this->languages[$key]['name'],
-                'locale' => $this->languages[$key]['locale'],
-            ];
-
+            $this->default = $key;
+            $this->active = $key;
             $this->loadFiles($key);
 
             return true;
@@ -98,12 +70,40 @@ class Language
 
 
     /**
-     * Varsayılan dil
-     * @return array
+     * Varsayılan dil anahtarı
+     * @return string
      */
-    public function getDefault(): array
+    public function getDefault(): string
     {
         return $this->default;
+    }
+
+
+    /**
+     * Aktif dilin adı
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->languages[$this->getActive()]['name'] ?? $this->languages[$this->default]['name'];
+    }
+
+    /**
+     * Aktif dilin anahtarı
+     * @return mixed
+     */
+    public function getKey()
+    {
+        return $this->languages[$this->getActive()]['key'] ?? $this->languages[$this->default]['key'];
+    }
+
+    /**
+     * Aktif dil locale değeri [TR-tr, EN-en]
+     * @return mixed
+     */
+    public function getLocale()
+    {
+        return $this->languages[$this->getActive()]['locale'] ?? $this->languages[$this->default]['locale'];
     }
 
 
@@ -117,7 +117,16 @@ class Language
     {
         if ($this->exists($key)) {
 
-            $this->session->set('_lang', $this->languages[$key]);
+            $this->active = $key;
+
+            if($this->useSession) {
+                $this->session()->set($this->useSession, $key);
+            }
+
+            if($this->useCookie) {
+                $this->cookie()->set($this->useCookie, $key);
+            }
+
             $this->loadFiles($key);
             return true;
         }
@@ -127,13 +136,21 @@ class Language
 
 
     /**
-     * @return array [key,name,locale]
+     * @return string
      *
-     * Aktif dil özelliklerini döndürür
+     * Aktif dil anahtaru
      */
-    public function getActive(): array
+    public function getActive(): string
     {
-        return $this->session->get('_lang') ? $this->session->get('_lang') : $this->default;
+        if($this->useCookie){
+            $this->active = (string) $this->cookie()->get($this->useCookie) ?: $this->active;
+        }
+
+        if($this->useSession){
+            $this->active = (string) $this->session()->get($this->useSession) ?: $this->active;
+        }
+
+        return $this->active;
     }
 
 
@@ -148,7 +165,8 @@ class Language
     {
         if (is_readable_file($file_path)) {
             $fileName = pathinfo($file_path, PATHINFO_FILENAME);
-            return $this->translate[$key][$fileName] = require($file_path);
+            $fileContent = require($file_path);
+            return $this->translate[$key][$fileName] = config_parser($fileContent);
         }
 
         throw new RuntimeException('Dil dosyası bulunamadı. ' . $file_path, E_NOTICE);
@@ -185,15 +203,16 @@ class Language
     {
         if(array_key_exists($this->getKey(), $this->translate)) {
             if ($translated = dot_aray_get($this->translate[$this->getKey()], $key)) {
-                return is_array($translated) ? $translated : vsprintf($translated, $args);
+                return is_array($translated) ? $translated : vsprintf(translate_parser($translated, ...$args), $args);
             }
-        }elseif(array_key_exists($this->default['key'], $this->translate)) {
-            if ($translated = dot_aray_get($this->translate[$this->default['key']], $key)) {
-                return is_array($translated) ? $translated : vsprintf($translated, $args);
+        }
+        if(array_key_exists($this->default, $this->translate)) {
+            if ($translated = dot_aray_get($this->translate[$this->default], $key)) {
+                return is_array($translated) ? $translated : vsprintf(translate_parser($translated, ...$args), $args);
             }
         }
 
-        return vsprintf($key, $args);
+        return vsprintf(translate_parser($key, ...$args), $args);
     }
 
 
@@ -259,6 +278,26 @@ class Language
 
 
     /**
+     * @param string $session_name
+     * @return $this
+     */
+    public function useSession(string $session_name):Language
+    {
+        $this->useSession = $session_name;
+        return $this;
+    }
+
+    /**
+     * @param string $cookie_name
+     * @return $this
+     */
+    public function useCookie(string $cookie_name):Language
+    {
+        $this->useCookie = $cookie_name;
+        return $this;
+    }
+
+    /**
      * Dilin adres satırında gösterilecek formu.
      * Seçili dil default dil ile aynı ise boş dönecektir.
      * @param int $segmentNum
@@ -266,8 +305,7 @@ class Language
      */
     public function routePrefix(int $segmentNum = 0): string
     {
-        self::$isLoaded = true;
-        $segments = $this->request->segments();
+        $segments = $this->request()->segments();
 
         if (count($segments) > $segmentNum) {
 
@@ -275,17 +313,58 @@ class Language
             unset($segments[$segmentNum]);
 
             //default dil ise adres satırında gösterme
-            if ($language == $this->default['key']) {
-                redirect($this->request->baseUrl() . implode('/', $segments), 301);
+            if ($language == $this->default) {
+                redirect($this->request()->baseUrl() . implode('/', $segments), 301);
                 return '';
             }
 
+            $this->routePrefix = $language;
             $this->setActive($language);
 
-            return $this->getKey() == $this->default['key'] ? '' : $this->getKey();
+            return $this->getKey() == $this->default ? '' : $this->getKey();
         }
 
-        $this->setActive($this->default['key']);
+        $this->setActive($this->default);
         return '';
+    }
+
+    /**
+     * @param string $prefix
+     */
+    public function setRoutePrefix(string $prefix):void
+    {
+        $this->routePrefix = $prefix;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRoutePrefix():string
+    {
+        return $this->routePrefix;
+    }
+
+    /**
+     * @return Session
+     */
+    private function session():Session
+    {
+        return $this->app->resolve(Session::class);
+    }
+
+    /**
+     * @return Cookie
+     */
+    private function cookie():Cookie
+    {
+        return $this->app->resolve(Cookie::class);
+    }
+
+    /**
+     * @return Request
+     */
+    private function request():Request
+    {
+        return $this->app->resolve(Request::class);
     }
 }

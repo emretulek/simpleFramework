@@ -3,16 +3,17 @@
 use Core\App;
 use Core\Config\Config;
 use Core\Http\Request;
-USE Core\Router\Router;
+use Core\Router\Router;
 use Core\Http\Response;
 use Core\Language\Language;
 use Core\View\View;
+use Core\Era\Era;
 
 if (!function_exists('app')) {
     /**
      * @return App
      */
-    function app():App
+    function app(): App
     {
         return App::getInstance();
     }
@@ -25,9 +26,9 @@ if (!function_exists('response')) {
      * @param array|null $headers
      * @return Response
      */
-    function response($content = null, $code = 200, array $headers = null):Response
+    function response($content = null, $code = 200, array $headers = null): Response
     {
-        return new Response($content, $code, $headers);
+        return app()->resolve(Response::class)->content($content)->code($code)->headers($headers);
     }
 }
 
@@ -35,7 +36,7 @@ if (!function_exists('request')) {
     /**
      * @return Request
      */
-    function request():Request
+    function request(): Request
     {
         return app()->resolve(Request::class);
     }
@@ -45,7 +46,7 @@ if (!function_exists('debug')) {
     /**
      * @param Throwable $throwable
      */
-    function debug(Throwable $throwable):void
+    function debug(Throwable $throwable): void
     {
         app()->debug($throwable);
     }
@@ -59,7 +60,7 @@ if (!function_exists('console_log')) {
      */
     function console_log(...$message)
     {
-        register_shutdown_function(function () use ($message){
+        register_shutdown_function(function () use ($message) {
             echo '<script>';
             echo 'console.log(' . json_encode($message) . ')';
             echo '</script>';
@@ -152,7 +153,7 @@ if (!function_exists('dot_array_del')) {
      * @param string $path indexlerin noktalı birleşimi
      * @return bool
      */
-    function dot_array_del(array &$array, string $path):bool
+    function dot_array_del(array &$array, string $path): bool
     {
         $keys = explode('.', $path);
 
@@ -170,6 +171,54 @@ if (!function_exists('dot_array_del')) {
     }
 }
 
+if (!function_exists('config_parser')) {
+    /**
+     * @param array $original
+     * @return array
+     */
+    function config_parser(array &$original):array
+    {
+        foreach ($original as $key => $val) {
+
+            $newArray = [];
+            unset($original[$key]);
+            dot_aray_set($newArray, $key, $val);
+
+            if (is_array($val)) {
+                $newArray[$key] = config_parser($val);
+            }
+
+            $original += $newArray;
+        }
+
+        return $original;
+    }
+}
+
+if(!function_exists('translate_parser')) {
+    /**
+     * Tekil ve çoğul cümlelerin seçilimi
+     * @param $input
+     * @param ...$args
+     * @return array|mixed|string|string[]
+     */
+    function translate_parser($input, ...$args)
+    {
+        $partOfinput = preg_split('/(?<!\\\)+?\|/u', $input);
+        $partOfinput = array_map(fn($item) => str_replace('\|', '|', $item), $partOfinput);
+        $numericArgs1 = array_filter($args, fn($item) => is_numeric($item) && $item == 1);
+        $numericArgs2 = array_filter($args, fn($item) => is_numeric($item) && $item > 1);
+
+        if ($numericArgs2) {
+            return $partOfinput[2] ?? $partOfinput[1] ?? $partOfinput[0];
+        } elseif ($numericArgs1 && count($partOfinput) > 2) {
+            return $partOfinput[1] ?? $partOfinput[0];
+        } else {
+            return $partOfinput[0];
+        }
+    }
+}
+
 if (!function_exists('config')) {
     /**
      * Config sınıfının hızlı erişim methodu
@@ -179,11 +228,11 @@ if (!function_exists('config')) {
      */
     function config($key, $value = null)
     {
-       if($value === null){
-           return app()->resolve(Config::class)->get($key);
-       }
+        if ($value === null) {
+            return app()->resolve(Config::class)->get($key);
+        }
 
-       return app()->resolve(Config::class)->set($key, $value);
+        return app()->resolve(Config::class)->set($key, $value);
     }
 }
 
@@ -191,7 +240,7 @@ if (!function_exists('lang')) {
     /**
      * @return Language
      */
-    function language():Language
+    function language(): Language
     {
         return app()->resolve(Language::class);
     }
@@ -220,7 +269,7 @@ if (!function_exists('counter')) {
      * @param int $start
      * @return int
      */
-    function counter(?int &$count, int $step = 1, int $start = 1):int
+    function counter(?int &$count, int $step = 1, int $start = 1): int
     {
         $count = is_null($count) ? $start : $count + $step;
         return $count;
@@ -235,32 +284,76 @@ if (!function_exists('random')) {
      * @param ?string $type [number, alpha, special, alnum]
      * @return string|null
      */
-    function random(int $length, ?string $type = null):string
+    function random(int $length, ?string $type = null): string
     {
         $random = null;
-        $characters = null;
-
         $number = "0123456789";
         $alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGIJKLMNOPQRSTUVWXYZ";
         $special = "!^+$%&/()[]=}?*_@";
 
-        switch ($type){
-            case 'number': $characters = $number; break;
-            case 'alpha' : $characters = $alpha; break;
-            case 'special' : $characters = $special; break;
-            case 'alnum' : $characters = $number.$alpha; break;
-            default: $characters = $number.$alpha.$special;
+        switch ($type) {
+            case 'number':
+                $characters = $number;
+                break;
+            case 'alpha' :
+                $characters = $alpha;
+                break;
+            case 'special' :
+                $characters = $special;
+                break;
+            case 'alnum' :
+                $characters = $number . $alpha;
+                break;
+            default:
+                $characters = $number . $alpha . $special;
         }
 
         $characterSize = strlen($characters);
 
-        for($i = 0; $i < $length; $i++){
-            $random .= $characters[rand(0,$characterSize-1)];
+        for ($i = 0; $i < $length; $i++) {
+            $random .= $characters[rand(0, $characterSize - 1)];
         }
 
         return $random;
     }
 }
+
+#region Tarih fonksiyonları
+if (!function_exists('era')) {
+    /**
+     * @param string $dateTime
+     * @param null $timeZone
+     * @return Era
+     */
+    function era($dateTime = 'now', $timeZone = null): Era
+    {
+        return new Era($dateTime, $timeZone);
+    }
+}
+
+if (!function_exists('now')) {
+    /**
+     * @param null $timeZone
+     * @return Era
+     */
+    function now($timeZone = null): Era
+    {
+        return Era::now($timeZone);
+    }
+}
+
+if (!function_exists('dateLocale')) {
+    /**
+     * @param string $format
+     * @return false|string
+     */
+    function dateLocale(string $format = Era::TEXT_BASED_DATETIME_SHORT)
+    {
+        return era()->formatLocale($format);
+    }
+}
+
+#endregion
 
 #region URL ile ilgili fonksiyonlar
 if (!function_exists('baseUrl')) {
@@ -268,7 +361,7 @@ if (!function_exists('baseUrl')) {
      * @param null $path url adresine eklenecek bölüm
      * @return string
      */
-    function baseUrl($path = null):string
+    function baseUrl($path = null): string
     {
         $path = $path ? trim($path, '/') : '';
         return app()->resolve(Request::class)->baseUrl() . $path;
@@ -286,9 +379,9 @@ if (!function_exists('groupUrl')) {
     {
         $path = $path ? trim($path, '/') : '';
 
-        $group  = app()->resolve(Router::class)->getPrefix() ?
+        $group = app()->resolve(Router::class)->getPrefix() ?
             app()->resolve(Router::class)->getPrefix() . '/' : '';
-        return baseUrl($group . $path . build_query($params));
+        return url($group . $path . build_query($params));
     }
 }
 
@@ -301,7 +394,7 @@ if (!function_exists('assets')) {
      * @param array|null $params
      * @return string
      */
-    function assets($path = null, array $params = null):string
+    function assets($path = null, array $params = null): string
     {
         $path = $path ? trim($path, '/') : '';
 
@@ -320,7 +413,7 @@ if (!function_exists('src')) {
      */
     function src($path = null, $params = null): string
     {
-        if(preg_match("#^https?://#", $path, $match)){
+        if (preg_match("#^https?://#", $path, $match)) {
             return $path . build_query($params);
         }
 
@@ -338,19 +431,19 @@ if (!function_exists('url')) {
      * @param array $params varsa get parametreleri
      * @return string
      */
-    function url(string $path = null, array $params = array()):string
+    function url(string $path = null, array $params = array()): string
     {
         $path = trim($path, '/');
 
         //http veya https varsa dış bağlantı olarak değerlendir
-        if(preg_match("#^https?://#", $path, $match)){
-            return $path.build_query($params);
+        if (preg_match("#^https?://#", $path, $match)) {
+            return $path . build_query($params);
         }
 
         //dil desteği aktifse url yapısını ona göre oluştur
-        if (Language::$isLoaded) {
-            if(language()->getDefault()['key'] != language()->getKey()) {
-                return baseUrl(language()->getKey() . '/' . $path . build_query($params));
+        if ($prefix = language()->getRoutePrefix()) {
+            if (language()->getDefault() != $prefix) {
+                return baseUrl($prefix . '/' . $path . build_query($params));
             }
         }
 
@@ -398,12 +491,12 @@ if (!function_exists('redirect')) {
     function redirect(string $url, $code = 302)
     {
         if (!headers_sent()) {
-            if(filter_var($url, FILTER_VALIDATE_URL)){
+            if (filter_var($url, FILTER_VALIDATE_URL)) {
                 response()->redirect($url, $code);
-            }else{
+            } else {
                 response()->redirect(url($url), $code);
             }
-        }else {
+        } else {
             echo '<meta http-equiv = "refresh" content = "0; url = ' . url($url) . '" />';
             echo 'Sayfa yönlendirilemiyor lütfen <a href="' . url($url) . '">Buraya tıklayın.</a>';
         }
@@ -420,7 +513,7 @@ if (!function_exists('view')) {
      *
      * @return View
      */
-    function view():View
+    function view(): View
     {
         return app()->resolve(View::class);
     }
@@ -435,7 +528,7 @@ if (!function_exists('page')) {
      * @param array $data
      * @return View
      */
-    function page($fileName, $data = array()):View
+    function page($fileName, $data = array()): View
     {
         return view()->page($fileName, $data);
     }
@@ -450,7 +543,7 @@ if (!function_exists('partial')) {
      * @param string $ext
      * @return View
      */
-    function partial($fileName, $data = array(), string $ext = EXT):View
+    function partial($fileName, $data = array(), string $ext = EXT): View
     {
         return view()->path($fileName, $data, $ext);
     }
@@ -461,9 +554,9 @@ if (!function_exists('json')) {
      * Core\View::json metodunun eş değeri
      *
      * @param $data
-     * @return View
+     * @return Response
      */
-    function json($data):View
+    function json($data): Response
     {
         return view()->json($data);
     }
@@ -477,9 +570,9 @@ if (!function_exists('jsonSuccess')) {
      * @param null $message
      * @param null $location
      * @param null $data
-     * @return View
+     * @return Response
      */
-    function jsonSuccess($message = null, $location = null, $data = null):View
+    function jsonSuccess($message = null, $location = null, $data = null): Response
     {
         return view()->json(['status' => 'success', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
@@ -492,9 +585,9 @@ if (!function_exists('jsonError')) {
      * @param null $message
      * @param null $location
      * @param null $data
-     * @return View
+     * @return Response
      */
-    function jsonError($message = null, $location = null, $data = null):View
+    function jsonError($message = null, $location = null, $data = null): Response
     {
         return view()->json(['status' => 'error', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
@@ -507,9 +600,9 @@ if (!function_exists('jsonWarning')) {
      * @param null $message
      * @param null $location
      * @param null $data
-     * @return View
+     * @return Response
      */
-    function jsonWarning($message = null, $location = null, $data = null):View
+    function jsonWarning($message = null, $location = null, $data = null): Response
     {
         return view()->json(['status' => 'warning', 'message' => $message, 'location' => $location, 'data' => $data]);
     }
@@ -523,7 +616,7 @@ if (!function_exists('layout')) {
      * @param array $data
      * @return View
      */
-    function layout($fileName, $data = array()):View
+    function layout($fileName, $data = array()): View
     {
         return view()->layout($fileName, $data);
     }
@@ -536,7 +629,7 @@ if (!function_exists('setLayout')) {
      * @param $layout
      * @return View
      */
-    function setLayout($layout):View
+    function setLayout($layout): View
     {
         return view()->setLayout($layout);
     }
@@ -551,9 +644,9 @@ if (!function_exists('is_readable_file')) {
      * @param string $filename
      * @return bool
      */
-    function is_readable_file(string $filename):bool
+    function is_readable_file(string $filename): bool
     {
-       return is_file($filename) && is_readable($filename);
+        return is_file($filename) && is_readable($filename);
     }
 }
 
@@ -565,7 +658,7 @@ if (!function_exists('is_writable_file')) {
      * @param string $filename
      * @return bool
      */
-    function is_writable_file(string $filename):bool
+    function is_writable_file(string $filename): bool
     {
         return is_file($filename) && is_writable($filename);
     }
@@ -579,7 +672,7 @@ if (!function_exists('is_readable_dir')) {
      * @param string $filename
      * @return bool
      */
-    function is_readable_dir(string $filename):bool
+    function is_readable_dir(string $filename): bool
     {
         return is_dir($filename) && is_readable($filename);
     }
@@ -593,7 +686,7 @@ if (!function_exists('is_writable_dir')) {
      * @param string $filename
      * @return bool
      */
-    function is_writable_dir(string $filename):bool
+    function is_writable_dir(string $filename): bool
     {
         return is_dir($filename) && is_writable($filename);
     }

@@ -389,7 +389,7 @@ class Router
     {
         try {
 
-            foreach ($this->routes as $name => $route) {
+            foreach ($this->routes as $route) {
 
                 if (false !== ($matches = $this->rootMatch($route['prefix'] . $route['pattern'], $route['requestUri']))) {
 
@@ -429,7 +429,7 @@ class Router
                     if ($response instanceof View || $response instanceof Response) {
                         echo $response;
                     } else {
-                        echo new Response($response);
+                        $this->app->resolve(Response::class)->content($response);
                     }
 
                     return;
@@ -440,19 +440,18 @@ class Router
 
         } catch (ModelException $e) {
             $this->app->debug($e);
-            return ;
         }catch (HttpNotFound $e) {
             $this->app->debug($e);
-            return self::errors(404);
+            self::errors(404);
         } catch (HttpMethodNotAllowed $e) {
             $this->app->debug($e);
-            return self::errors(405);
+            self::errors(405);
         } catch (Exception $e) {
             if(array_key_exists($e->getCode(), ExceptionHandler::NOTICE)){
                 $this->app->debug($e);
             }else{
                 $this->app->debug($e);
-                return self::errors(500);
+                self::errors(500);
             }
         }
     }
@@ -682,22 +681,22 @@ class Router
      *
      * @param $http_code
      * @param callable|null $callback
-     * @return mixed
+     * @return void
      */
-    public function errors($http_code, callable $callback = null)
+    public function errors($http_code, callable $callback = null):void
     {
         if ($callback instanceof Closure) {
             $this->errors[$http_code] = $callback;
-            return $this;
+            return;
         }
 
         if (empty($this->errors[$http_code])) {
             $this->errors[$http_code] = function () use ($http_code) {
-                return $this->view()->path('errors/' . $http_code, null)->render($http_code);
+                $this->view()->path('errors/' . $http_code, null)->render($http_code);
             };
         }
 
-        return call_user_func($this->errors[$http_code]);
+        call_user_func($this->errors[$http_code]);
     }
 
 

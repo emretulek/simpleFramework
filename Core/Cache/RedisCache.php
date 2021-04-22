@@ -3,6 +3,7 @@
 namespace Core\Cache;
 
 use Closure;
+use Core\Connector\RedisConnector;
 use Redis;
 
 class RedisCache implements CacheInterface

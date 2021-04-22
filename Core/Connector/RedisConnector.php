@@ -1,8 +1,8 @@
 <?php
 
-namespace Core\Cache;
+namespace Core\Connector;
 
-use Exception;
+use RuntimeException;
 use Redis;
 
 class RedisConnector
@@ -13,12 +13,12 @@ class RedisConnector
      * @param int $port
      * @param array $options
      * @return Redis
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function connect(string $server, int $port = 6379, array $options = []): Redis
     {
         if (!extension_loaded('redis')) {
-            throw new Exception("redis eklentisi kurulu değil.");
+            throw new RuntimeException("redis eklentisi kurulu değil.");
         }
 
         $redis = new Redis();

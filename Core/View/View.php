@@ -141,14 +141,11 @@ class View
      * Diziyi json header bilgisiyle encode edip buffera alır
      *
      * @param $data
-     * @return $this
+     * @return Response
      */
-    public function json($data): self
+    public function json($data): Response
     {
-        ob_start();
-        (new Response($data))->toJson()->send();
-        $this->buffer[] = ob_get_clean();
-        return $this;
+        return $this->response()->content($data)->toJson();
     }
 
     /**
@@ -156,13 +153,11 @@ class View
      *
      * @param null $code
      * @param null $headers
-     * @return $this
      */
-    public function render($code = 200, $headers = null): self
+    public function render($code = 200, $headers = null)
     {
-        (new Response($this->getBuffer(), $code, $headers))->send();
+        $this->response()->content($this->getBuffer())->code($code)->headers($headers)->send();
         $this->buffer = [];
-        return $this;
     }
 
     /**
@@ -210,6 +205,14 @@ class View
             $this->data = array_merge($this->data, compact('data'));
         }
         return $this;
+    }
+
+    /**
+     * @return Response
+     */
+    public function response():Response
+    {
+        return $this->app->resolve(Response::class)->content($this->getBuffer(false));
     }
 
     /**

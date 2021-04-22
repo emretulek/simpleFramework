@@ -3,6 +3,7 @@
 namespace Core\Cache;
 
 use Closure;
+use Core\Connector\MemcachedConnector;
 use DateInterval;
 use DateTime;
 use Memcached;

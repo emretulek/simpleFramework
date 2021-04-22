@@ -2,15 +2,12 @@
 
 namespace Core\Database;
 
-use Core\App;
 use PDO;
 use PDOException;
 use PDOStatement;
 
 class Database
 {
-
-    public App $app;
     private PDO $pdo;
     private PDOStatement $stm;
     private ConnectionInterface $connection;
@@ -36,7 +33,7 @@ class Database
 
     /**
      * Yeniden database seçer
-     * @param $database
+     * @param string $database
      * @return $this
      * @throws SqlErrorException
      */
@@ -79,7 +76,7 @@ class Database
         $sqlError = $this->stm->errorInfo();
 
         if (isset($sqlError[1])) {
-            throw new SqlErrorException("Sql error code({$sqlError[0]}/{$sqlError[1]}) Error: {$sqlError[2]}", E_ERROR);
+            throw new SqlErrorException("Sql error code($sqlError[0]/$sqlError[1]) Error: $sqlError[2]", E_ERROR);
         }
 
         return $this->stm;
@@ -91,7 +88,7 @@ class Database
      * @param string $query
      * @param array|null $bindings
      * @param int $fetchStyle
-     * @return mixed
+     * @return array
      * @throws SqlErrorException
      */
     public function get(string $query, array $bindings = null, $fetchStyle = PDO::FETCH_OBJ)

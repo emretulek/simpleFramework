@@ -84,126 +84,27 @@ class QueryBuilder
 
 
     /**
-     * @param array $columns
-     * @return array|bool|string
-     * @throws SqlErrorException
-     */
-    public function insert(array $columns)
-    {
-        $query = [];
-
-        foreach ($columns as $key => $value) {
-
-            if ($value !== null) {
-                $query[] = $this->comparison($key, '=', $value);
-            }
-        }
-
-        $this->insert .= $this->insert ? ', ' . implode(", ", $query) : implode(", ", $query);
-
-        if ($this->debug) {
-            return [$this->buildQuery(), $this->bindingParams()];
-        }
-
-        return $this->database->insert($this->buildQuery(), $this->bindingParams());
-    }
-
-    /**
-     * @param array $columns
-     * @param bool $force
-     * @return array|bool|int
-     * @throws SqlErrorException
-     */
-    public function update(array $columns, $force = false)
-    {
-        $this->force = $force;
-
-        $query = [];
-
-        foreach ($columns as $key => $value) {
-
-            if ($value !== null) {
-                $query[] = $this->comparison($key, '=', $value);
-            }
-        }
-
-        $this->update .= $this->update ? ', ' . implode(", ", $query) : implode(", ", $query);
-
-        if ($this->debug) {
-            return [$this->buildQuery(), $this->bindingParams()];
-        }
-
-        return $this->database->update($this->buildQuery(), $this->bindingParams());
-    }
-
-
-    /**
-     * @param array|int $columns
-     * @param bool $force
-     * @return array|bool|int
-     * @throws SqlErrorException
-     */
-    public function delete($columns, bool $force = false)
-    {
-        $this->delete = true;
-        $this->force = $force;
-
-        if (is_array($columns)) {
-            $this->where($columns);
-        } elseif ($this->pk) {
-            $this->where($this->pk, $columns);
-        } else {
-            throw new InvalidArgumentException("\$column [column_name => value] ilişkili bir dizi olmalı.");
-        }
-
-        if ($this->debug) {
-            return [$this->buildQuery(), $this->bindingParams()];
-        }
-
-        return $this->database->delete($this->buildQuery(), $this->bindingParams());
-    }
-
-
-    /**
-     * @param array|int $columns
-     * @return bool|int
-     * @throws SqlErrorException
-     */
-    public function softDelete($columns)
-    {
-        if (is_array($columns)) {
-            return $this->where($columns)->update(['deleted_at' => '{{Now()}}']);
-        } elseif ($this->pk) {
-            return $this->where($this->pk, $columns)->update(['deleted_at' => '{{Now()}}']);
-        } else {
-            throw new InvalidArgumentException("\$column [column_name => value] ilişkili bir dizi olmalı.");
-        }
-    }
-
-
-    /**
      * @param $column
-     * @param $operant
-     * @param $param
+     * @param string $operant
+     * @param false $param
+     * @param string $connective
      * @return $this
      */
-    public function where($column, $operant = null, $param = null): self
+    public function where($column, $operant = '=', $param = false, $connective = 'AND'): self
     {
         if (is_array($column)) {
 
-            $operant = $operant ? $operant : '=';
-
             foreach ($column as $key => $val) {
                 $query = $this->comparison($key, $operant, $val);
-                $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
+                $this->where .= $this->where ? " $connective " . $query : ' WHERE ' . $query;
             }
 
-        } elseif (is_string($column) && is_null($param)) {
+        } elseif ($param === false) {
             $query = $this->comparison($column, '=', $operant);
-            $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
+            $this->where .= $this->where ? " $connective " . $query : ' WHERE ' . $query;
         } else {
             $query = $this->comparison($column, $operant, $param);
-            $this->where .= $this->where ? ' AND ' . $query : ' WHERE ' . $query;
+            $this->where .= $this->where ? " $connective " . $query : ' WHERE ' . $query;
         }
 
         return $this;
@@ -216,24 +117,9 @@ class QueryBuilder
      * @param null $param
      * @return $this
      */
-    public function orWhere($column, $operant = null, $param = null): self
+    public function orWhere($column, $operant = '=', $param = false): self
     {
-        if (is_array($column)) {
-
-            $operant = $operant ? $operant : '=';
-
-            foreach ($column as $key => $val) {
-                $query = $this->comparison($key, $operant, $val);
-                $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
-            }
-
-        } elseif (is_string($column) && is_null($param)) {
-            $query = $this->comparison($column, '=', $operant);
-            $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
-        } else {
-            $query = $this->comparison($column, $operant, $param);
-            $this->where .= $this->where ? ' OR ' . $query : ' WHERE ' . $query;
-        }
+        $this->where($column, $operant, $param, 'OR');
 
         return $this;
     }
@@ -306,11 +192,11 @@ class QueryBuilder
             $type = "ASC";
         }
 
-        if($column) {
+        if ($column) {
             $this->order .= $this->order ?
                 ', ' . $this->quoteColumn($column) . ' ' . $type :
                 ' ORDER BY ' . $this->quoteColumn($column) . ' ' . $type;
-        }else{
+        } else {
             $this->order = "";
         }
 
@@ -318,16 +204,28 @@ class QueryBuilder
     }
 
     /**
-     * @param string $column
+     * @param $column
      * @param string $operant
-     * @param $param
+     * @param false $param
+     * @param string $connective
      * @return $this
      */
-    public function having(string $column, string $operant, $param): self
+    public function having($column, $operant = '=', $param = false, $connective = 'AND'): self
     {
-        $query = $this->comparison($column, $operant, $param);
+        if (is_array($column)) {
 
-        $this->having .= $this->having ? ' AND ' . $query : ' WHERE ' . $query;
+            foreach ($column as $key => $val) {
+                $query = $this->comparison($key, $operant, $val);
+                $this->having .= $this->having ? " $connective " . $query : ' WHERE ' . $query;
+            }
+
+        } elseif ($param === false) {
+            $query = $this->comparison($column, '=', $operant);
+            $this->having .= $this->having ? " $connective " . $query : ' WHERE ' . $query;
+        } else {
+            $query = $this->comparison($column, $operant, $param);
+            $this->having .= $this->having ? " $connective " . $query : ' WHERE ' . $query;
+        }
 
         return $this;
     }
@@ -340,9 +238,7 @@ class QueryBuilder
      */
     public function orHaving(string $column, string $operant, $param): self
     {
-        $query = $this->comparison($column, $operant, $param);
-
-        $this->having .= $this->having ? ' OR ' . $query : ' WHERE ' . $query;
+        $this->having($column, $operant, $param, 'OR');
 
         return $this;
     }
@@ -436,7 +332,7 @@ class QueryBuilder
 
         if ($this->insert) {
 
-            return 'INSERT INTO ' . $this->table . ' SET ' . $this->insert . $this->where . $this->group . $this->having . $this->order . $this->limit;
+            return 'INSERT INTO ' . $this->table . ' ' . $this->insert;
         } elseif ($this->update) {
 
             if (empty($this->where) && $this->force == false) {
@@ -460,6 +356,35 @@ class QueryBuilder
     }
 
     /**
+     * @return array|string|string[]
+     */
+    public function parseQuery()
+    {
+        try {
+            $query = $this->buildQuery();
+            $params = $this->bindingParams();
+            $params = array_map(function ($v) {
+                if (is_null($v)) {
+                    return 'null';
+                } elseif (is_int($v) || is_float($v)) {
+                    return $v;
+                }
+                return "'$v'";
+            }, $params);
+
+            if(isset($params[0])){
+                return preg_replace(array_fill(0, count($params),'/\?/'), $params, $query, 1);
+            }
+
+            return str_replace(array_keys($params), array_values($params), $query);
+
+
+        } catch (SqlErrorException $e) {
+            return $e->getMessage();
+        }
+    }
+
+    /**
      * @return array
      */
     public function bindingParams(): array
@@ -471,10 +396,9 @@ class QueryBuilder
      * debug query
      * @return $this
      */
-    public function debug()
+    public function debug(): self
     {
         $this->debug = true;
-
         return $this;
     }
 
@@ -491,14 +415,15 @@ class QueryBuilder
      * @param string $column
      * @param string $operant
      * @param $param
+     * @param bool $isNull
      * @return string
      */
-    protected function comparison(string $column, string $operant, $param): string
+    protected function comparison(string $column, string $operant, $param, $isNull = true): string
     {
         if (preg_match("/^\{\{(.+)\}\}$/", $param, $matches)) {
             $query = $this->quoteColumn($column) . ' ' . $operant . ' ' . $matches[1];
         } else {
-            if ($param === null) {
+            if ($param === null && $isNull === true) {
                 if ($operant == '=') {
                     $query = $this->quoteColumn($column) . ' ' . 'IS NULL';
                 } else {
@@ -533,14 +458,159 @@ class QueryBuilder
      *****************************************************************************************/
 
     /**
+     * @param array $columns
+     * @return string
+     * @throws SqlErrorException
+     */
+    public function insert(array $columns)
+    {
+        $keys = array_keys($columns);
+        $values = array_values($columns);
+        $keys = array_map([$this, 'quoteColumn'], $keys);
+        $tableCol = '('.implode(',', $keys).')';
+        $tableVal = 'VALUES('.implode(',', array_fill(0, count($columns), '?')).')';
+        $this->params = $values;
+        $this->insert = $tableCol.' '.$tableVal;
+
+        if ($this->debug) {
+            return $this->parseQuery();
+        }
+
+        return $this->database->insert($this->buildQuery(), $this->bindingParams());
+    }
+
+
+    /**
+     * @param array $columns
+     * @param int $fraction
+     * @return array|string|string[]
+     * @throws SqlErrorException
+     */
+    public function multiLineInsert(array $columns, $fraction = 1000)
+    {
+        $tableValAray = [];
+        $lineCount = 0;
+        $breaking = false;
+
+        foreach ($columns as $column){
+            if(is_array($column)) {
+                $tableValAray[] = '('.implode(',', array_fill(0, count($column), '?')).') ';
+                $this->params = array_merge($this->params, array_values($column));
+            }else{
+               throw new InvalidArgumentException("Çoklu insert için iki boyutlu bir dizi aktarılması gerekir.");
+            }
+
+            if(++$lineCount == $fraction){
+                $breaking = true;
+                break;
+            }
+        }
+
+        $keys = array_keys($columns[0]);
+        $keys = array_map([$this, 'quoteColumn'], $keys);
+        $tableCol = '('.implode(',', $keys).')';
+        $tableVal = 'VALUES '.implode(',', $tableValAray);
+        $this->insert = $tableCol.' '.$tableVal;
+
+        if ($this->debug) {
+            return $this->parseQuery();
+        }
+
+        $this->database->insert($this->buildQuery(), $this->bindingParams());
+
+        if($breaking && count($columns) > $fraction){
+            $this->params = [];
+            $this->multiLineInsert(array_slice($columns, $fraction), $fraction);
+        }
+
+        return count($columns);
+    }
+
+    /**
+     * @param $column
+     * @param false $param
+     * @param false $force
+     * @return array|bool|int|string|string[]
+     * @throws SqlErrorException
+     */
+    public function update($column, $param = false, $force = false)
+    {
+        $this->force = $force;
+
+        $query = [];
+
+        if (is_array($column)) {
+            foreach ($column as $key => $value) {
+                $query[] = $this->comparison($key, '=', $value, false);
+            }
+        }elseif ($param !== false){
+            $query[] = $this->comparison($column, '=', $param, false);
+        }else{
+            throw new SqlErrorException("İlk parametre dizi olmalı veya ikinci parametre false dışında bir değer almalıdır.");
+        }
+        $this->update .= $this->update ? ', ' . implode(", ", $query) : implode(", ", $query);
+
+        if ($this->debug) {
+            return $this->parseQuery();
+        }
+
+        return $this->database->update($this->buildQuery(), $this->bindingParams());
+    }
+
+
+    /**
+     * @param array|int $columns
+     * @param bool $force
+     * @return bool|int
+     * @throws SqlErrorException
+     */
+    public function delete($columns = null, $param = false, bool $force = false)
+    {
+        $this->delete = true;
+        $this->force = $force;
+
+        if (is_array($columns)) {
+            $this->where($columns);
+        } elseif ($this->pk && $columns !== null && $param === false) {
+            $this->where($this->pk, $columns);
+        }elseif(is_string($columns) && $param !== false){
+            $this->where($columns, $param);
+        }
+
+        if ($this->debug) {
+            return $this->parseQuery();
+        }
+
+        return $this->database->delete($this->buildQuery(), $this->bindingParams());
+    }
+
+
+    /**
+     * @param array|int $columns
+     * @return bool|int
+     * @throws SqlErrorException
+     */
+    public function softDelete($columns = null)
+    {
+        if (is_array($columns)) {
+            return $this->where($columns)->update(['deleted_at' => '{{Now()}}']);
+        } elseif ($this->pk) {
+            return $this->where($this->pk, $columns)->update(['deleted_at' => '{{Now()}}']);
+        }
+
+        return $this->update(['deleted_at' => '{{Now()}}']);
+    }
+
+
+    /**
      * @param int $fetchStyle
-     * @return mixed
+     * @return array|string|string[]
      * @throws SqlErrorException
      */
     public function get($fetchStyle = PDO::FETCH_OBJ)
     {
         if ($this->debug) {
-            return [$this->buildQuery(), $this->bindingParams()];
+            return $this->parseQuery();
         }
 
         return $this->database->get($this->buildQuery(), $this->bindingParams(), $fetchStyle);
@@ -554,9 +624,8 @@ class QueryBuilder
     public function getRow($fetchStyle = PDO::FETCH_OBJ)
     {
         if ($this->debug) {
-            return [$this->buildQuery(), $this->bindingParams()];
+            return $this->parseQuery();
         }
-
         return $this->database->getRow($this->buildQuery(), $this->bindingParams(), $fetchStyle);
     }
 
@@ -567,9 +636,8 @@ class QueryBuilder
     public function getVar()
     {
         if ($this->debug) {
-            return [$this->buildQuery(), $this->bindingParams()];
+            return $this->parseQuery();
         }
-
         return $this->database->getVar($this->buildQuery(), $this->bindingParams());
     }
 
@@ -580,9 +648,8 @@ class QueryBuilder
     public function getCol()
     {
         if ($this->debug) {
-            return [$this->buildQuery(), $this->bindingParams()];
+            return $this->parseQuery();
         }
-
         return $this->database->getCol($this->buildQuery(), $this->bindingParams());
     }
 

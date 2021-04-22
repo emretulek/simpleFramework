@@ -2,6 +2,8 @@
 
 namespace Core\Cache;
 
+use Core\Connector\MemcachedConnector;
+use Core\Connector\RedisConnector;
 use Core\Database\Database;
 use Core\Services\ServiceProvider;
 
@@ -20,7 +22,7 @@ class CacheServiceProvider extends ServiceProvider
         //default cache driver registered
         $this->app->singleton(Cache::class, function ($app) {
 
-            $defaultDriver = 'Core\\Cache\\' . ucfirst($app->config['app']['cache_driver']) . 'Cache';
+            $defaultDriver = 'Core\\Cache\\' . ucfirst($app->config['cache']['driver']) . 'Cache';
 
             return new Cache($this->app->resolve($defaultDriver));
         });
@@ -36,6 +38,9 @@ class CacheServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * Apcu cache singleton
+     */
     protected function registerApcuCache()
     {
         $this->app->singleton(ApcuCache::class, function () {
@@ -49,7 +54,8 @@ class CacheServiceProvider extends ServiceProvider
     protected function registerMemcachedCache()
     {
         $this->app->singleton(MemcachedCache::class, function ($app) {
-            return new MemcachedCache(new MemcachedConnector(), $app->config['cache']['memcached']);
+            $memcachedDriver = $app->config['memcached'][$app->config['cache']['memcached']];
+            return new MemcachedCache(new MemcachedConnector(), $memcachedDriver);
         });
     }
 
@@ -69,7 +75,8 @@ class CacheServiceProvider extends ServiceProvider
     protected function registerRedisCache()
     {
         $this->app->singleton(RedisCache::class, function ($app) {
-            return new RedisCache(new RedisConnector(), $app->config['cache']['redis']);
+            $redisDriver = $app->config['redis'][$app->config['cache']['redis']];
+            return new RedisCache(new RedisConnector(), $redisDriver);
         });
     }
 

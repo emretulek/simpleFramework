@@ -10,7 +10,7 @@ class LoggerServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(Logger::class, function ($app) {
-            $driver = 'Core\\Log\\' . ucfirst($app->config['app']['logger_driver']) . 'Log';
+            $driver = 'Core\\Log\\' . ucfirst($app->config['logger']['driver']) . 'Log';
             return new Logger($app->resolve($driver));
         });
 

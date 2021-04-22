@@ -14,6 +14,7 @@ return [
     'aliases' => [
         //static class alies
         'valid' => Core\Validation\Valid::class,
+        'era' => \Core\Era\Era::class,
         //facade alias
         'config' => Core\Facades\Config::class,
         'router' => Core\Facades\Router::class,
@@ -35,8 +36,8 @@ return [
         'html' => Helpers\Html\Html::class,
     ],
     'services' => [
-        //'default' => Services\DefaultServiceProvider::class,
-        //'language' => Services\LanguageService::class,
+        //Services\DefaultServiceProvider::class => Services\DefaultServiceProvider::class,
+        //Services\LanguageService::class => Services\LanguageService::class,
     ],
     'routes' => [
         ROOT . '/routes/routing' . EXT,

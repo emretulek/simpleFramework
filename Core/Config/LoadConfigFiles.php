@@ -29,7 +29,8 @@ class LoadConfigFiles
             foreach ($configFiles as $configFile) {
 
                 $fileName = pathinfo($configFile, PATHINFO_FILENAME);
-                $this->configs[$fileName] = require_once($this->path . '/' . $configFile);
+                $fileContent =  require_once($this->path . '/' . $configFile);
+                $this->configs[$fileName] = $fileContent;
             }
 
         } else {

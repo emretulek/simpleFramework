@@ -35,7 +35,7 @@ return  array(
     'language' => [
         'key' => 'tr',
         'name' => 'Türkçe',
-        'locale' => 'TR-tr'
+        'locale' => 'tr_TR'
     ],
     /**
      * Charset
@@ -63,16 +63,4 @@ return  array(
      * true, "md5", "sha256", "haval160,4" ve benzerleri
      */
     'password_hash' => 'md5',
-
-    /**
-     * driver [file, database, null]
-     */
-    'logger_driver' => 'database',
-
-    /**
-     * cache.php
-     * driver seçeneklerinden biri
-     * [file, apcu, database, redis, memcached, null]
-     */
-    'cache_driver' => 'file',
 );

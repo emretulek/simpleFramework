@@ -559,7 +559,27 @@ class QueryBuilder
 
 
     /**
-     * @param array|int $columns
+     * @param array $columns
+     * @param null $pkID
+     * @return array|bool|int|string|string[]
+     * @throws SqlErrorException
+     */
+    public function upsert(array $columns, $pkID = null)
+    {
+        if(empty($pkID)){
+            return $this->insert($columns);
+        }
+
+        if ($this->pk){
+            return $this->where($this->pk, $pkID)->update($columns);
+        }
+
+        throw new SqlErrorException('Querybuilder $pk değeri tanımlanmadı.');
+    }
+
+    /**
+     * @param null $columns
+     * @param bool $param
      * @param bool $force
      * @return bool|int
      * @throws SqlErrorException

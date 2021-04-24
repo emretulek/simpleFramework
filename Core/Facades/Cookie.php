@@ -4,9 +4,9 @@ namespace Core\Facades;
 
 /**
  * @see \Core\Cookie\Cookie::set()
- * @method static bool set(string $name, string $value, $lifetime = "+1 Day", $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict')
+ * @method static bool set(string $name, string $value, $lifetime = 2592000, $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict')
  * -----------------------------------------------------------------------
- * @see \Core\Cookie\Cookie::set()
+ * @see \Core\Cookie\Cookie::get()
  * @method static mixed get(string $name = null)
  * -----------------------------------------------------------------------
  * @see \Core\Cookie\Cookie::remove()

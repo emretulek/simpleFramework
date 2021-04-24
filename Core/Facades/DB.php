@@ -13,10 +13,10 @@ use PDOStatement;
  * @method static Database selectDB(string $database)
  * --------------------------------------------------------------------------------------------
  * @see Database::table()
- * @method static QueryBuilder table(string $table)
+ * @method static QueryBuilder table(string $table = '')
  * --------------------------------------------------------------------------------------------
  * @see Database::bindQuery()
- * @method static Database bindQuery($query, array $bindings = null, array $options = [])
+ * @method static PDOStatement bindQuery($query, array $bindings = null, array $options = [])
  * --------------------------------------------------------------------------------------------
  * @see Database::get()
  * @method static array|bool get(string $query, array $bindings = null, $fetchStyle = PDO::FETCH_OBJ)

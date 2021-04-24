@@ -341,6 +341,21 @@ class Auth
 
 
     /**
+     * @param $key
+     * @param null $value
+     * @return bool|mixed
+     */
+    public function authSession($key, $value = null)
+    {
+        if ($value === null) {
+            return $this->session()->get('AUTH.USER.' . $key);
+        } else {
+            return $this->session()->set('AUTH.USER.' . $key, $value);
+        }
+    }
+
+
+    /**
      * Beni hatırla seçeneği için cookie oluşturur.
      * @param string $token
      * @param int|string $lifetime strtottime veya int saniye
@@ -395,20 +410,6 @@ class Auth
             ->getVar();
     }
 
-
-    /**
-     * @param $key
-     * @param null $value
-     * @return bool|mixed
-     */
-    public function authSession($key, $value = null)
-    {
-        if ($value === null) {
-            return $this->session()->get('AUTH.USER.' . $key);
-        } else {
-            return $this->session()->set('AUTH.USER.' . $key, $value);
-        }
-    }
 
 
     /**

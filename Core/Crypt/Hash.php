@@ -74,7 +74,6 @@ class Hash
      *
      * @param string $password
      * @param string $hashedPassword
-     * use_algo false ise php nin password_hash fonksiyonu kullanılır
      * @return string|false
      */
     public function passwordCheck(string $password, string $hashedPassword)
@@ -96,8 +95,8 @@ class Hash
     /**
      * yeni hash üretilmesi gerekiyorsa üretir gerekmiyorsa false döndürür
      *
-     * @param $password
-     * @param $hashedPassword
+     * @param string $password
+     * @param string $hashedPassword
      * @return string
      */
     public function passwordRehash(string $password, string $hashedPassword): string

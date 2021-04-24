@@ -13,7 +13,7 @@ namespace Core\Facades;
  * @method static false|string|null password(string $password)
  * ----------------------------------------------------------------------------------
  * @see \Core\Crypt\Hash::passwordCheck()
- * @method static string|false passwordCheck(string $password, string $hashedPassword, $use_algo = false)
+ * @method static string|false passwordCheck(string $password, string $hashedPassword)
  * ----------------------------------------------------------------------------------
  * @see \Core\Crypt\Hash::passwordRehash()
  * @method static string passwordRehash(string $password, string $hashedPassword)

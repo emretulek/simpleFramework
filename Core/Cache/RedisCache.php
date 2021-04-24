@@ -6,7 +6,7 @@ use Closure;
 use Core\Connector\RedisConnector;
 use Redis;
 
-class RedisCache implements CacheInterface
+class RedisCache extends BaseCache
 {
 
     protected Redis $redis;
@@ -47,7 +47,7 @@ class RedisCache implements CacheInterface
      */
     public function set(string $key, $value, $ttl = null): bool
     {
-        return (bool)$this->redis->set($key, serialize($value), $this->timeout($ttl));
+        return $this->redis->set($key, serialize($value), $this->ttl($ttl)?:null);
     }
 
     /**
@@ -61,7 +61,7 @@ class RedisCache implements CacheInterface
      */
     public function add(string $key, $value, $ttl = null): bool
     {
-        if ($this->get($key)) {
+        if ($this->has($key)) {
             return false;
         }
 
@@ -190,18 +190,5 @@ class RedisCache implements CacheInterface
     public function decrement(string $key, $value = 1)
     {
         return $this->redis->decrBy($key, $value);
-    }
-
-    /**
-     * @param $ttl
-     * @return int|null
-     */
-    protected function timeout($ttl)
-    {
-        if (is_numeric($ttl)) {
-            return $ttl > 0 ? $ttl : 1;
-        }
-
-        return null;
     }
 }

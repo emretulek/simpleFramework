@@ -464,7 +464,8 @@ class Era
 
 
     /**
-     * @param int $year
+     * İlk parametre int yıl veya DateInterval
+     * @param int|DateInterval $year
      * @param int $month
      * @param int $day
      * @param int $hour
@@ -472,9 +473,14 @@ class Era
      * @param int $second
      * @return $this
      */
-    public function add(int $year, int $month, int $day, int $hour, int $minute, int $second): self
+    public function add($year, int $month = 0, int $day = 0, int $hour = 0, int $minute = 0, int $second = 0): self
     {
-        $this->dateTime->modify("+$year year +$month month +$day day +$hour hour +$minute minute +$second second");
+        if($year instanceof DateInterval){
+            $this->dateTime->add($year);
+        }else {
+            $this->dateTime->modify("+$year year +$month month +$day day +$hour hour +$minute minute +$second second");
+        }
+
         return $this;
     }
 
@@ -563,7 +569,7 @@ class Era
     }
 
     /**
-     * @param int $year
+     * @param int|DateInterval $year
      * @param int $month
      * @param int $day
      * @param int $hour
@@ -571,9 +577,14 @@ class Era
      * @param int $second
      * @return $this
      */
-    public function sub(int $year, int $month, int $day, int $hour, int $minute, int $second): self
+    public function sub($year, int $month = 0, int $day = 0, int $hour = 0, int $minute = 0, int $second = 0): self
     {
-        $this->dateTime->modify("-$year year -$month month -$day day -$hour hour -$minute minute -$second second");
+        if($year instanceof DateInterval){
+            $this->dateTime->add($year);
+        }else {
+            $this->dateTime->modify("-$year year -$month month -$day day -$hour hour -$minute minute -$second second");
+        }
+
         return $this;
     }
 
@@ -672,6 +683,37 @@ class Era
         return $this->diff(new DateTime())->y;
     }
 
+    /**
+     * @param DateInterval $dateInterval
+     * @param string $unit[second,minute,hour,day,month,year]
+     * @return int
+     */
+    public static function dateIntervalTo(DateInterval $dateInterval, $unit = "day"):int
+    {
+        $unit = strtolower($unit);
+
+        if($dateInterval->days === false){
+            $dateInterval->days = 365 * $dateInterval->y;
+            $dateInterval->days += 30 * $dateInterval->m;
+            $dateInterval->days += $dateInterval->d;
+        }
+
+        if($unit == "year"){
+            return $dateInterval->y;
+        }elseif($unit == "month"){
+            return $dateInterval->y * 12 + $dateInterval->m;
+        }elseif ($unit == "day"){
+            return $dateInterval->days;
+        }elseif ($unit == "hour"){
+            return $dateInterval->days * 24 + $dateInterval->h;
+        }elseif ($unit == "minute"){
+            return $dateInterval->days * 24 * 60 + $dateInterval->i;
+        }elseif ($unit == "second"){
+            return $dateInterval->days * 24 * 60 * 60 + $dateInterval->s;
+        }
+
+        return $dateInterval->days;
+    }
 
     /**
      * @param bool $short

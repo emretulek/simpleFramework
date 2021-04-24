@@ -26,7 +26,7 @@ class MemcachedConnector
         $this->memcached = new Memcached($connectionId);
 
         //set username password
-        if (count($sasl) === 2) {
+        if (!empty($sasl['username']) && !empty($sasl['password'])) {
             $this->memcached->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
             $this->memcached->setSaslAuthData($sasl['username'], $sasl['password']);
         }

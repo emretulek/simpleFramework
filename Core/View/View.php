@@ -151,12 +151,12 @@ class View
     /**
      * Hazırlanan belleği belirtilen header bilgileriyle ekrana basar
      *
-     * @param null $code
-     * @param null $headers
+     * @param int $code
+     * @param array $headers
      */
-    public function render($code = 200, $headers = null)
+    public function render(int $code = 200, array $headers = [])
     {
-        $this->response()->content($this->getBuffer())->code($code)->headers($headers)->send();
+        $this->response($code, $headers)->send();
         $this->buffer = [];
     }
 
@@ -208,11 +208,14 @@ class View
     }
 
     /**
+     * @param int $code
+     * @param array $headers
      * @return Response
      */
-    public function response():Response
+    public function response(int $code = 200, array $headers = []):Response
     {
-        return $this->app->resolve(Response::class)->content($this->getBuffer(false));
+        return $this->app->resolve(Response::class)
+            ->content($this->getBuffer(false))->code($code)->headers($headers);
     }
 
     /**

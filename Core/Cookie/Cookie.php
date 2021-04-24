@@ -2,7 +2,9 @@
 
 namespace Core\Cookie;
 
+use Core\Era\Era;
 use Core\Http\Request;
+use DateInterval;
 
 class Cookie
 {
@@ -18,7 +20,7 @@ class Cookie
      *
      * @param string $name nokta ile birleşitirilmiş cookie indexi (index1.index2)
      * @param string $value
-     * @param int|string $lifetime integer hours or  string (60s, 30i, 24h, 30d, 12m, 1y)
+     * @param int|DateInterval|Era $lifetime integer saniye defaul 1 ay
      * @param string $path
      * @param null $domain
      * @param bool|null $secure true sadece https, false http, null auto
@@ -26,7 +28,7 @@ class Cookie
      * @param string $sameSite Strict, Lax, None
      * @return bool
      */
-    public function set(string $name, string $value, $lifetime = "+1 Month", $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict'): bool
+    public function set(string $name, string $value, $lifetime = 2592000, $path = "/", $domain = null, $secure = null, $http_only = true, $sameSite = 'strict'): bool
     {
         if ($secure == null) {
             $secure = $this->request->scheme() === 'https';
@@ -63,7 +65,7 @@ class Cookie
      */
     public function remove(string $name): bool
     {
-        return $this->set($name, "", -1);
+        return $this->set($name, "", -3600);
     }
 
 
@@ -110,15 +112,17 @@ class Cookie
     /**
      * Cookie için bitiş tarihi oluşturur.
      *
-     * @param string|int $time (int saniye) veya php strtotime
-     * @return float|int|string
+     * @param int|DateInterval|Era $time (int saniye) veya php strtotime
+     * @return int
      */
     private function expires($time)
     {
-        if (is_numeric($time)) {
-            return time() + $time;
+        if($time instanceof DateInterval){
+            return Era::now()->addSecond(Era::dateIntervalTo($time, 'second'))->getTimestamp();
+        }elseif ($time instanceof Era){
+            return $time->getTimestamp();
         }
 
-        return strtotime($time);
+        return Era::now()->addSecond($time)->getTimestamp();
     }
 }

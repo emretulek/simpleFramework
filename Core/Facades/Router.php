@@ -77,6 +77,9 @@ namespace Core\Facades;
  * --------------------------------------------------------------------------
  * @see \Core\Router\Router::errors()
  * @method static void errors($http_code, callable $callback = null)
+ * --------------------------------------------------------------------------
+ * @see \Core\Router\Router::errors()
+ * @method static void setErrorPage($http_code, callable $callback = function($http_code, $http_error_message){})
  * ----------------------------------------------------------------------------
  * @mixin \Core\Router\Router
  * @see \Core\Router\Router

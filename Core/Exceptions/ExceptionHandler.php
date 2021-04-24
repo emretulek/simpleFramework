@@ -2,7 +2,10 @@
 
 namespace Core\Exceptions;
 
+use Core\App;
+use Core\Http\HttpException\InternalServerErrorHttpException;
 use Core\Http\Response;
+use Core\Router\Router;
 use Exception;
 use ErrorException;
 use Throwable;
@@ -151,7 +154,7 @@ class ExceptionHandler
         $exceptionType = get_class($e);
         $code = $e->getCode();
         $message = $exception->getMessage();
-        $location = $this->getLocation($exception);
+        $location = $this->getErrorLocation($exception);
         $firstCatchLocation[] = ['file' => $e->getFile(), 'line' => $e->getLine()];
         array_splice( $location, 1, 0, $firstCatchLocation);
         $file = $location[0]['file'];
@@ -162,12 +165,8 @@ class ExceptionHandler
             case 0:
                 // kullanıcılara önemli hatalar hakkında bilgi verme.
                 if (array_key_exists($code, self::ERROR)) {
-                    ob_end_clean();
-                    ob_start();
-                    $this->print("Something went wrong. You can get detailed information in debug mode.", $code);
-                    $content = ob_get_clean();
-                    echo new Response($content, 500);
-                    exit;
+                    $this->writeLog($message, $code, $file, $line);
+                    $this->InternalServerError();
                 }
                 if (!array_key_exists($code, self::NOTICE)) {
                     $this->writeLog($message, $code, $file, $line);
@@ -214,7 +213,7 @@ class ExceptionHandler
      * @param Throwable $throwable
      * @return array
      */
-    private function getLocation(Throwable $throwable): array
+    private function getErrorLocation(Throwable $throwable): array
     {
         $trace = $throwable->getTrace();
         $visibleTrace = [];
@@ -236,5 +235,14 @@ class ExceptionHandler
         }
 
         return $visibleTrace;
+    }
+
+
+    private function InternalServerError()
+    {
+        ob_end_clean();
+        App::getInstance()->resolve(Router::class)
+            ->errors(new InternalServerErrorHttpException());
+        exit;
     }
 }

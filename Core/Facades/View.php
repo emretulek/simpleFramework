@@ -19,16 +19,19 @@ namespace Core\Facades;
  * @method static \Core\View\View getLayoutPage()
  * ----------------------------------------------------------------------------------
  * @see \Core\View\View::json()
- * @method static \Core\View\View json($data)
+ * @method static \Core\Http\Response json($data)
  * ------------------------------------------------------------------------------------
  * @see \Core\View\View::render()
- * @method static \Core\View\View render($code = null, $headers = null)
+ * @method static void render(int $code = 200, array $headers = [])
  * ------------------------------------------------------------------------------------
  * @see \Core\View\View::getBuffer()
- * @method static \Core\View\View getBuffer()
+ * @method static string getBuffer($clear = true)
  * ------------------------------------------------------------------------------------
  * @see \Core\View\View::setLayout()
  * @method static \Core\View\View setLayout(string $layout)
+ * -------------------------------------------------------------------------------------
+ * @see \Core\View\View::response()
+ * @method static \Core\Http\Response response(int $code = 200, array $headers = [])
  * -------------------------------------------------------------------------------------
  * @mixin \Core\View\View
  * @see \Core\View\View

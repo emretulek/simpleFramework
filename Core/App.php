@@ -3,11 +3,27 @@
 namespace Core;
 
 use Closure;
+use Core\Auth\AuthServiceProvider;
+use Core\Cache\CacheServiceProvider;
+use Core\Config\ConfigServiceProvider;
 use Core\Config\LoadConfigFiles;
+use Core\Cookie\CookieServiceProvider;
+use Core\Crypt\CryptServiceProvider;
+use Core\Csrf\CsrfServiceProvider;
+use Core\Database\DatabaseServiceProvider;
+use Core\Era\EraServiceProvider;
 use Core\Exceptions\ExceptionHandler;
 use Core\Facades\Facade;
+use Core\Hook\HookServiceProvider;
+use Core\Http\HttpServiceProvider;
+use Core\Language\LanguageServiceProvider;
+use Core\Log\LoggerServiceProvider;
 use Core\Router\Router;
+use Core\Router\RouterServiceProvider;
 use Core\Services\ServiceProvider;
+use Core\Session\SessionServiceProvider;
+use Core\Validation\FilterServiceProvider;
+use Core\View\ViewServiceProvider;
 use Exception;
 use ReflectionClass;
 use RuntimeException;
@@ -18,7 +34,7 @@ class App
     /**
      * semantic version
      */
-    const VERSION = "3.4.0";
+    const VERSION = "3.5.1";
 
     /**
      * @var static
@@ -57,23 +73,29 @@ class App
      * default services
      * @var array|string[]
      */
-    protected array $services = [
-        \Core\Config\ConfigServiceProvider::class,
-        \Core\Http\RequestServiceProvider::class,
-        \Core\Session\SessionServiceProvider::class,
-        \Core\Cookie\CookieServiceProvider::class,
-        \Core\Router\RouterServiceProvider::class,
-        \Core\View\ViewServiceProvider::class,
-        \Core\Database\DatabaseServiceProvider::class,
-        \Core\Language\LanguageServiceProvider::class,
-        \Core\Cache\CacheServiceProvider::class,
-        \Core\Validation\FilterServiceProvider::class,
-        \Core\Crypt\CryptServiceProvider::class,
-        \Core\Csrf\CsrfServiceProvider::class,
-        \Core\Log\LoggerServiceProvider::class,
-        \Core\Auth\AuthServiceProvider::class,
-        \Core\Hook\HookServiceProvider::class,
+    protected array $providers = [
+        ConfigServiceProvider::class,
+        EraServiceProvider::class,
+        CryptServiceProvider::class,
+        HttpServiceProvider::class,
+        DatabaseServiceProvider::class,
+        CookieServiceProvider::class,
+        SessionServiceProvider::class,
+        LanguageServiceProvider::class,
+        CacheServiceProvider::class,
+        FilterServiceProvider::class,
+        CsrfServiceProvider::class,
+        AuthServiceProvider::class,
+        LoggerServiceProvider::class,
+        HookServiceProvider::class,
+        ViewServiceProvider::class,
+        RouterServiceProvider::class,
     ];
+
+    /**
+     * @var array
+     */
+    public array $registeredProviders = [];
 
     /**
      * route files
@@ -129,7 +151,8 @@ class App
             $this->loadFiles($this->config['autoload']['files']);
             $this->loadFacades();
             $this->loadAlias($this->config['autoload']['aliases']);
-            $this->loadServices($this->config['autoload']['services']);
+            $this->registerProviders($this->config['autoload']['services']);
+            $this->bootProviders();
             $this->loadRoutes($this->config['autoload']['routes']);
         } catch (Exception $e) {
             $this->debug($e);
@@ -138,6 +161,14 @@ class App
         $this->boot = true;
     }
 
+    /**
+     * App self instance
+     * @return static
+     */
+    public static function getInstance(): App
+    {
+        return static::$instance ??= new static();
+    }
 
     /**
      * @param string $path
@@ -151,26 +182,17 @@ class App
     }
 
     /**
-     * App self instance
-     * @return static
-     */
-    public static function getInstance(): App
-    {
-        return static::$instance ??= new static();
-    }
-
-
-    /**
      * @param string $className
      * @return mixed|object
      */
     public function resolve(string $className): object
     {
-        if (array_key_exists($className, $this->instances)) {
+        if (isset($this->instances[$className])) {
             return $this->instances[$className];
         }
 
         if ($this->isBinding($className)) {
+
             if ($this->bindings[$className]['shared']) {
                 return $this->instances[$className] = $this->bindings[$className]['closure']($this);
             } else {
@@ -178,9 +200,8 @@ class App
             }
         }
 
-        throw new RuntimeException("{$className} Sınıf çözülemiyor veya uygulamaya kayıt edilmedi.");
+        throw new RuntimeException("$className Sınıf çözülemiyor veya uygulamaya kayıt edilmedi.");
     }
-
 
     /**
      * @param string $name
@@ -190,7 +211,6 @@ class App
     {
         $this->bind($name, $closure, true);
     }
-
 
     /**
      * @param string $name
@@ -211,7 +231,6 @@ class App
         ];
     }
 
-
     /**
      * @param string $name
      * @return bool
@@ -220,7 +239,6 @@ class App
     {
         return array_key_exists($name, $this->bindings);
     }
-
 
     /**
      * @param string $className
@@ -242,7 +260,6 @@ class App
         throw new RuntimeException("Sınıf çözülemiyor veya kayıt edilmeiş.");
     }
 
-
     /**
      * @param string $name
      * @param $instance
@@ -253,7 +270,6 @@ class App
         return $this->instances[$name] = $instance;
     }
 
-
     /**
      * @param $id
      * @return bool
@@ -263,12 +279,11 @@ class App
         return isset($this->instances[$id], $this->bindings[$id]);
     }
 
-
     /**
      * get instance from name
      * @param $id
      * @return mixed
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function get($id)
     {
@@ -277,9 +292,8 @@ class App
             return $this->instances[$id] ?? $this->resolve($id);
         }
 
-        throw new Exception("Instance [{$id}] not found in app");
+        throw new RuntimeException("Instance [$id] not found in app");
     }
-
 
     /**
      * Sınıf takma isimlerini yüklenmesi
@@ -294,7 +308,6 @@ class App
             class_alias($orginal, $alias);
         }
     }
-
 
     /**
      * projeden önce gereken dosyaların yüklenmesi
@@ -312,29 +325,39 @@ class App
         }
     }
 
-
     /**
-     * @param array|string[] $services services class Name
+     * @param array|string[] $providers services class Name
      */
-    protected function loadServices(array $services)
+    protected function registerProviders(array $providers)
     {
-        $this->services += $services;
+        $this->providers += $providers;
 
-        try {
-            foreach ($this->services as $serviceProvider) {
+        foreach ($this->providers as $service) {
 
-                $reflectionClass = new ReflectionClass($serviceProvider);
+            try {
+                $reflectionClass = new ReflectionClass($service);
 
                 if ($reflectionClass->isSubclassOf(ServiceProvider::class)) {
-                    $serviceProviderInstance = new $serviceProvider($this);
-                    $serviceProviderInstance->register();
-                    $serviceProviderInstance->boot();
+                    $providerInstance = new $service($this);
+                    $providerInstance->register();
+                    $this->registeredProviders[$service] = $providerInstance;
                 } else {
-                    throw new Exception("{$serviceProvider} sınıfı " . ServiceProvider::class . " sınıfından türetilmedilir.", E_WARNING);
+                    throw new RuntimeException("$service sınıfı " . ServiceProvider::class . " sınıfından türetilmedilir.", E_WARNING);
                 }
+
+            } catch (RuntimeException $e) {
+                $this->debug($e);
             }
-        } catch (Exception $e) {
-            $this->debug($e);
+        }
+    }
+
+    /**
+     * boot method registered service providers
+     */
+    protected function bootProviders()
+    {
+        foreach ($this->registeredProviders as $registeredProvider) {
+            $registeredProvider->boot();
         }
     }
 
@@ -345,7 +368,6 @@ class App
     {
         Facade::setFacadeApplication($this);
     }
-
 
     /**
      * @param array|string[] $routes route files
@@ -371,7 +393,6 @@ class App
         $this->instance(ExceptionHandler::class, new ExceptionHandler());
     }
 
-
     /**
      * @param Throwable $throwable
      */
@@ -396,5 +417,13 @@ class App
     public function __set($name, $value)
     {
         $this[$name] = $value;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function __debugInfo()
+    {
+        return [];
     }
 }

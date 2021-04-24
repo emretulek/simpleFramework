@@ -98,6 +98,35 @@ class Response
         exit;
     }
 
+    /**
+     * @return int
+     */
+    public function getCode(): int
+    {
+        return $this->response['code'] ?? http_response_code();
+    }
+
+
+    /**
+     * @return array|mixed
+     */
+    public function getHeader()
+    {
+        return $this->response['headers'] + headers_list();
+    }
+
+
+    /**
+     * Header gönderilmemişse temizlenir
+     */
+    public function clearHeader():void
+    {
+        $this->response['headers'] = [];
+
+        if (!headers_sent()) {
+            header_remove();
+        }
+    }
 
     /**
      * Yanıt gövdesini döndürür

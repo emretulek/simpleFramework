@@ -20,13 +20,13 @@ namespace Core\Facades;
  * @method static bool setDefault($key)
  * ---------------------------------------------------------------------
  * @see Language::getDefault()
- * @method static array getDefault()
+ * @method static string getDefault()
  * ---------------------------------------------------------------------
  * @see Language::setActive()
  * @method static bool setActive(string $key)
  * ----------------------------------------------------------------------
  * @see Language::getActive()
- * @method static array getActive()
+ * @method static string getActive()
  * -----------------------------------------------------------------------
  * @see Language::addFile()
  * @method static bool|array addFile(string $key, string $file_path)
@@ -51,6 +51,18 @@ namespace Core\Facades;
  * -----------------------------------------------------------------------
  * @see Language::routePrefix()
  * @method static string routePrefix()
+ * -----------------------------------------------------------------------
+ * @see Language::useCookie()
+ * @method static \Core\Language\Language useCookie(string $key)
+ *  * -----------------------------------------------------------------------
+ * @see Language::useSession()
+ * @method static \Core\Language\Language useSession(string $key)
+ * -----------------------------------------------------------------------
+ *  * @see Language::setRoutePrefix()
+ * @method static string setRoutePrefix(string $prefix)
+ * -----------------------------------------------------------------------
+ *  * @see Language::getRoutePrefix()
+ * @method static string getRoutePrefix()
  * -----------------------------------------------------------------------
  * @mixin Language
  * @see Language

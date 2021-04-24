@@ -9,7 +9,7 @@ class SessionServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(Session::class, function ($app) {
-            return new Session();
+            return new Session(new SessionManager($app), $app);
         });
     }
 

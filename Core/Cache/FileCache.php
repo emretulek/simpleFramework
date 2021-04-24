@@ -3,11 +3,9 @@
 namespace Core\Cache;
 
 use Closure;
-use DateInterval;
-use DateTime;
 use Exception;
 
-class FileCache implements CacheInterface
+class FileCache extends BaseCache
 {
 
     protected string $path;
@@ -51,15 +49,13 @@ class FileCache implements CacheInterface
      * @param $value
      * @param int|null|\DateInterval $ttl
      * @return bool
-     * @throws InvalidArgumentException
      */
     public function set(string $key, $value, $ttl = null): bool
     {
         $file = $this->setFileName($key);
-        $content = $this->timeout($ttl) . PHP_EOL;
-        $content .= serialize($value);
+        $content = $this->expires($ttl) . serialize($value);
 
-        return (bool)file_put_contents($file, $content);
+        return (bool)file_put_contents($file, $content, LOCK_EX);
     }
 
     /**
@@ -265,9 +261,8 @@ class FileCache implements CacheInterface
 
         if (is_readable_file($file)) {
             $content = file_get_contents($file);
-            $partOfContent = explode(PHP_EOL, $content, 2);
-            $expire = array_shift($partOfContent);
-            $value = unserialize($partOfContent[0]);
+            $expire = substr($content,0, 10);
+            $value = unserialize(substr($content, 10));
 
             if ($expire > time()) {
                 return ['expires' => $expire, 'content' => $value];
@@ -298,8 +293,7 @@ class FileCache implements CacheInterface
 
             if (is_readable_file($file) && filemtime($file) < time() - $maxLifeTime) {
                 $content = file_get_contents($file);
-                $partOfContent = explode(PHP_EOL, $content, 1);
-                $expire = array_shift($partOfContent);
+                $expire = substr($content,0, 10);
 
                 if ($expire < time()) {
                     unlink($file);
@@ -310,25 +304,5 @@ class FileCache implements CacheInterface
                 return;
             }
         }
-    }
-
-    /**
-     * @param $timeout
-     * @return string
-     */
-    private function timeout($timeout): int
-    {
-        $timeout = empty($timeout) ? '999999999' : $timeout;
-
-        $date = new DateTime();
-
-        if ($timeout instanceof DateInterval) {
-            $date->add($timeout);
-        } else {
-            $dateInterval = new DateInterval("PT{$timeout}S");
-            $date->add($dateInterval);
-        }
-
-        return $date->format("U");
     }
 }

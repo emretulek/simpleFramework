@@ -29,7 +29,7 @@ class FileLog implements LoggerInterface
     {
         $type = "[{$level}]";
         $time = date("d.m.Y H:i:s");
-        $data = json_encode($data);
+        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
 
         return sprintf("%s\t%s\t%s\t%s" . PHP_EOL, $time, $type, $message, $data);
     }

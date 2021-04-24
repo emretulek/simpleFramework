@@ -36,6 +36,9 @@ namespace Core\Facades;
  * @see \Core\Http\Request::raw()
  * @method static string raw()
  * ---------------------------------------------------------------
+ * @see \Core\Http\Request::cookie()
+ * @method static string cookie(string $name = null)
+ * ---------------------------------------------------------------
  * @see \Core\Http\Request::method()
  * @method static bool|string method(string $method = null)
  * ---------------------------------------------------------------

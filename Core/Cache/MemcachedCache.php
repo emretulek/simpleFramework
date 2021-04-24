@@ -3,11 +3,12 @@
 namespace Core\Cache;
 
 use Closure;
+use Core\Connector\MemcachedConnector;
 use DateInterval;
 use DateTime;
 use Memcached;
 
-class MemcachedCache implements CacheInterface
+class MemcachedCache extends BaseCache
 {
 
     protected Memcached $memcached;
@@ -52,7 +53,7 @@ class MemcachedCache implements CacheInterface
      */
     public function set(string $key, $value, $ttl = null): bool
     {
-        return $this->memcached->set($key, $value, $this->timeout($ttl));
+        return $this->memcached->set($key, $value, $this->expires($ttl));
     }
 
     /**
@@ -66,7 +67,7 @@ class MemcachedCache implements CacheInterface
      */
     public function add(string $key, $value, $ttl = null): bool
     {
-        return $this->memcached->add($key, $value, $this->timeout($ttl));
+        return $this->memcached->add($key, $value, $this->expires($ttl));
     }
 
     /**
@@ -138,7 +139,7 @@ class MemcachedCache implements CacheInterface
      */
     public function setMultiple(array $items, $ttl = null): bool
     {
-        return $this->memcached->setMulti($items, $this->timeout($ttl));
+        return $this->memcached->setMulti($items, $this->expires($ttl));
     }
 
     /**
@@ -183,25 +184,5 @@ class MemcachedCache implements CacheInterface
     public function decrement(string $key, $value = 1)
     {
         return $this->memcached->decrement($key, $value);
-    }
-
-    /**
-     * @param $timeout
-     * @return mixed
-     */
-    private function timeout($timeout): int
-    {
-        $timeout = empty($timeout) ? '999999999' : $timeout;
-
-        $date = new DateTime();
-
-        if ($timeout instanceof DateInterval) {
-            $date->add($timeout);
-        } else {
-            $dateInterval = new DateInterval("PT{$timeout}S");
-            $date->add($dateInterval);
-        }
-
-        return $date->format("U");
     }
 }

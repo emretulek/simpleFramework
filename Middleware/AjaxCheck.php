@@ -1,18 +1,18 @@
 <?php
 namespace Middleware;
 
-use Core\Http\HttpMethodNotAllowed;
+use Core\Http\HttpException\MethodNotAllowedHttpException;
 use Request;
 
 Class AjaxCheck {
 
     /**
-     * @throws HttpMethodNotAllowed
+     * @throws MethodNotAllowedHttpException
      */
     public function before()
     {
         if(Request::isAjax() == false){
-            throw new HttpMethodNotAllowed();
+            throw new MethodNotAllowedHttpException();
         }
     }
 }

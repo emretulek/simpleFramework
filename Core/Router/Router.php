@@ -3,9 +3,10 @@
 namespace Core\Router;
 
 use Core\App;
-use Core\Exceptions\ExceptionHandler;
-use Core\Http\HttpMethodNotAllowed;
-use Core\Http\HttpNotFound;
+use Core\Http\HttpException\HttpException;
+use Core\Http\HttpException\MethodNotAllowedHttpException;
+use Core\Http\HttpException\NotFoundHttpException;
+use Core\Http\HttpException\BadRequestHttpException;
 use Core\Http\Request;
 use ArgumentCountError;
 use Closure;
@@ -347,7 +348,7 @@ class Router
      * @param $method
      * @param $params
      * @return mixed
-     * @throws HttpNotFound
+     * @throws NotFoundHttpException
      */
     private function route($controller, $method, $params)
     {
@@ -355,16 +356,16 @@ class Router
             $controller = $this->class_caseinsensitive($controller);
             //class mevcut değilse
             if (!class_exists($controller)) {
-                throw new HttpNotFound($controller . ' : class not found.', E_NOTICE);
+                throw new NotFoundHttpException($controller . ' : class not found.');
                 //method mevcut değilse
             } elseif (!method_exists($controller, $method)) {
-                throw new HttpNotFound($method . ' : method not found in ' . $controller, E_NOTICE);
+                throw new NotFoundHttpException($method . ' : method not found in ' . $controller);
             } else {
                 //method public değilse
                 $reflectionMethod = new ReflectionMethod($controller, $method);
 
                 if (!$reflectionMethod->isPublic()) {
-                    throw new HttpNotFound($method . ' : method is not a public', E_NOTICE);
+                    throw new NotFoundHttpException($method . ' : method is not a public');
                 }
 
                 $reflectionForParameters = new Reflection($this->app);
@@ -373,10 +374,10 @@ class Router
 
             return call_user_func_array([new $controller, $method], $classRefParameters);
 
-        } catch (ArgumentCountError | TypeError $e) {//TODO badrequest olarak değişecek
-            throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
+        } catch (ArgumentCountError | TypeError $e) {
+            throw new BadRequestHttpException($e->getMessage(), [],E_NOTICE, $e);
         } catch (ReflectionException $e) {
-            throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
+            throw new NotFoundHttpException($e->getMessage(), [],E_NOTICE, $e);
         }
     }
 
@@ -389,7 +390,7 @@ class Router
     {
         try {
 
-            foreach ($this->routes as $name => $route) {
+            foreach ($this->routes as $route) {
 
                 if (false !== ($matches = $this->rootMatch($route['prefix'] . $route['pattern'], $route['requestUri']))) {
 
@@ -401,7 +402,7 @@ class Router
 
                     //Request method check
                     if (in_array($this->request->method(), $route['method']) == false) {
-                        throw new HttpMethodNotAllowed("Http method allowed " . implode(",", $route['method']));
+                        throw new MethodNotAllowedHttpException("Http method allowed " . implode(",", $route['method']));
                     }
 
                     //load middlewares before
@@ -428,32 +429,25 @@ class Router
                     //if response view or response class
                     if ($response instanceof View || $response instanceof Response) {
                         echo $response;
-                    } else {
-                        echo new Response($response);
+                        return;
+                    }
+
+                    if(!is_null($response)){
+                        echo $this->app->resolve(Response::class)->content($response);
+                        return;
                     }
 
                     return;
                 }
             }
 
-            throw new HttpNotFound('No match router.', E_NOTICE);
+            throw new NotFoundHttpException('No match router.');
 
-        } catch (ModelException $e) {
+        }catch (HttpException $e) {
             $this->app->debug($e);
-            return ;
-        }catch (HttpNotFound $e) {
+            self::errors($e);
+        } catch (ModelException | Exception $e) {
             $this->app->debug($e);
-            return self::errors(404);
-        } catch (HttpMethodNotAllowed $e) {
-            $this->app->debug($e);
-            return self::errors(405);
-        } catch (Exception $e) {
-            if(array_key_exists($e->getCode(), ExceptionHandler::NOTICE)){
-                $this->app->debug($e);
-            }else{
-                $this->app->debug($e);
-                return self::errors(500);
-            }
         }
     }
 
@@ -462,7 +456,7 @@ class Router
      * @param callable $callback
      * @param $args
      * @return Response|View|null
-     * @throws HttpNotFound|ModelException
+     * @throws NotFoundHttpException|ModelException
      */
     private function startCallback(callable $callback, $args)
     {
@@ -472,7 +466,7 @@ class Router
 
             return call_user_func_array($callback, $parameters);
         } catch (ArgumentCountError $e) {
-            throw new HttpNotFound($e->getMessage(), E_NOTICE, $e);
+            throw new NotFoundHttpException($e->getMessage(), [], E_NOTICE, $e);
         }
     }
 
@@ -481,7 +475,7 @@ class Router
      * @param $route
      * @param $matches
      * @return mixed
-     * @throws HttpNotFound|ModelException
+     * @throws NotFoundHttpException|BadRequestHttpException|ModelException
      */
     private function startController($route, $matches)
     {
@@ -672,34 +666,43 @@ class Router
     /**
      * @return View
      */
-    public function view():View
+    protected function view():View
     {
         return $this->app->resolve(View::class);
     }
 
     /**
-     * Router custom errors
-     *
-     * @param $http_code
-     * @param callable|null $callback
-     * @return mixed
+     *  Router custom errors
+     * @param HttpException $httpException
      */
-    public function errors($http_code, callable $callback = null)
+    public function errors(HttpException $httpException):void
     {
-        if ($callback instanceof Closure) {
-            $this->errors[$http_code] = $callback;
-            return $this;
-        }
+        $statusCode = $httpException->getStatusCode();
+        $errorMessage = $httpException->getMessage();
+        $errorFile = ROOT.$this->app->config['path']['view'].'/errors/'.$statusCode.EXT;
 
-        if (empty($this->errors[$http_code])) {
-            $this->errors[$http_code] = function () use ($http_code) {
-                return $this->view()->path('errors/' . $http_code, null)->render($http_code);
+        if (empty($this->errors[$statusCode])) {
+            $this->errors[$statusCode] = function ($statusCode, $errorMessage) use ($errorFile) {
+                if(is_readable_file($errorFile)) {
+                    $this->view()->path('errors/' . $statusCode, ['message' => $errorMessage])->render($statusCode);
+                }else{
+                    $this->view()->response($statusCode)->content($errorMessage)->send();
+                }
             };
         }
 
-        return call_user_func($this->errors[$http_code]);
+        $this->errors[$statusCode]($statusCode, $errorMessage);
     }
 
+
+    /**
+     * @param $http_code
+     * @param callable $callback function($http_code, $http_error_message)
+     */
+    public function setErrorPage($http_code, callable $callback)
+    {
+        $this->errors[$http_code] = $callback;
+    }
 
     /**
      * Büyük küçük harf duyarlı işltemim sistemlerinde sınıfın olduğu dizini tarayıp

@@ -3,17 +3,17 @@
 namespace Core\Facades;
 
 /**
+ * @see \Core\Csrf\Csrf::setTokenTimeout()
+ * @method static void setTokenTimeout(int $seconds)
+ * ----------------------------------------------
  * @see \Core\Csrf\Csrf::generateToken()
- * @method static string generateToken()
+ * @method static string generateToken($refresh = false)
  * ----------------------------------------------
  * @see \Core\Csrf\Csrf::token()
  * @method static string token()
  * ---------------------------------------------
  * @see \Core\Csrf\Csrf::refreshToken()
  * @method static string refreshToken()
- * ---------------------------------------------
- * @see \Core\Csrf\Csrf::old_token()
- * @method static string old_token()
  * ---------------------------------------------
  * @see \Core\Csrf\Csrf::check()
  * @method static bool check()

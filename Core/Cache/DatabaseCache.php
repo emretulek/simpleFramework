@@ -5,11 +5,9 @@ namespace Core\Cache;
 use Closure;
 use Core\Database\Database;
 use Core\Database\QueryBuilder;
-use DateInterval;
-use DateTime;
 use Exception;
 
-class DatabaseCache implements CacheInterface
+class DatabaseCache extends BaseCache
 {
     protected Database $database;
     protected string $table;
@@ -43,7 +41,7 @@ class DatabaseCache implements CacheInterface
      */
     public function get(string $key, $default = null)
     {
-        if ($item = $this->table()->select("*")->where("key", $key)->getRow()) {
+        if ($item = $this->table()->select()->where("key", $key)->getRow()) {
 
             if ($item->expires > time()) {
                 return unserialize($item->value);
@@ -71,7 +69,7 @@ class DatabaseCache implements CacheInterface
     public function set(string $key, $value, $ttl = null): bool
     {
         $value = serialize($value);
-        $expires = $this->timeout($ttl);
+        $expires = $this->expires($ttl);
 
         try {
             $result = $this->table()->insert(compact('key', 'value', 'expires'));
@@ -90,12 +88,11 @@ class DatabaseCache implements CacheInterface
      * @param mixed $value
      * @param int|null|\DateInterval $ttl
      * @return bool
-     * @throws InvalidArgumentException
      */
     public function add(string $key, $value, $ttl = null): bool
     {
         $value = serialize($value);
-        $expires = $this->timeout($ttl);
+        $expires = $this->expires($ttl);
 
         try {
             $result = $this->table()->insert(compact('key', 'value', 'expires'));
@@ -135,7 +132,6 @@ class DatabaseCache implements CacheInterface
      *
      * @param string $key
      * @return bool
-     * @throws Exception
      */
     public function delete(string $key): bool
     {
@@ -145,18 +141,16 @@ class DatabaseCache implements CacheInterface
     /**
      * Tüm önbelleği temizler
      * @return bool
-     * @throws Exception
      */
     public function clear(): bool
     {
-        return $this->table()->delete(null, true);
+        return $this->table()->delete(null, false,true);
     }
 
     /**
      * Çoklu önbellek listesi
      * @param array $keys liste
      * @return array A list of key
-     * @throws InvalidArgumentException
      */
     public function getMultiple(array $keys): array
     {
@@ -178,7 +172,6 @@ class DatabaseCache implements CacheInterface
      * @param array $items anahtar değer ilişkili liste
      * @param int|null|\DateInterval $ttl geçerlilik süresi
      * @return bool
-     * @throws InvalidArgumentException
      */
     public function setMultiple(array $items, $ttl = null): bool
     {
@@ -199,7 +192,6 @@ class DatabaseCache implements CacheInterface
      * Çoklu önbellekten veri silme
      * @param array $keys
      * @return bool
-     * @throws InvalidArgumentException
      */
     public function deleteMultiple(array $keys): bool
     {
@@ -231,17 +223,17 @@ class DatabaseCache implements CacheInterface
     /**
      * @param string $key
      * @param int $value
-     * @return int|false
+     * @return int
      */
-    public function increment(string $key, $value = 1)
+    public function increment(string $key, $value = 1):int
     {
-        $ttl = $this->timeout(null);
+        $ttl = $this->expires(null);
 
-        if (!$this->add($key, $value)) {
-            $item = $this->get($key);
+        if ($item = $this->get($key)) {
             $value = (int)$item + $value;
-            $this->set($key, $value, $ttl);
         }
+
+        $this->set($key, $value, $ttl);
 
         return $value;
     }
@@ -249,17 +241,17 @@ class DatabaseCache implements CacheInterface
     /**
      * @param string $key
      * @param int $value
-     * @return int|false
+     * @return int
      */
-    public function decrement(string $key, $value = 1)
+    public function decrement(string $key, $value = 1):int
     {
-        $ttl = $this->timeout(null);
+        $ttl = $this->expires(null);
 
-        if (!$this->add($key, $value)) {
-            $item = $this->get($key);
+        if ($item = $this->get($key)) {
             $value = (int)$item - $value;
-            $this->set($key, $value, $ttl);
         }
+
+        $this->set($key, $value, $ttl);
 
         return $value;
     }
@@ -270,25 +262,5 @@ class DatabaseCache implements CacheInterface
     private function table(): QueryBuilder
     {
         return $this->database->table($this->table);
-    }
-
-    /**
-     * @param $timeout
-     * @return int
-     */
-    private function timeout($timeout): int
-    {
-        $timeout = empty($timeout) ? '999999999' : $timeout;
-
-        $date = new DateTime();
-
-        if ($timeout instanceof DateInterval) {
-            $date->add($timeout);
-        } else {
-            $dateInterval = new DateInterval("PT{$timeout}S");
-            $date->add($dateInterval);
-        }
-
-        return $date->format("U");
     }
 }

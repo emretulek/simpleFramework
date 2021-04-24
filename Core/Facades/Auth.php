@@ -24,8 +24,8 @@ namespace Core\Facades;
  * @see \Core\Auth\Auth::user()
  * @method static object|null user()
  * ----------------------------------------------------------------------------
- * @see \Core\Auth\Auth::info()
- * @method static mixed info($key = null)
+ * @see \Core\Auth\Auth::authSession()
+ * @method static mixed authSession($key, $value = null)
  * ----------------------------------------------------------------------------
  * @see \Core\Auth\Auth::userID()
  * @method static int userID()

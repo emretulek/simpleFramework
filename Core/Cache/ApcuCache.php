@@ -7,7 +7,7 @@ namespace Core\Cache;
 use Closure;
 use RuntimeException;
 
-class ApcuCache implements CacheInterface
+class ApcuCache extends BaseCache
 {
 
     /**
@@ -55,7 +55,7 @@ class ApcuCache implements CacheInterface
      */
     public function set(string $key, $value, $ttl = null): bool
     {
-        return apcu_store($key, $value, $ttl);
+        return apcu_store($key, $value, $this->ttl($ttl));
     }
 
 
@@ -70,7 +70,7 @@ class ApcuCache implements CacheInterface
      */
     public function add(string $key, $value, $ttl = null): bool
     {
-        return apcu_add($key, $value, $ttl);
+        return apcu_add($key, $value, $this->ttl($ttl));
     }
 
     /**
@@ -88,7 +88,7 @@ class ApcuCache implements CacheInterface
             };
         }
 
-        return apcu_entry($key, $default, $ttl);
+        return apcu_entry($key, $default, $this->ttl($ttl));
     }
 
     /**
@@ -132,7 +132,7 @@ class ApcuCache implements CacheInterface
      */
     public function setMultiple(array $items, $ttl = null): bool
     {
-        return apcu_store($items, null, $ttl);
+        return apcu_store($items, null, $this->ttl($ttl));
     }
 
     /**

@@ -9,8 +9,7 @@ class LanguageService extends ServiceProvider
 {
     public function boot()
     {
-        Language::load();
-//        //kullanılabilir diller arasına ingilizce ekleniyor
-//        Language::add('en', 'English', 'EN-us');
+        //kullanılabilir diller arasına ingilizce ekleniyor
+        Language::add('en', 'English', 'EN-us');
     }
 }

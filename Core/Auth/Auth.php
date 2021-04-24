@@ -37,7 +37,7 @@ class Auth
         'status' => 1
     ];
 
-    protected array $noStoreSession = [
+    protected array $sessionNotStored = [
         'password'
     ];
 
@@ -49,6 +49,11 @@ class Auth
     public function __construct(App $app)
     {
         $this->app = $app;
+
+        $this->table = $this->app->config['auth']['table'] ?? $this->table;
+        $this->tokenName = $this->app->config['auth']['token_name'] ?? $this->tokenName;
+        $this->userWhere = $this->app->config['auth']['user_where'] ?? $this->userWhere;
+        $this->sessionNotStored = $this->app->config['auth']['session_not_stored'] ?? $this->sessionNotStored;
 
         if ($this->check()) {
             $this->user = $this->table()->select()->where('userID', $this->userID())->getRow();
@@ -157,7 +162,7 @@ class Auth
         $this->authSession('ip', $this->request()->ip());
 
         foreach ($this->user as $key => $value) {
-            if (!in_array($key, $this->noStoreSession)) {
+            if (!in_array($key, $this->sessionNotStored)) {
                 $this->authSession($key, $value);
             }
         }
@@ -170,6 +175,7 @@ class Auth
      * @param array $userInfo
      * @return bool
      * @throws SqlErrorException
+     * @throws AuthError
      */
     protected function setUserForPassword(string $password, array $userInfo): bool
     {
@@ -177,21 +183,21 @@ class Auth
 
         $query = $this->table()->select();
 
-        //kullanıcı varsa
-        if ($user = $query->where($userInfo)->getRow()) {
-            //şifre kontrolü
-            if ($rehash = $this->app->resolve(Hash::class)->passwordCheck($password, $user->password)) {
-                //rehash gerekliyse şifre update edilir
-                if ($rehash != $user->password) {
-                    $this->table()->where('userID', $user->userID)->update(['password', $rehash]);
-                }
-
-                $this->user = $user;
-                return true;
-            }
+        if (!$user = $query->where($userInfo)->getRow()) {
+            throw new AuthError(AuthError::USER_NOT_FOUND);
+        }
+        //şifre kontrolü
+        if (!$rehash = $this->app->resolve(Hash::class)->passwordCheck($password, $user->password)) {
+            throw new AuthError(AuthError::PASSWORD_MISMATCH);
         }
 
-        return false;
+        //rehash gerekliyse şifre update edilir
+        if ($rehash != $user->password) {
+            $this->table()->where('userID', $user->userID)->update(['password', $rehash]);
+        }
+
+        $this->user = $user;
+        return true;
     }
 
     /**
@@ -200,7 +206,7 @@ class Auth
      * @return bool
      * @throws SqlErrorException
      */
-    protected function setUserForToken(array $userInfo)
+    protected function setUserForToken(array $userInfo):bool
     {
         $userInfo = array_merge($this->userWhere, $userInfo);
 
@@ -252,9 +258,9 @@ class Auth
 
     /**
      * Sessiondan id değerini döndürür.
-     * @return bool|mixed
+     * @return bool|int
      */
-    public function userID(): int
+    public function userID()
     {
         return $this->authSession('id');
     }
@@ -335,6 +341,21 @@ class Auth
 
 
     /**
+     * @param $key
+     * @param null $value
+     * @return bool|mixed
+     */
+    public function authSession($key, $value = null)
+    {
+        if ($value === null) {
+            return $this->session()->get('AUTH.USER.' . $key);
+        } else {
+            return $this->session()->set('AUTH.USER.' . $key, $value);
+        }
+    }
+
+
+    /**
      * Beni hatırla seçeneği için cookie oluşturur.
      * @param string $token
      * @param int|string $lifetime strtottime veya int saniye
@@ -389,20 +410,6 @@ class Auth
             ->getVar();
     }
 
-
-    /**
-     * @param $key
-     * @param null $value
-     * @return bool|mixed
-     */
-    public function authSession($key, $value = null)
-    {
-        if ($value === null) {
-            return $this->session()->get('AUTH.USER.' . $key);
-        } else {
-            return $this->session()->set('AUTH.USER.' . $key, $value);
-        }
-    }
 
 
     /**

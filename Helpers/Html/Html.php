@@ -32,6 +32,7 @@ class Html {
     {
         $tag = new Tag('form');
         $tag->attr('method', $method)
+            ->attr('action', $action)
             ->attr('encode', $multipart ? 'multipart/form-data' : 'application/x-www-form-urlencoded');
 
         return $tag;
@@ -67,7 +68,7 @@ class Html {
         $tag = new Tag('input', false);
         $tag->attr('type', 'file')
             ->attr('name', $multiple ? $name.'[]': $name);
-        $multiple ? $tag->attr('multiple', 'multiple') : null;
+        !$multiple ?: $tag->attr('multiple', 'multiple');
 
         return $tag;
     }
@@ -84,7 +85,7 @@ class Html {
     {
         $tag = new Tag('select');
         $tag->attr('name', $multiple ? $name.'[]': $name);
-        $multiple ? $tag->attr('multiple', 'multiple') : null;
+        !$multiple ?: $tag->attr('multiple', 'multiple');
 
         foreach ($options as $key => $val){
 

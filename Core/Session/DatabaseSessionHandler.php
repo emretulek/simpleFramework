@@ -19,6 +19,7 @@ class DatabaseSessionHandler extends BaseSessionHandler
     private App $app;
     protected string $table = 'sessions';
     protected int $lifeTime = 78840000;
+    protected int $blockingTimeout = -1;
 
     public function __construct(App $app, array $config)
     {
@@ -26,6 +27,7 @@ class DatabaseSessionHandler extends BaseSessionHandler
         $this->table = $config['database']['table'] ?? $this->table;
         $this->lifeTime = $config['options']['gc_maxlifetime'] ?: (int)ini_get('session.gc_maxlifetime') ?: $this->lifeTime;
         $this->prefix = $config['prefix'] ? session_name() : '';
+        $this->blockingTimeout = $config['database']['blockingTimeout'] ?? $this->blockingTimeout;
     }
 
 
@@ -34,17 +36,10 @@ class DatabaseSessionHandler extends BaseSessionHandler
      */
     function get(string $key): string
     {
-        if ($row = $this->table()->find($key)) {
+        $this->table()->database()->getVar("SELECT GET_LOCK(?, ?) AS free", [$key, $this->blockingTimeout]);
 
-            if ($row->expire <= Era::now()->getTimestamp()) {
-                $this->table()->delete($key);
-                return '';
-            }
-
-            return (string)($row->data);
-        }
-
-        return '';
+        $row = $this->table()->find($key);
+        return (string)isset($row->data) ? $row->data : '';
     }
 
     /**
@@ -52,13 +47,12 @@ class DatabaseSessionHandler extends BaseSessionHandler
      */
     function set(string $key, string $session_data): bool
     {
-        $encodedData = ($session_data);
         $expire = Era::now()->addSecond($this->lifeTime)->getTimestamp();
 
         try {
-           $this->table()->insert([
+            $this->table()->insert([
                 'session_id' => $key,
-                'data' => $encodedData,
+                'data' => $session_data,
                 'expire' => $expire,
                 'userID' => $this->auth()->userID(),
                 'ip' => $this->request()->forwardedIp(),
@@ -68,7 +62,7 @@ class DatabaseSessionHandler extends BaseSessionHandler
         } catch (SqlErrorException $e) {
 
             $this->table()->where('session_id', $key)->update([
-                'data' => $encodedData,
+                'data' => $session_data,
                 'expire' => $expire,
                 'userID' => $this->auth()->userID(),
                 'ip' => $this->request()->forwardedIp(),
@@ -76,6 +70,8 @@ class DatabaseSessionHandler extends BaseSessionHandler
                 'referer' => $this->request()->referer() ?: '{{referer}}'
             ]);
         }
+
+        $this->table()->database()->getVar("DO RELEASE_LOCK(?)", [$key]);
 
         return true;
     }
@@ -85,7 +81,13 @@ class DatabaseSessionHandler extends BaseSessionHandler
      */
     function delete(string $key): bool
     {
-        return (bool)$this->table()->delete($key);
+        try {
+            $this->table()->delete($key);
+            return true;
+        } catch (SqlErrorException $e) {
+            $this->app->debug($e);
+            return false;
+        }
     }
 
 
@@ -94,8 +96,13 @@ class DatabaseSessionHandler extends BaseSessionHandler
      */
     public function gc($max_lifetime): bool
     {
-        $this->table()->where('expire', '<=', Era::now()->getTimestamp())->delete();
-        return true;
+        try {
+            $this->table()->where('expire', '<=', Era::now()->getTimestamp())->delete();
+            return true;
+        } catch (SqlErrorException $e) {
+            $this->app->debug($e);
+            return false;
+        }
     }
 
 
@@ -110,7 +117,7 @@ class DatabaseSessionHandler extends BaseSessionHandler
     /**
      * @return Auth
      */
-    protected function auth():Auth
+    protected function auth(): Auth
     {
         return $this->app->resolve(Auth::class);
     }
@@ -118,9 +125,8 @@ class DatabaseSessionHandler extends BaseSessionHandler
     /**
      * @return Request
      */
-    protected function request():Request
+    protected function request(): Request
     {
         return $this->app->resolve(Request::class);
     }
-
 }

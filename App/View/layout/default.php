@@ -8,10 +8,8 @@
     <title>Layout</title>
 </head>
 <body>
-<?php
-View::path('part/header')->render();
-View::getLayoutPage()->render();
-View::path('part/footer')->render();
-?>
+<?= View::path('part/header') ?>
+<?= View::getLayoutPage() ?>
+<?= View::path('part/footer') ?>
 </body>
 </html>

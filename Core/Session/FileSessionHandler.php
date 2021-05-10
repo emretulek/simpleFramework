@@ -9,13 +9,16 @@ class FileSessionHandler extends BaseSessionHandler
     private string $path;
     private int $gc_probability;
     private int $gc_divisor;
+    private bool $blocking = true;
+    private $fp = null;
 
     public function __construct(array $config)
     {
-        $this->gc_probability = $config['options']['gc_probability'] ?: (int) ini_get('session.gc_probability');
-        $this->gc_divisor = $config['options']['gc_divisor'] ?: (int) ini_get('session.gc_divisor');
+        $this->gc_probability = $config['options']['gc_probability'] ?: (int)ini_get('session.gc_probability');
+        $this->gc_divisor = $config['options']['gc_divisor'] ?: (int)ini_get('session.gc_divisor');
         $this->path = $config['file']['path'] ?: session_save_path();
-        $this->prefix = $config['prefix'] ? session_name(): '';
+        $this->prefix = $config['prefix'] ? session_name() : '';
+        $this->blocking = $config['file']['blocking'] ?? $this->blocking;
     }
 
     /**
@@ -40,15 +43,16 @@ class FileSessionHandler extends BaseSessionHandler
         $filePath = $this->path . '/' . $key;
         $sessionData = '';
 
-        if (is_readable_file($filePath)) {
+        if ($this->fp = fopen($filePath, "cb+")) {
 
-            $fp = fopen($filePath, "r");
+            if (flock($this->fp, LOCK_EX) && $fileSize = filesize($filePath)) {
+                $sessionData = fread($this->fp, $fileSize);
 
-            if (flock($fp, LOCK_SH) && $fileSize = filesize($filePath)) {
-                $sessionData = fread($fp, $fileSize);
+                if ($this->blocking == false) {
+                    flock($this->fp, LOCK_UN);
+                    fclose($this->fp);
+                }
             }
-
-            fclose($fp);
         }
 
         return $sessionData;
@@ -59,14 +63,27 @@ class FileSessionHandler extends BaseSessionHandler
      */
     public function set(string $key, string $session_data): bool
     {
-        $filePath = $this->path . '/' . $key;
-        $fp = fopen($filePath, "w");
+        if ($this->blocking == true && $this->fp) {
 
-        if(flock($fp, LOCK_EX)) {
-            fwrite($fp, $session_data);
+            ftruncate($this->fp, 0);
+            rewind($this->fp);
+            fwrite($this->fp, $session_data);
+            fflush($this->fp);
+            flock($this->fp, LOCK_UN);
+            fclose($this->fp);
+        } else {
+
+            $filePath = $this->path . '/' . $key;
+
+            if ($this->fp = fopen($filePath, "wb+")) {
+                if (flock($this->fp, LOCK_EX)) {
+                    fwrite($this->fp, $session_data);
+                    fflush($this->fp);
+                    flock($this->fp, LOCK_UN);
+                    fclose($this->fp);
+                }
+            }
         }
-
-        fclose($fp);
 
         return true;
     }

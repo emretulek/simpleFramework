@@ -2,6 +2,7 @@
 
 namespace Core\Model;
 
+use Closure;
 use Core\App;
 use Core\Database\Database;
 use Core\Database\QueryBuilder;
@@ -19,6 +20,12 @@ use Exception;
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::insert()
  * @method static int|array insert(array $columns)
+ * *  -------------------------------------------------------------------------
+ * @see QueryBuilder::multiLineInsert()
+ * @method static array|int multiLineInsert(array $columns, $fraction = 1000)
+ * *  -------------------------------------------------------------------------
+ * @see QueryBuilder::upsert()
+ * @method static array|int upsert(array $columns)
  * *  -------------------------------------------------------------------------
  * @see QueryBuilder::update()
  * @method static int|array|bool update($column, $param = false, bool $force = false)
@@ -71,6 +78,12 @@ use Exception;
  * @see QueryBuilder::cover()
  * @method static QueryBuilder cover($condition, $callback)
  *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::append()
+ * @method static QueryBuilder append(string $raw)
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::prepend()
+ * @method static QueryBuilder prepend(string $raw)
+ *  * -------------------------------------------------------------------------
  * @see QueryBuilder::buildQuery()
  * @method static string buildQuery()
  *  * -------------------------------------------------------------------------
@@ -84,10 +97,22 @@ use Exception;
  * @method static mixed|array|bool find($param)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::last()
- * @method static array|bool last(int $rowCount = 1)
+ * @method static mixed last(int $rowCount = 1)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::first()
- * @method static array|bool first(int $rowCount = 1)
+ * @method static mixed first(int $rowCount = 1)
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::transaction()
+ * @method static bool transaction(Closure $callback)
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::beginTransaction()
+ * @method static void beginTransaction()
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::rollBack()
+ * @method static void rollBack()
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::commit()
+ * @method static void commit()
  * -----------------------------------------------------------------------------
  * @see QueryBuilder::debug()
  * @method static QueryBuilder debug()
@@ -120,7 +145,7 @@ abstract class Model
     {
         if (method_exists(QueryBuilder::class, $methods)) {
 
-            $queryBuilder = self::database()->table(self::static()->table);
+            $queryBuilder = App::getInstance()->resolve(Database::class)->table(self::static()->table);
 
             if (self::static()->table) {
 
@@ -140,18 +165,10 @@ abstract class Model
 
             return $queryBuilder->$methods(...$arguments);
         } else {
-            throw new Exception('Method ' . $methods . ' not found in ' . get_class(self::database()));
+            throw new Exception('Method ' . $methods . ' not found in ' . static::class);
         }
     }
 
-
-    /**
-     * @return Database
-     */
-    public static function database():Database
-    {
-        return App::getInstance()->resolve(Database::class);
-    }
 
     /**
      * @param $message
@@ -159,7 +176,7 @@ abstract class Model
      * @return false
      * @throws ModelException
      */
-    final protected function setError($message, $key = ''):bool
+    final protected function setError($message, string $key = ''):bool
     {
         if ($key) {
             self::$errors[$key] = $message;
@@ -169,7 +186,7 @@ abstract class Model
 
         if(self::$throw){
             self::$throw = false;
-            throw new ModelException($message, E_WARNING);
+            throw new ModelException($message);
         }
 
         return false;

@@ -4,7 +4,7 @@ namespace App\Model;
 
 use Core\Model\Model;
 
-class Home extends Model
+class ModelExample extends Model
 {
 
     protected string $table = 'users';

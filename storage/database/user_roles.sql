@@ -13,18 +13,18 @@
 
 -- Dumping structure for table phpfw.user_roles
 CREATE TABLE IF NOT EXISTS `user_roles` (
-  `roleID` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `role_name` varchar(32) NOT NULL,
-  `role_description` varchar(32) DEFAULT NULL,
-  PRIMARY KEY (`roleID`),
-  UNIQUE KEY `groupName` (`role_name`)
+                                            `roleID` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                                            `role_name` varchar(32) NOT NULL,
+                                            `role_description` varchar(32) DEFAULT NULL,
+                                            PRIMARY KEY (`roleID`),
+                                            UNIQUE KEY `groupName` (`role_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 -- Dumping data for table phpfw.user_roles: ~2 rows (approximately)
 /*!40000 ALTER TABLE `user_roles` DISABLE KEYS */;
 INSERT INTO `user_roles` (`roleID`, `role_name`, `role_description`) VALUES
-	(1, 'admin', NULL),
-	(2, 'member', NULL);
+(1, 'admin', NULL),
+(2, 'member', NULL);
 /*!40000 ALTER TABLE `user_roles` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

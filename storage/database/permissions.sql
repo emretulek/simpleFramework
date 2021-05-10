@@ -13,18 +13,18 @@
 
 -- Dumping structure for table phpfw.permissions
 CREATE TABLE IF NOT EXISTS `permissions` (
-  `permissionID` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `perm_name` varchar(32) NOT NULL,
-  `perm_description` varchar(256) DEFAULT NULL,
-  PRIMARY KEY (`permissionID`),
-  UNIQUE KEY `permName` (`perm_name`)
+                                             `permissionID` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                                             `perm_name` varchar(32) NOT NULL,
+                                             `perm_description` varchar(256) DEFAULT NULL,
+                                             PRIMARY KEY (`permissionID`),
+                                             UNIQUE KEY `permName` (`perm_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
--- Dumping data for table phpfw.permissions: ~3 rows (approximately)
+-- Dumping data for table phpfw.permissions: ~2 rows (approximately)
 /*!40000 ALTER TABLE `permissions` DISABLE KEYS */;
 INSERT INTO `permissions` (`permissionID`, `perm_name`, `perm_description`) VALUES
-	(1, 'perm1', 'perm 1 description'),
-	(2, 'perm2', 'perm 2 descript');
+(1, 'perm1', 'perm 1 description'),
+(2, 'perm2', 'perm 2 descript');
 /*!40000 ALTER TABLE `permissions` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

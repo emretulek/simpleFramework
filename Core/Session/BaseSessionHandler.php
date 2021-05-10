@@ -56,7 +56,7 @@ abstract class BaseSessionHandler implements SessionHandlerInterface
         $prefix_id = $this->prefix($id);
         $this->session = $this->get($prefix_id);
 
-        return $this->session;
+        return base64_decode($this->session);
     }
 
     /**
@@ -65,35 +65,15 @@ abstract class BaseSessionHandler implements SessionHandlerInterface
     public function write($id, $data): bool
     {
         $prefix_id = $this->prefix($id);
+        $encodedData = base64_encode($data);
 
-        $lastVersionInStore = $this->get($prefix_id);
-
-        if($this->session === $data){
-            $this->session = $data;
+        if($this->session === $encodedData){
+            return true;
         }
 
-        if($this->session === $lastVersionInStore){
-            return $this->set($prefix_id, $data);
-        }
-
-        return $this->set($prefix_id, $this->resolveConflict($lastVersionInStore, $data));
+        return $this->set($prefix_id, $encodedData);
     }
 
-
-    /**
-     * @param $lastVersionInStore
-     * @param $data
-     * @return string encoded string session data
-     */
-    protected function resolveConflict($lastVersionInStore, $data):string
-    {
-        $decoded_Data = $this->unserialize($data);
-        $decoded_lastVersionInStore = $this->unserialize($lastVersionInStore);
-
-        $noConflict = array_merge($decoded_Data, $decoded_lastVersionInStore);
-
-        return $this->serialize($noConflict);
-    }
 
     /**
      * Session name prefix olarak kullanılacak
@@ -105,34 +85,6 @@ abstract class BaseSessionHandler implements SessionHandlerInterface
         return $this->prefix ? $this->prefix.'_'.$key : $key;
     }
 
-
-    /**
-     * @param $data
-     * @return string
-     */
-    protected function serialize($data): string
-    {
-        $buffer = $_SESSION;
-        $_SESSION = $data;
-        $serialized = session_encode();
-        $_SESSION = $buffer;
-
-        return  $serialized;
-    }
-
-    /**
-     * @param string $data
-     * @return mixed
-     */
-    public function unserialize(string $data)
-    {
-        $buffer = $_SESSION;
-        session_decode($data);
-        $unserialized = $_SESSION;
-        $_SESSION = $buffer;
-
-        return $unserialized;
-    }
 
     /**
      * @param string $key session_id

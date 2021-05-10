@@ -40,7 +40,7 @@ class DataTable {
     {
         $this->request['order'] = $this->request['order'] ?? [];
 
-        foreach ($this->request['order'] as $key => $order){
+        foreach ($this->request['order'] as $order){
 
             if(isset($order['column']) && array_key_exists($order['column'], $columns)){
 
@@ -63,7 +63,7 @@ class DataTable {
         $search = false;
 
         $searchQuery->cover("and", function ($query) use ($columns, $minLength, &$search){
-            foreach ($this->request['columns'] as $key => $column){
+            foreach ($this->request['columns'] as $column){
 
                 if($column['searchable'] == 'true' && array_key_exists($column['data'], $columns)){
 
@@ -83,7 +83,7 @@ class DataTable {
         //arama varsa ve sonuç sayısını değiştirmişse filtrelenmiş veri sayısını alır
         if($search){
             $this->query = clone $searchQuery;
-            $this->response['recordsFiltered'] = $searchQuery->select("Count(1)", true)->getVar();
+            $this->response['recordsFiltered'] = $searchQuery->select("Count(1)", true)->order("")->getVar();
         }
     }
 
@@ -94,7 +94,7 @@ class DataTable {
     protected function recordsTotalQuery():int
     {
         $recordsTotalQuery = clone $this->query;
-        return $recordsTotalQuery->select('Count(1)', true)->getVar();
+        return $recordsTotalQuery->select('Count(1)', true)->order("")->getVar();
     }
 
 

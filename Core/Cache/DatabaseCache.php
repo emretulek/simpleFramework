@@ -176,7 +176,7 @@ class DatabaseCache extends BaseCache
     public function setMultiple(array $items, $ttl = null): bool
     {
         try {
-            $this->database->transaction();
+            $this->database->beginTransaction();
             foreach ($items as $key => $item) {
                 $this->set($key, $item, $ttl);
             }
@@ -196,7 +196,7 @@ class DatabaseCache extends BaseCache
     public function deleteMultiple(array $keys): bool
     {
         try {
-            $this->database->transaction();
+            $this->database->beginTransaction();
             foreach ($keys as $key) {
                 $this->delete($key);
             }

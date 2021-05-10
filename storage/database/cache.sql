@@ -13,18 +13,16 @@
 
 -- Dumping structure for table phpfw.cache
 CREATE TABLE IF NOT EXISTS `cache` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `key` varchar(32) NOT NULL,
-  `value` mediumblob,
-  `expires` bigint(20) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `key` (`key`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+                                       `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+                                       `key` varchar(32) NOT NULL,
+                                       `value` mediumblob,
+                                       `expires` bigint(20) NOT NULL DEFAULT '0',
+                                       PRIMARY KEY (`id`),
+                                       UNIQUE KEY `key` (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Dumping data for table phpfw.cache: ~1 rows (approximately)
+-- Dumping data for table phpfw.cache: ~0 rows (approximately)
 /*!40000 ALTER TABLE `cache` DISABLE KEYS */;
-INSERT INTO `cache` (`id`, `key`, `value`, `expires`) VALUES
-	(1, 'test', _binary 0x733A31303A22746573742076616C7565223B, 2607872728);
 /*!40000 ALTER TABLE `cache` ENABLE KEYS */;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

@@ -11,7 +11,6 @@ use Core\Http\Request;
 use ArgumentCountError;
 use Closure;
 use Core\Http\Response;
-use Core\Model\ModelException;
 use Core\Reflection\Reflection;
 use Core\View\View;
 use Exception;
@@ -375,7 +374,7 @@ class Router
             return call_user_func_array([new $controller, $method], $classRefParameters);
 
         } catch (ArgumentCountError | TypeError $e) {
-            throw new BadRequestHttpException($e->getMessage(), [],E_NOTICE, $e);
+            throw new BadRequestHttpException("Bad Request", [],E_NOTICE, $e);
         } catch (ReflectionException $e) {
             throw new NotFoundHttpException($e->getMessage(), [],E_NOTICE, $e);
         }
@@ -446,7 +445,7 @@ class Router
         }catch (HttpException $e) {
             $this->app->debug($e);
             self::errors($e);
-        } catch (ModelException | Exception $e) {
+        } catch (Exception $e) {
             $this->app->debug($e);
         }
     }
@@ -456,7 +455,7 @@ class Router
      * @param callable $callback
      * @param $args
      * @return Response|View|null
-     * @throws NotFoundHttpException|ModelException
+     * @throws NotFoundHttpException
      */
     private function startCallback(callable $callback, $args)
     {
@@ -475,7 +474,7 @@ class Router
      * @param $route
      * @param $matches
      * @return mixed
-     * @throws NotFoundHttpException|BadRequestHttpException|ModelException
+     * @throws NotFoundHttpException|BadRequestHttpException
      */
     private function startController($route, $matches)
     {
@@ -557,7 +556,7 @@ class Router
     private function setMethod($methodName)
     {
         $methodName = preg_replace('/[^\w\d]{1,256}/u', '', $methodName);
-        $this->method = $methodName ? $methodName : $this->method;
+        $this->method = $methodName ?: $this->method;
     }
 
     /**
@@ -683,10 +682,19 @@ class Router
 
         if (empty($this->errors[$statusCode])) {
             $this->errors[$statusCode] = function ($statusCode, $errorMessage) use ($errorFile) {
+
+                if($statusCode >= 500){
+                    ob_get_clean();
+                }
+
                 if(is_readable_file($errorFile)) {
                     $this->view()->path('errors/' . $statusCode, ['message' => $errorMessage])->render($statusCode);
                 }else{
                     $this->view()->response($statusCode)->content($errorMessage)->send();
+                }
+
+                if($statusCode >= 500){
+                    exit;
                 }
             };
         }

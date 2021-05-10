@@ -2,6 +2,7 @@
 
 namespace Core\Facades;
 
+use Closure;
 use Core\Database\Database;
 use Core\Database\QueryBuilder;
 use PDO;
@@ -40,7 +41,10 @@ use PDOStatement;
  * @method static bool|int delete(string $query, array $bindings = null)
  * --------------------------------------------------------------------------------------------
  * @see Database::transaction()
- * @method static void transaction()
+ * @method static mixed transaction(Closure $callback, int $attempts = 1)
+ * --------------------------------------------------------------------------------------------
+ * @see Database::beginTransaction()
+ * @method static mixed beginTransaction()
  * --------------------------------------------------------------------------------------------
  * @see Database::close()
  * @method static void close()

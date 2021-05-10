@@ -238,11 +238,12 @@ class ExceptionHandler
     }
 
 
+    /**
+     * Router errors
+     */
     private function InternalServerError()
     {
-        ob_end_clean();
         App::getInstance()->resolve(Router::class)
             ->errors(new InternalServerErrorHttpException());
-        exit;
     }
 }

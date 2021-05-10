@@ -2,6 +2,8 @@
 
 namespace Core\Database;
 
+use Closure;
+use Exception;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -11,6 +13,7 @@ class Database
     private PDO $pdo;
     private PDOStatement $stm;
     private ConnectionInterface $connection;
+    private int $transectionCount = 0;
     public array $config;
 
 
@@ -188,11 +191,48 @@ class Database
     }
 
     /**
+     * @param Closure $callback
+     * @param int $attempts
+     * @return mixed
+     * @throws Exception
+     */
+    public function transaction(Closure $callback, int $attempts = 5)
+    {
+        for($i = 1; $i <= $attempts; $i++) {
+
+            $this->beginTransaction();
+
+            try {
+                $result = $callback();
+                $this->commit();
+                return $result;
+            } catch (Exception $e) {
+
+                if($this->stm->errorInfo()[0] == 40001){
+                    $this->rollBack();
+                    usleep(10);
+                    continue;
+                }
+
+                throw $e;
+            }
+        }
+
+        throw new SqlErrorException("$attempts kez denendi ama deadlock çözülemedi.", E_WARNING);
+    }
+
+    /**
      * PDO::beginTransaction()
      */
-    public function transaction()
+    public function beginTransaction()
     {
-        $this->pdo->beginTransaction();
+        if($this->transectionCount > 0){
+            $this->pdo->exec("SAVEPOINT LEVEL{$this->transectionCount}");
+        }else{
+            $this->pdo->beginTransaction();
+        }
+
+        $this->transectionCount++;
     }
 
     /**
@@ -200,7 +240,13 @@ class Database
      */
     public function commit()
     {
-        $this->pdo->commit();
+        $this->transectionCount--;
+
+        if($this->transectionCount > 0) {
+            $this->pdo->exec("RELEASE SAVEPOINT LEVEL{$this->transectionCount}");
+        }else{
+            $this->pdo->commit();
+        }
     }
 
     /**
@@ -208,7 +254,13 @@ class Database
      */
     public function rollBack()
     {
-        $this->pdo->rollBack();
+        $this->transectionCount--;
+
+        if($this->transectionCount > 0) {
+            $this->pdo->exec("ROLLBACK TO SAVEPOINT LEVEL{$this->transectionCount}");
+        }else{
+            $this->pdo->rollBack();
+        }
     }
 
     /**

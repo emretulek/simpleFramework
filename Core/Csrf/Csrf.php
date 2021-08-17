@@ -12,7 +12,7 @@ class Csrf
     private App $app;
 
     //default 5dk
-    private int $tokenTimeout = 60 * 5;
+    private int $tokenTimeout = 60 * 60;
 
     public function __construct(App $app)
     {

@@ -352,7 +352,9 @@ class Era
             return $this->locale;
         }
 
-        setlocale(LC_TIME, $this->locale = strtolower($locale));
+        if(setlocale(LC_TIME, $locale)) {
+            $this->locale = $locale;
+        }
 
         return $this;
     }
@@ -765,9 +767,10 @@ class Era
      */
     private function humanPlaceholder(string $key, int $unit, int $invert, bool $short): string
     {
-        $placeholder = ':empty';
+        $placeholder = ':ph-empty';
         $locale = strstr($this->locale, '.', true);
         $locale = $locale ?: $this->locale;
+        $locale = strtolower($locale);
 
         if ($short == false) {
             $placeholder = $invert ? ':ph-after' : ':ph-before';

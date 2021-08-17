@@ -79,7 +79,7 @@ class Hash
     public function passwordCheck(string $password, string $hashedPassword)
     {
         if ($this->password_hash === true) {
-            if ($hashedPassword = password_verify($password, $hashedPassword)) {
+            if (password_verify($password, $hashedPassword)) {
                 return $this->passwordRehash($password, $hashedPassword);
             }
         } else {
@@ -104,7 +104,6 @@ class Hash
         if (password_needs_rehash($hashedPassword, PASSWORD_BCRYPT)) {
             return password_hash($password, PASSWORD_BCRYPT);
         }
-
         return $hashedPassword;
     }
 }

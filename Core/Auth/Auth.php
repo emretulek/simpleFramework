@@ -11,6 +11,8 @@ use Core\Database\QueryBuilder;
 use Core\Database\SqlErrorException;
 use Core\Http\Request;
 use Core\Session\Session;
+use DateInterval;
+use Core\Era\Era;
 
 
 /**
@@ -25,6 +27,8 @@ class Auth
     protected string $table = 'users';
 
     protected string $tokenName = 'user_token';
+
+    protected bool $multiDevice = true;
 
     protected ?object $user = null;
 
@@ -41,10 +45,11 @@ class Auth
         'password'
     ];
 
+    use Attempt;
 
     /**
-     * Auth constructor.
      * @param App $app
+     * @throws SqlErrorException
      */
     public function __construct(App $app)
     {
@@ -52,21 +57,27 @@ class Auth
 
         $this->table = $this->app->config['auth']['table'] ?? $this->table;
         $this->tokenName = $this->app->config['auth']['token_name'] ?? $this->tokenName;
+        $this->multiDevice = $this->app->config['auth']['multi_device'] ?? $this->tokenName;
         $this->userWhere = $this->app->config['auth']['user_where'] ?? $this->userWhere;
         $this->sessionNotStored = $this->app->config['auth']['session_not_stored'] ?? $this->sessionNotStored;
 
+        $this->attempt = $this->app->config['auth']['login_attempt'] ?? $this->attempt;
+        $this->attemptMax = $this->app->config['auth']['login_attempt_max'] ?? $this->attemptMax;
+        $this->attemptTimeout = $this->app->config['auth']['login_attempt_timeout'] ?? $this->attemptTimeout;
+
         if ($this->check()) {
-            $this->user = $this->table()->select()->where('userID', $this->userID())->getRow();
-            $this->generateUserSessions();
+            $user = $this->table()->select()->where('userID', $this->userID())->getRow();
+            $this->generateUserSessions($user);
         }
     }
 
     /**
      * @param string $password
      * @param string $userName
-     * @param int $remember
+     * @param int|DateInterval|Era $remember
      * @param array $where
      * @return bool
+     * @throws AuthError
      */
     public function loginWithUserName(string $password, string $userName, $remember = 0, array $where = []): bool
     {
@@ -79,9 +90,10 @@ class Auth
     /**
      * @param string $password
      * @param string $email
-     * @param int $remember
+     * @param int|DateInterval|Era $remember
      * @param array $where
      * @return bool
+     * @throws AuthError
      */
     public function loginWithEmail(string $password, string $email, $remember = 0, array $where = []): bool
     {
@@ -94,9 +106,10 @@ class Auth
     /**
      * @param string $password
      * @param string $userNameOrEmail
-     * @param int $remember
+     * @param int|DateInterval|Era $remember
      * @param array $where
      * @return bool
+     * @throws AuthError
      */
     public function loginWithEmailOrUserName(string $password, string $userNameOrEmail, $remember = 0, array $where = []): bool
     {
@@ -109,59 +122,54 @@ class Auth
 
 
     /**
-     * @param $password
-     * @param $userInfo
-     * @param int $remember
+     * @param string $password
+     * @param array $userInfo
+     * @param int|DateInterval|Era $remember
      * @return bool
+     * @throws AuthError
      * @throws SqlErrorException
      */
-    public function login($password = null, $userInfo = [], $remember = 0): bool
+    public function login(string $password, array $userInfo = [], $remember = 0):bool
     {
-        if ($password) {
-            $result = $this->setUserForPassword($password, $userInfo);
-        } elseif (isset($userInfo['rememberme'])) {
-            $result = $this->setUserForToken($userInfo);
-        }else{
-            $result = false;
+        $user = $this->findUserWithPassword($password, $userInfo);
+
+        $this->generateUserSessions($user);
+
+        if ($remember) {
+            $token = $this->createToken($user);
+            $this->creatRememberCookie($token, $remember);
+            $this->table()
+                ->where('userID', $user->userID)
+                ->update(['rememberme' => $token]);
         }
 
-        if ($result) {
-            $this->generateUserSessions();
+        $this->table()->where('userID', $user->userID)->update([
+            'session_id' => session_id(),
+            'last_login' => Era::now(),
+            'ip' => $this->request()->ip()
+        ]);
 
-            if ($remember) {
-                $token = $this->creatToken();
-                $this->creatRememberCookie($token, $remember);
-                $this->table()
-                    ->where('userID', $this->user->userID)
-                    ->update(['rememberme' => $token]);
-            }
-
-            $this->table()->where('userID', $this->user->userID)->update([
-                    'session_id' => session_id(),
-                    'last_login' => '{{NOW()}}',
-                    'ip' => $this->request()->ip()
-                ]);
-        }
-
-        return $result;
+        return true;
     }
 
 
     /**
-     * kullanıcı sessionb ilgilerini oluşturur
+     * Kullanıcı session bilgilerini oluşturur
+     * @param $user
      */
-    protected function generateUserSessions()
+    public function generateUserSessions($user)
     {
+        $this->user = $user;
         $this->authSession('LOGIN', true);
-        $this->authSession('id', $this->user->userID);
-        $this->authSession('username', $this->user->username);
-        $this->authSession('email', $this->user->email);
-        $this->authSession('roleID', $this->user->roleID);
-        $this->authSession('permissions', $this->userPermissions());
-        $this->authSession($this->tokenName, $this->creatToken());
+        $this->authSession('id', $user->userID);
+        $this->authSession('username', $user->username);
+        $this->authSession('email', $user->email);
+        $this->authSession('roleID', $user->roleID);
+        $this->authSession('permissions', $this->userPermissions($user->roleID));
+        $this->authSession($this->tokenName, $this->createToken($user));
         $this->authSession('ip', $this->request()->ip());
 
-        foreach ($this->user as $key => $value) {
+        foreach ($user as $key => $value) {
             if (!in_array($key, $this->sessionNotStored)) {
                 $this->authSession($key, $value);
             }
@@ -173,11 +181,11 @@ class Auth
      * Password ile login olacak kullanıcı bilgileri
      * @param string $password
      * @param array $userInfo
-     * @return bool
-     * @throws SqlErrorException
+     * @return array|mixed|string|string[]|null
      * @throws AuthError
+     * @throws SqlErrorException
      */
-    protected function setUserForPassword(string $password, array $userInfo): bool
+    protected function findUserWithPassword(string $password, array $userInfo)
     {
         $userInfo = array_merge($this->userWhere, $userInfo);
 
@@ -186,8 +194,15 @@ class Auth
         if (!$user = $query->where($userInfo)->getRow()) {
             throw new AuthError(AuthError::USER_NOT_FOUND);
         }
+
+        //login attempt
+        if($this->checkAttempt($user->email)){
+            throw new AuthError(AuthError::TOOMANYATTEMPTS);
+        }
+
         //şifre kontrolü
         if (!$rehash = $this->app->resolve(Hash::class)->passwordCheck($password, $user->password)) {
+            $this->setAttempt($user->email);
             throw new AuthError(AuthError::PASSWORD_MISMATCH);
         }
 
@@ -196,43 +211,44 @@ class Auth
             $this->table()->where('userID', $user->userID)->update(['password', $rehash]);
         }
 
-        $this->user = $user;
-        return true;
+        $this->clearAttempt($user->email);
+
+        return $user;
     }
 
     /**
      * Token ile login olacak kullanıcı bilgileri
      * @param array $userInfo
-     * @return bool
+     * @return array|mixed|string|string[]
      * @throws SqlErrorException
      */
-    protected function setUserForToken(array $userInfo):bool
+    protected function findUser(array $userInfo)
     {
         $userInfo = array_merge($this->userWhere, $userInfo);
 
         $query = $this->table()->select();
 
-        if ($user = $query->where($userInfo)->getRow()) {
-            $this->user = $user;
-            /* Session hijacking  security */
-            if($this->creatToken() === $this->user->rememberme){
-                return true;
-            }
-        }
-
-        return false;
+        return $query->where($userInfo)->getRow();
     }
 
 
     /**
-     * @return array|false|mixed|object
+     * @return false
      * @throws SqlErrorException
      */
     public function rememberMe()
     {
-        if ($this->cookie()->get($this->tokenName) && !$this->check()) {
+        $remembermeToken = $this->cookie()->get($this->tokenName);
 
-            return $this->login(null, ['rememberme' => $this->cookie()->get($this->tokenName)]);
+        if (!$this->check() && $remembermeToken) {
+
+            if ($user = $this->findUser(['rememberme' => $remembermeToken])) {
+
+                if ($this->createToken($user) === $user->rememberme) {
+                    $this->generateUserSessions($user);
+                    return true;
+                }
+            }
         }
 
         return false;
@@ -245,7 +261,7 @@ class Auth
      */
     public function check(): bool
     {
-        return (bool) $this->authSession('LOGIN');
+        return (bool)$this->authSession('LOGIN');
     }
 
     /**
@@ -358,7 +374,7 @@ class Auth
     /**
      * Beni hatırla seçeneği için cookie oluşturur.
      * @param string $token
-     * @param int|string $lifetime strtottime veya int saniye
+     * @param int|DateInterval|Era $lifetime strtottime veya int saniye
      */
     protected function creatRememberCookie(string $token, $lifetime)
     {
@@ -368,11 +384,18 @@ class Auth
 
     /**
      * Cookie doğrulaması useragent ile token oluşturur.
+     * @param $user
      * @return string
      */
-    protected function creatToken(): string
+    protected function createToken($user): string
     {
-        return md5($this->user->userID . $this->user->password . $this->app->resolve(Request::class)->userAgent());
+        $tokenString = $user->userID . $user->email . $user->password;
+
+        if ($this->multiDevice === false) {
+            $tokenString .= $this->request()->userAgent();
+        }
+
+        return $this->app->resolve(Hash::class)->makeWithKey($tokenString);
     }
 
 
@@ -380,15 +403,15 @@ class Auth
      * Gruba ait izin ve bilgileri döndürür
      * @return array [groupID, groupName, permissions]
      */
-    protected function userPermissions()
+    protected function userPermissions($roleID)
     {
-        $permissions['roleID'] = $this->user->roleID;
-        $permissions['role_name'] = $this->getRoleName();
+        $permissions['roleID'] = $roleID;
+        $permissions['role_name'] = $this->getRoleName($roleID);
         $permissions['permissions'] = [];
 
         $rolePerms = $this->app->resolve(Database::class)->table('role_permissions rp')
             ->join('permissions p', 'rp.permissionID = p.permissionID')
-            ->select('p.permissionID, p.perm_name')->where('rp.roleID', $this->user->roleID)->get();
+            ->select('p.permissionID, p.perm_name')->where('rp.roleID', $roleID)->get();
 
         foreach ($rolePerms as $rolePerm) {
             $permissions['permissions'][$rolePerm->permissionID] = $rolePerm->perm_name;
@@ -402,14 +425,13 @@ class Auth
      * @return mixed
      * @throws SqlErrorException
      */
-    protected function getRoleName()
+    protected function getRoleName($roleID)
     {
         return $this->app->resolve(Database::class)->table("user_roles")
             ->select('role_name')
-            ->where('roleID', $this->user->roleID)
+            ->where('roleID', $roleID)
             ->getVar();
     }
-
 
 
     /**
@@ -424,7 +446,7 @@ class Auth
     /**
      * @return Session
      */
-    protected function session():Session
+    protected function session(): Session
     {
         return $this->app->resolve(Session::class);
     }
@@ -432,7 +454,7 @@ class Auth
     /**
      * @return Cookie
      */
-    protected function cookie():Cookie
+    protected function cookie(): Cookie
     {
         return $this->app->resolve(Cookie::class);
     }
@@ -440,7 +462,7 @@ class Auth
     /**
      * @return Request
      */
-    protected function request():Request
+    protected function request(): Request
     {
         return $this->app->resolve(Request::class);
     }

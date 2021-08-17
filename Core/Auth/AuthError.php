@@ -17,4 +17,9 @@ class AuthError extends Exception
      * @const Şifre Eşleşmedi
      */
     const PASSWORD_MISMATCH = 2;
+
+    /**
+     * @const Çok fazla hatalı deneme
+     */
+    const TOOMANYATTEMPTS = 3;
 }

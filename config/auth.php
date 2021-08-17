@@ -11,6 +11,6 @@ return [
         'password'
     ],
     'login_attempt' => true,
-    'login_attempt_max' => 10,
+    'login_attempt_max' => 3,
     'login_attempt_timeout' => 60
 ];

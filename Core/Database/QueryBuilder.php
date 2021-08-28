@@ -12,7 +12,7 @@ class QueryBuilder
     protected Database $database;
     protected array $params = [];
     protected string $table = '';
-    protected string $select = '';
+    protected string $select = '*';
     protected string $insert = '';
     protected string $update = '';
     protected bool $delete = false;
@@ -76,7 +76,7 @@ class QueryBuilder
     {
         $select = $this->quoteColumn($select);
 
-        if ($overwrite) {
+        if ($overwrite || $this->select == $select || $this->select == "*") {
             $this->select = $select;
         } else {
             $this->select .= $this->select ? ', ' . $select : $select;
@@ -90,24 +90,24 @@ class QueryBuilder
      * @param $column
      * @param mixed $operant
      * @param mixed $param
-     * @param string $connective
+     * @param string $andOR
      * @return $this
      */
-    public function where($column, $operant = '=', $param = false, string $connective = 'AND'): self
+    public function where($column, $operant = '=', $param = false, string $andOR = 'AND'): self
     {
         if (is_array($column)) {
 
             foreach ($column as $key => $val) {
                 $query = $this->comparison($key, $operant, $val);
-                $this->where .= $this->where ? " $connective " . $query : ' WHERE ' . $query;
+                $this->where .= $this->where ? " $andOR " . $query : ' WHERE ' . $query;
             }
 
         } elseif ($param === false) {
             $query = $this->comparison($column, '=', $operant);
-            $this->where .= $this->where ? " $connective " . $query : ' WHERE ' . $query;
+            $this->where .= $this->where ? " $andOR " . $query : ' WHERE ' . $query;
         } else {
             $query = $this->comparison($column, $operant, $param);
-            $this->where .= $this->where ? " $connective " . $query : ' WHERE ' . $query;
+            $this->where .= $this->where ? " $andOR " . $query : ' WHERE ' . $query;
         }
 
         return $this;
@@ -130,12 +130,158 @@ class QueryBuilder
 
     /**
      * @param string $column
+     * @param $param1
+     * @param $param2
+     * @param string $andOR
+     * @return $this
+     */
+    public function between(string $column, $param1, $param2, string $andOR = 'AND'): self
+    {
+        if($rawParam1 = $this->paramToRaw($param1)){
+            $param1 = $rawParam1;
+        }
+
+        if($rawParam2 = $this->paramToRaw($param2)){
+            $param2 = $rawParam2;
+        }
+
+        $this->where .= $this->where
+            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' BETWEEN ' . $param1 . ' AND ' . $param2
+            : ' WHERE ' . $this->quoteColumn($column) . ' BETWEEN ' . $param1 . ' AND ' . $param2;
+
+        return $this;
+    }
+
+
+    /**
+     * @param string $column
+     * @param $param1
+     * @param $param2
+     * @param string $andOR
+     * @return $this
+     */
+    public function notBetween(string $column, $param1, $param2, string $andOR = 'AND'): self
+    {
+        if($rawParam1 = $this->paramToRaw($param1)){
+            $param1 = $rawParam1;
+        }
+
+        if($rawParam2 = $this->paramToRaw($param2)){
+            $param2 = $rawParam2;
+        }
+
+        $this->where .= $this->where
+            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' NOT BETWEEN ' . $param1 . ' AND ' . $param2
+            : ' WHERE ' . $this->quoteColumn($column) . ' NOT BETWEEN ' . $param1 . ' AND ' . $param2;
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     * @param array $params
+     * @param string $andOR
+     * @return $this
+     */
+    public function in(string $column, array $params, string $andOR = 'AND'): self
+    {
+        $paramFiltered = array_map(function ($item){
+
+            if($item === null){
+                return 'null';
+            }
+
+            if($rawParam = $this->paramToRaw($item)){
+                return $rawParam;
+            }
+
+            if(is_string($item)){
+                return "'$item'";
+            }
+
+            return $item;
+
+        }, $params);
+
+        $this->where .= $this->where
+            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IN (' .implode(',', $paramFiltered). ')'
+            : ' WHERE ' . $this->quoteColumn($column) . ' IN (' .implode(',', $paramFiltered). ') ';
+
+        return $this;
+    }
+
+
+    /**
+     * @param string $column
+     * @param array $params
+     * @param string $andOR
+     * @return $this
+     */
+    public function notIn(string $column, array $params, string $andOR = 'AND'): self
+    {
+        $paramFiltered = array_map(function ($item){
+
+            if($item === null){
+                return 'null';
+            }
+
+            if($rawParam = $this->paramToRaw($item)){
+                return $rawParam;
+            }
+
+            if(is_string($item)){
+                return "'$item'";
+            }
+
+            return $item;
+
+        }, $params);
+
+        $this->where .= $this->where
+            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' NOT IN (' .implode(',', $paramFiltered). ')'
+            : ' WHERE ' . $this->quoteColumn($column) . ' NOT IN (' .implode(',', $paramFiltered). ') ';
+
+        return $this;
+    }
+
+    /**
+     * @param string $query
+     * @param string $andOR
+     * @return $this
+     */
+    public function exists(string $query, string $andOR = 'AND'):self
+    {
+        $this->where .= $this->where
+            ? ' ' . $andOR . ' EXISTS (' .$query. ')'
+            : ' WHERE EXISTS (' .$query. ') ';
+
+        return $this;
+    }
+
+    /**
+     * @param string $query
+     * @param string $andOR
+     * @return $this
+     */
+    public function notExists(string $query, string $andOR = 'AND'):self
+    {
+        $this->where .= $this->where
+            ? ' ' . $andOR . ' NOT EXISTS (' .$query. ')'
+            : ' WHERE NOT EXISTS (' .$query. ') ';
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
      * @param string $andOR
      * @return $this
      */
     public function isNull(string $column, string $andOR = 'AND'): self
     {
-        $this->where .= $this->where ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IS NULL ' : ' WHERE ' . $column . ' IS NULL ';
+        $this->where .= $this->where
+            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IS NULL '
+            : ' WHERE ' . $this->quoteColumn($column) . ' IS NULL ';
 
         return $this;
     }
@@ -148,7 +294,9 @@ class QueryBuilder
      */
     public function isNotNull(string $column, string $andOR = 'AND'): self
     {
-        $this->where .= $this->where ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IS NOT NULL ' : ' WHERE ' . $column . ' IS NOT NULL ';
+        $this->where .= $this->where
+            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IS NOT NULL '
+            : ' WHERE ' . $this->quoteColumn($column) . ' IS NOT NULL ';
 
         return $this;
     }
@@ -176,7 +324,7 @@ class QueryBuilder
     {
         $this->group .= $this->group ?
             ', ' . $this->quoteColumn($column) :
-            ' GROUP BY ' . $column;
+            ' GROUP BY ' . $this->quoteColumn($column);
 
         return $this;
     }
@@ -210,24 +358,24 @@ class QueryBuilder
      * @param $column
      * @param mixed $operant
      * @param mixed $param
-     * @param string $connective
+     * @param string $andOr
      * @return $this
      */
-    public function having($column, $operant = '=', $param = false, string $connective = 'AND'): self
+    public function having($column, $operant = '=', $param = false, string $andOr = 'AND'): self
     {
         if (is_array($column)) {
 
             foreach ($column as $key => $val) {
                 $query = $this->comparison($key, $operant, $val);
-                $this->having .= $this->having ? " $connective " . $query : ' WHERE ' . $query;
+                $this->having .= $this->having ? " $andOr " . $query : ' HAVING ' . $query;
             }
 
         } elseif ($param === false) {
             $query = $this->comparison($column, '=', $operant);
-            $this->having .= $this->having ? " $connective " . $query : ' WHERE ' . $query;
+            $this->having .= $this->having ? " $andOr " . $query : ' HAVING ' . $query;
         } else {
             $query = $this->comparison($column, $operant, $param);
-            $this->having .= $this->having ? " $connective " . $query : ' WHERE ' . $query;
+            $this->having .= $this->having ? " $andOr " . $query : ' HAVING ' . $query;
         }
 
         return $this;
@@ -376,11 +524,8 @@ class QueryBuilder
             }
 
             return $this->prepend . 'DELETE FROM ' . $this->table . $this->join . $this->where . $this->group . $this->having . $this->order . $this->limit . $this->append;
-        } elseif ($this->select) {
-
-            return $this->prepend . 'SELECT ' . $this->select . ' FROM ' . $this->table . $this->join . $this->where . $this->group . $this->having . $this->order . $this->limit . $this->append;
         } else {
-            throw new SqlErrorException("[select, insert, update, delete] deyimlerinden en az birini kullanmalısınız.");
+            return $this->prepend . 'SELECT ' . $this->select . ' FROM ' . $this->table . $this->join . $this->where . $this->group . $this->having . $this->order . $this->limit . $this->append;
         }
     }
 
@@ -449,8 +594,8 @@ class QueryBuilder
      */
     protected function comparison(string $column, string $operant, $param, bool $isNull = true): string
     {
-        if (preg_match("/^{{(.+)}}$/", $param, $matches)) {
-            $query = $this->quoteColumn($column) . ' ' . $operant . ' ' . $matches[1];
+        if ($rawParam = $this->paramToRaw($param)) {
+            $query = $this->quoteColumn($column) . ' ' . $operant . ' ' . $rawParam;
         } else {
             if ($param === null && $isNull === true) {
                 if ($operant == '=') {
@@ -479,6 +624,20 @@ class QueryBuilder
         }
 
         return $column;
+    }
+
+
+    /**
+     * @param $param
+     * @return mixed|null
+     */
+    protected function paramToRaw($param)
+    {
+        if (preg_match("/^{{(.+)}}$/", $param, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
     }
 
 
@@ -726,11 +885,7 @@ class QueryBuilder
             throw new Exception(__FUNCTION__ . " methodu pk değeri atanmadan kullanılamaz.");
         }
 
-        if(!$this->select){
-            $this->select();
-        }
-
-        return $this->select()->where($this->pk, $param)->getRow();
+        return $this->where($this->pk, $param)->getRow();
     }
 
     /**
@@ -743,10 +898,6 @@ class QueryBuilder
     {
         if (!$this->pk) {
             throw new Exception(__FUNCTION__ . " methodu pk değeri atanmadan kullanılamaz.");
-        }
-
-        if(!$this->select){
-            $this->select();
         }
 
         if ($rowCount == 1) {
@@ -768,15 +919,11 @@ class QueryBuilder
             throw new Exception(__FUNCTION__ . " methodu pk değeri atanmadan kullanılamaz.");
         }
 
-        if(!$this->select){
-            $this->select();
-        }
-
         if ($rowCount == 1) {
-            return $this->select()->order($this->pk)->limit($rowCount)->getRow();
+            return $this->order($this->pk)->limit($rowCount)->getRow();
         }
 
-        return $this->select()->order($this->pk)->limit($rowCount)->get();
+        return $this->order($this->pk)->limit($rowCount)->get();
     }
 
     /**

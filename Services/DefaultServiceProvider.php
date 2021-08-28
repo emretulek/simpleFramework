@@ -6,6 +6,7 @@ use Core\Model\Settings;
 use Config;
 use Core\Services\ServiceProvider;
 use Csrf;
+use Language;
 
 class DefaultServiceProvider extends ServiceProvider
 {
@@ -17,8 +18,14 @@ class DefaultServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        Csrf::generateToken();
-        $this->loadSettingsFromDatabase();
+        //csrf open
+        //Csrf::generateToken();
+
+        //load site settings
+        //$this->loadSettingsFromDatabase();
+
+        //load other languages
+        //$this->loadLanguages();
     }
 
     /**
@@ -31,5 +38,11 @@ class DefaultServiceProvider extends ServiceProvider
         foreach ($settings as $setting){
             Config::set('settings.'.$setting->name, $setting->value);
         }
+    }
+
+    protected function loadLanguages()
+    {
+        //kullanılabilir diller arasına ingilizce ekleniyor
+        Language::add('en', 'English', 'EN_us');
     }
 }

@@ -9,13 +9,13 @@
 
 return [
     'files' => [
-        //uygulama başlatılmadan önce yüklenecek dosyalar
+        #uygulama başlatılmadan önce yüklenecek dosyalar
     ],
     'aliases' => [
-        //static class alies
+        #static class alies
         'valid' => Core\Validation\Valid::class,
         'era' => \Core\Era\Era::class,
-        //facade alias
+        #facade alias
         'config' => Core\Facades\Config::class,
         'router' => Core\Facades\Router::class,
         'request' => Core\Facades\Request::class,
@@ -30,12 +30,20 @@ return [
         'logger' => Core\Facades\Logger::class,
         'hash' => \Core\Facades\Hash::class,
         'csrf' => \Core\Facades\Csrf::class,
-        //helper alies
+        #helper alies
         'tag' => Helpers\Html\Tag::class,
         'meta' => Helpers\Html\Meta::class,
         'html' => Helpers\Html\Html::class,
     ],
     'services' => [
+        #basic service providers
+        Core\Cookie\CookieServiceProvider::class,
+        Core\Session\SessionServiceProvider::class,
+        Core\Auth\AuthServiceProvider::class,
+        //Core\Csrf\CsrfServiceProvider::class,
+        //Core\Language\LanguageServiceProvider::class,
+
+        #Custom serverproviders
         //Services\DefaultServiceProvider::class => Services\DefaultServiceProvider::class,
         //Services\LanguageService::class => Services\LanguageService::class,
     ],

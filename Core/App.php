@@ -3,25 +3,20 @@
 namespace Core;
 
 use Closure;
-use Core\Auth\AuthServiceProvider;
 use Core\Cache\CacheServiceProvider;
 use Core\Config\ConfigServiceProvider;
 use Core\Config\LoadConfigFiles;
-use Core\Cookie\CookieServiceProvider;
 use Core\Crypt\CryptServiceProvider;
-use Core\Csrf\CsrfServiceProvider;
 use Core\Database\DatabaseServiceProvider;
 use Core\Era\EraServiceProvider;
 use Core\Exceptions\ExceptionHandler;
 use Core\Facades\Facade;
 use Core\Hook\HookServiceProvider;
 use Core\Http\HttpServiceProvider;
-use Core\Language\LanguageServiceProvider;
 use Core\Log\LoggerServiceProvider;
 use Core\Router\Router;
 use Core\Router\RouterServiceProvider;
 use Core\Services\ServiceProvider;
-use Core\Session\SessionServiceProvider;
 use Core\Validation\FilterServiceProvider;
 use Core\View\ViewServiceProvider;
 use Exception;
@@ -34,7 +29,7 @@ class App
     /**
      * semantic version
      */
-    const VERSION = "3.5.3";
+    const VERSION = "3.5.4";
 
     /**
      * @var static
@@ -79,13 +74,8 @@ class App
         CryptServiceProvider::class,
         HttpServiceProvider::class,
         DatabaseServiceProvider::class,
-        CookieServiceProvider::class,
-        SessionServiceProvider::class,
-        LanguageServiceProvider::class,
         CacheServiceProvider::class,
         FilterServiceProvider::class,
-        CsrfServiceProvider::class,
-        AuthServiceProvider::class,
         LoggerServiceProvider::class,
         HookServiceProvider::class,
         ViewServiceProvider::class,
@@ -301,7 +291,7 @@ class App
      */
     protected function loadAlias(array $aliases)
     {
-        $this->aliases += $aliases;
+        $this->aliases = array_merge($this->aliases, $aliases);
 
         foreach ($this->aliases as $alias => $orginal) {
 
@@ -315,7 +305,7 @@ class App
      */
     protected function loadFiles(array $files)
     {
-        $this->files += $files;
+        $this->files = array_merge($this->files, $files);
 
         foreach ($this->files as $file) {
 
@@ -330,7 +320,7 @@ class App
      */
     protected function registerProviders(array $providers)
     {
-        $this->providers += $providers;
+        $this->providers = array_merge($this->providers, $providers);
 
         foreach ($this->providers as $service) {
 
@@ -374,7 +364,7 @@ class App
      */
     protected function loadRoutes(array $routes)
     {
-        $this->routes += $routes;
+        $this->routes = array_merge($this->routes, $routes);
 
         foreach ($this->routes as $route) {
             if (is_file($route)) {

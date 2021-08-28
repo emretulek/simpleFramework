@@ -441,7 +441,8 @@ if (!function_exists('url')) {
         }
 
         //dil desteği aktifse url yapısını ona göre oluştur
-        if ($prefix = language()->getRoutePrefix()) {
+        if (app()->isBinding(Language::class)) {
+            $prefix = language()->getRoutePrefix();
             if (language()->getDefault() != $prefix) {
                 return baseUrl($prefix . '/' . $path . build_query($params));
             }

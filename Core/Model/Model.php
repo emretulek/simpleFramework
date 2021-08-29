@@ -9,6 +9,9 @@ use Core\Database\QueryBuilder;
 use Exception;
 
 /**
+ * * @see QueryBuilder::database()
+ * @method static Database database()
+ * ----------------------------------------------------------------------------
  * @see QueryBuilder::pk()
  * @method static QueryBuilder pk($primaryColumn)
  *  * -------------------------------------------------------------------------
@@ -41,6 +44,24 @@ use Exception;
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::orWhere()
  * @method static QueryBuilder orWhere($column, $operant = null, $param = null)
+ * *  *  -------------------------------------------------------------------------
+ * @see QueryBuilder::notBetween()
+ * @method static QueryBuilder notBetween(string $column, $param1, $param2, string $andOR = 'AND')
+ * *  *  -------------------------------------------------------------------------
+ * @see QueryBuilder::between()
+ * @method static QueryBuilder between(string $column, $param1, $param2, string $andOR = 'AND')
+ *  *  -------------------------------------------------------------------------
+ * @see QueryBuilder::notIn()
+ * @method static QueryBuilder notIn(string $column, array $params, string $andOR = 'AND')
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::in()
+ * @method static QueryBuilder in(string $column, array $params, string $andOR = 'AND')
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::notExists()
+ * @method static QueryBuilder notExists(string $query, string $andOR = 'AND')
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::exists()
+ * @method static QueryBuilder exists(string $query, string $andOR = 'AND')
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::isNull()
  * @method static QueryBuilder isNull(string $column, $andOR = 'AND')

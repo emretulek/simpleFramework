@@ -805,7 +805,7 @@ class QueryBuilder
      * @return bool|int
      * @throws SqlErrorException
      */
-    public function softDelete($columns = null, $param = false, bool $force = false)
+    public function softDelete($columns = null, $param = false)
     {
         if (is_array($columns)) {
             return $this->where($columns)->update(['deleted_at' => '{{Now()}}']);

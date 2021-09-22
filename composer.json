@@ -8,7 +8,8 @@
       "": ""
     },
     "files": [
-      "Core/helpers.php"
+      "Core/helpers.php",
+      "Helpers/functions/functions.php"
     ]
   },
   "require": {

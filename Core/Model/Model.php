@@ -9,7 +9,7 @@ use Core\Database\QueryBuilder;
 use Exception;
 
 /**
- * * @see QueryBuilder::database()
+ * @see QueryBuilder::database()
  * @method static Database database()
  * ----------------------------------------------------------------------------
  * @see QueryBuilder::pk()
@@ -34,7 +34,7 @@ use Exception;
  * @method static int|array|bool update($column, $param = false, bool $force = false)
  *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::delete()
- * @method static int|array delete($columns, bool $force = false)
+ * @method static int|array delete($columns = null, $param = false, bool $force = false)
  * *   -------------------------------------------------------------------------
  * @see QueryBuilder::softDelete()
  * @method static int|array|bool softDelete($columns)
@@ -44,6 +44,9 @@ use Exception;
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::orWhere()
  * @method static QueryBuilder orWhere($column, $operant = null, $param = null)
+ *  *  -------------------------------------------------------------------------
+ * @see QueryBuilder::like()
+ * @method static QueryBuilder like($column, $param = false, string $andOR = 'AND')
  * *  *  -------------------------------------------------------------------------
  * @see QueryBuilder::notBetween()
  * @method static QueryBuilder notBetween(string $column, $param1, $param2, string $andOR = 'AND')
@@ -68,6 +71,12 @@ use Exception;
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::isNotNull()
  * @method static QueryBuilder isNotNull(string $column, $andOR = 'AND')
+ *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::findInSet()
+ * @method static QueryBuilder findInSet(string $param1, $param2, string $andOR = 'AND')
+ * * -------------------------------------------------------------------------
+ * @see QueryBuilder::notFindInSet()
+ * @method static QueryBuilder notFindInSet(string $param1, $param2, string $andOR = 'AND')
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::limit()
  * @method static QueryBuilder limit(int $length, int $start = 0)
@@ -100,19 +109,16 @@ use Exception;
  * @method static QueryBuilder cover($condition, $callback)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::append()
- * @method static QueryBuilder append(string $raw)
+ * @method static QueryBuilder append(string $raw, array $bindings = [])
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::prepend()
- * @method static QueryBuilder prepend(string $raw)
+ * @method static QueryBuilder prepend(string $raw, array $bindings = [])
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::buildQuery()
  * @method static string buildQuery()
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::bindingParams()
  * @method static array bindingParams()
- *  * -------------------------------------------------------------------------
- * @see QueryBuilder::getQueryType()
- * @method static string getQueryType()
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::find()
  * @method static mixed|array|bool find($param)

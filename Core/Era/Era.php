@@ -690,7 +690,7 @@ class Era
      * @param string $unit[second,minute,hour,day,month,year]
      * @return int
      */
-    public static function dateIntervalTo(DateInterval $dateInterval, $unit = "day"):int
+    public static function dateIntervalTo(DateInterval $dateInterval, string $unit = "day"):int
     {
         $unit = strtolower($unit);
 
@@ -719,42 +719,46 @@ class Era
 
     /**
      * @param bool $short
+     * @param string $defaultFormat
      * @return false|string
      */
-    public function humanDiff($short = false)
+    public function humanDiff(bool $short = false, string $defaultFormat = self::TEXT_BASED_DATE_SHORT)
     {
         $dateInterval = $this->diff(new DateTime(), false);
 
         //year
-        if ($dateInterval->y) {
-            return $this->humanPlaceholder('year', $dateInterval->y, $dateInterval->invert, $short);
-            //month
-        } elseif ($dateInterval->m) {
-            return $this->humanPlaceholder('month', $dateInterval->m, $dateInterval->invert, $short);
-        } elseif ($dateInterval->d) {
+//        if ($dateInterval->y) {
+//            return $this->humanPlaceholder('year', $dateInterval->y, $dateInterval->invert, $short);
+//        }
+        //month
+//        if ($dateInterval->m) {
+//            return $this->humanPlaceholder('month', $dateInterval->m, $dateInterval->invert, $short);
+//        }
 
-            //week
-            if ($dateInterval->d > 7) {
-
-                $week = floor($dateInterval->d / 7);
-                return $this->humanPlaceholder('week', $week, $dateInterval->invert, $short);
+        if ($dateInterval->d) {
+            //day
+            if ($dateInterval->d < 7) {
+                return $this->humanPlaceholder('day', $dateInterval->d, $dateInterval->invert, $short);
             }
 
-            //day
-            return $this->humanPlaceholder('day', $dateInterval->d, $dateInterval->invert, $short);
-            //hour
-        } elseif ($dateInterval->h) {
-            return $this->humanPlaceholder('hour', $dateInterval->h, $dateInterval->invert, $short);
-            //minute
-        } elseif ($dateInterval->i) {
-            return $this->humanPlaceholder('minute', $dateInterval->i, $dateInterval->invert, $short);
-            //second
-        } elseif ($dateInterval->s) {
-            return $this->humanPlaceholder('second', $dateInterval->s, $dateInterval->invert, $short);
-            //default
-        } else {
-            return $this->formatLocale(self::TEXT_BASED_DATE_SHORT);
+            //week
+//            $week = floor($dateInterval->d / 7);
+//            return $this->humanPlaceholder('week', $week, $dateInterval->invert, $short);
         }
+        //hour
+        if ($dateInterval->h) {
+            return $this->humanPlaceholder('hour', $dateInterval->h, $dateInterval->invert, $short);
+        }
+        //minute
+        if ($dateInterval->i) {
+            return $this->humanPlaceholder('minute', $dateInterval->i, $dateInterval->invert, $short);
+        }
+        //second
+        if ($dateInterval->s) {
+            return $this->humanPlaceholder('second', $dateInterval->s, $dateInterval->invert, $short);
+        }
+        //default
+        return $this->formatLocale($defaultFormat);
     }
 
 
@@ -877,7 +881,7 @@ class Era
      * @param string $format
      * @return string
      */
-    public function getTime($format = "H:i:s"): string
+    public function getTime(string $format = "H:i:s"): string
     {
         return $this->formatLocale($format);
     }

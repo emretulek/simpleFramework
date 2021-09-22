@@ -35,7 +35,7 @@ return  array(
     'language' => [
         'key' => 'tr',
         'name' => 'Türkçe',
-        'locale' => 'tr_TR'
+        'locale' => 'TR_tr'
     ],
     /**
      * Charset

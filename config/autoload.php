@@ -10,6 +10,7 @@
 return [
     'files' => [
         #uygulama başlatılmadan önce yüklenecek dosyalar
+        ROOT.'/Helpers/functions/functions'.EXT
     ],
     'aliases' => [
         #static class alies
@@ -45,7 +46,6 @@ return [
 
         #Custom serverproviders
         //Services\DefaultServiceProvider::class => Services\DefaultServiceProvider::class,
-        //Services\LanguageService::class => Services\LanguageService::class,
     ],
     'routes' => [
         ROOT . '/routes/routing' . EXT,

@@ -27,6 +27,9 @@ namespace Core\Facades;
  * @see \Core\Csrf\Csrf::checkCookie()
  * @method static bool checkCookie()
  * ---------------------------------------------
+ * @see \Core\Csrf\Csrf::checkHeader()
+ * @method static bool checkHeader()
+ * ---------------------------------------------
  * @mixin \Core\Csrf\Csrf
  * @see \Core\Csrf\Csrf
  */

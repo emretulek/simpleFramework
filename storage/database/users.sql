@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `users` (
                                        `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
                                        `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                        `deleted_at` datetime DEFAULT NULL,
-                                       `lastLogin` datetime DEFAULT CURRENT_TIMESTAMP,
+                                       `last_login` datetime DEFAULT CURRENT_TIMESTAMP,
                                        `rememberme` varchar(256) DEFAULT NULL,
                                        `activation_code` varchar(256) DEFAULT NULL,
                                        `session_id` varchar(64) DEFAULT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 -- Dumping data for table phpfw.users: ~1 rows (approximately)
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` (`userID`, `username`, `email`, `password`, `roleID`, `ip`, `status`, `name`, `register_ip`, `created_at`, `updated_at`, `deleted_at`, `lastLogin`, `rememberme`, `activation_code`, `session_id`) VALUES
+INSERT INTO `users` (`userID`, `username`, `email`, `password`, `roleID`, `ip`, `status`, `name`, `register_ip`, `created_at`, `updated_at`, `deleted_at`, `last_login`, `rememberme`, `activation_code`, `session_id`) VALUES
 (1, 'admin', 'admin@admin.com', '670b14728ad9902aecba32e22fa4f6bd', 1, NULL, '1', NULL, NULL, '2020-06-29 12:11:12', '2021-05-10 05:46:48', NULL, '2020-06-29 12:11:12', NULL, NULL, NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 

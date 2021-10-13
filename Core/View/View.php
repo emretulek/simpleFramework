@@ -141,11 +141,12 @@ class View
      * Diziyi json header bilgisiyle encode edip buffera alır
      *
      * @param $data
+     * @param null $options
      * @return Response
      */
-    public function json($data): Response
+    public function json($data, $options = null): Response
     {
-        return $this->response()->content($data)->toJson();
+        return $this->response()->content($data)->toJson($options);
     }
 
     /**

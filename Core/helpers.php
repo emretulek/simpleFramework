@@ -555,9 +555,10 @@ if (!function_exists('json')) {
      * Core\View::json metodunun eş değeri
      *
      * @param $data
+     * @param null $options
      * @return Response
      */
-    function json($data): Response
+    function json($data, $options = null): Response
     {
         return view()->json($data);
     }
@@ -571,11 +572,12 @@ if (!function_exists('jsonSuccess')) {
      * @param null $message
      * @param null $location
      * @param null $data
+     * @param null $jsonOptions
      * @return Response
      */
-    function jsonSuccess($message = null, $location = null, $data = null): Response
+    function jsonSuccess($message = null, $location = null, $data = null, $jsonOptions = null): Response
     {
-        return view()->json(['status' => 'success', 'message' => $message, 'location' => $location, 'data' => $data]);
+        return view()->json(['status' => 'success', 'message' => $message, 'location' => $location, 'data' => $data], $jsonOptions);
     }
 }
 
@@ -586,11 +588,12 @@ if (!function_exists('jsonError')) {
      * @param null $message
      * @param null $location
      * @param null $data
+     * @param null $jsonOptions
      * @return Response
      */
-    function jsonError($message = null, $location = null, $data = null): Response
+    function jsonError($message = null, $location = null, $data = null, $jsonOptions = null): Response
     {
-        return view()->json(['status' => 'error', 'message' => $message, 'location' => $location, 'data' => $data]);
+        return view()->json(['status' => 'error', 'message' => $message, 'location' => $location, 'data' => $data], $jsonOptions);
     }
 }
 
@@ -601,11 +604,12 @@ if (!function_exists('jsonWarning')) {
      * @param null $message
      * @param null $location
      * @param null $data
+     * @param null $jsonOptions
      * @return Response
      */
-    function jsonWarning($message = null, $location = null, $data = null): Response
+    function jsonWarning($message = null, $location = null, $data = null, $jsonOptions = null): Response
     {
-        return view()->json(['status' => 'warning', 'message' => $message, 'location' => $location, 'data' => $data]);
+        return view()->json(['status' => 'warning', 'message' => $message, 'location' => $location, 'data' => $data], $jsonOptions);
     }
 }
 

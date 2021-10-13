@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
                                           `data` text,
                                           `userID` int(11) unsigned DEFAULT NULL,
                                           `ip` varchar(50) DEFAULT NULL,
-                                          `referer` varchar(512) DEFAULT NULL,
+                                          `referrer` varchar(512) DEFAULT NULL,
                                           `user_agent` varchar(512) DEFAULT NULL,
                                           `expire` int(11) unsigned NOT NULL,
                                           PRIMARY KEY (`session_id`),

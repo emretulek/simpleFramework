@@ -79,7 +79,7 @@ use Exception;
  * @method static QueryBuilder notFindInSet(string $param1, $param2, string $andOR = 'AND')
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::limit()
- * @method static QueryBuilder limit(int $length, int $start = 0)
+ * @method static QueryBuilder limit(int $limit, int $offset = 0)
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::group()
  * @method static QueryBuilder group(string $column)
@@ -113,6 +113,9 @@ use Exception;
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::prepend()
  * @method static QueryBuilder prepend(string $raw, array $bindings = [])
+ *  * -----------------------------------------------------------------------------
+ * @see QueryBuilder::raw()
+ * @method static QueryBuilder raw(string $raw, array $bindings = [])
  *  * -------------------------------------------------------------------------
  * @see QueryBuilder::buildQuery()
  * @method static string buildQuery()
@@ -146,13 +149,20 @@ use Exception;
  */
 abstract class Model
 {
-    protected static array $instance;
+    protected static array $instance = [];
     protected string $table = "";
     protected string $pk = "";
     protected bool $softDelete = false;
     protected static array $errors = [];
     protected static bool $throw = false;
 
+    /**
+     * constructer
+     */
+    public function __construct()
+    {
+        self::$instance[static::class] = $this;
+    }
 
     /**
      * @return mixed|static
@@ -172,16 +182,16 @@ abstract class Model
     {
         if (method_exists(QueryBuilder::class, $methods)) {
 
-            $queryBuilder = App::getInstance()->resolve(Database::class)->table(self::static()->table);
+            $queryBuilder = App::getInstance()->resolve(Database::class)->table(static::static()->table);
 
-            if (self::static()->table) {
+            if (static::static()->table) {
 
-                if (self::static()->pk) {
-                    $queryBuilder->pk(self::static()->pk);
+                if (static::static()->pk) {
+                    $queryBuilder->pk(static::static()->pk);
                 }
             }
 
-            if (self::static()->softDelete) {
+            if (static::static()->softDelete) {
 
                 if ($methods == 'delete') {
                     return $queryBuilder->softDelete(...$arguments);

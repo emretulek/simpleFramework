@@ -11,8 +11,8 @@ class Csrf
 {
     private App $app;
 
-    //default 5dk
-    private int $tokenTimeout = 60 * 60;
+    //default 2 saat
+    private int $tokenTimeout = 60 * 60 * 2;
 
     public function __construct(App $app)
     {
@@ -35,7 +35,7 @@ class Csrf
      * $_COOKIE csrf_token
      * @param bool $refresh
      */
-    public function generateToken($refresh = false)
+    public function generateToken(bool $refresh = false)
     {
         if($this->session()->get('csrf_token_timeout') < time() || $refresh == true) {
             $token = md5(uniqid());
@@ -117,6 +117,21 @@ class Csrf
             if ($this->request()->server('cache-control') != 'max-age=0') {
                 return false;
             }
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Header bilgisi ile csrf kontrol eder CSRF yoksa false varsa true döner
+     * Header başlığı X-CSRF-TOKEN
+     * @return bool
+     */
+    public function checkHeader(): bool
+    {
+        if ($this->request()->server('x-csrf-token') == $this->token() && $this->isSelfReferer()) {
+            return false;
         }
 
         return true;

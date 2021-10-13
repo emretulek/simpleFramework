@@ -57,7 +57,7 @@ class DatabaseSessionHandler extends BaseSessionHandler
                 'userID' => $this->auth()->userID(),
                 'ip' => $this->request()->forwardedIp(),
                 'user_agent' => $this->request()->userAgent(),
-                'referer' => $this->request()->referer()
+                'referrer' => $this->request()->referer()
             ]);
         } catch (SqlErrorException $e) {
 
@@ -67,7 +67,7 @@ class DatabaseSessionHandler extends BaseSessionHandler
                 'userID' => $this->auth()->userID(),
                 'ip' => $this->request()->forwardedIp(),
                 'user_agent' => $this->request()->userAgent(),
-                'referer' => $this->request()->referer() ?: '{{referer}}'
+                'referrer' => $this->request()->referer() ?: '{{referrer}}'
             ]);
         }
 

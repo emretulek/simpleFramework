@@ -6,15 +6,13 @@ class MysqlQueryBuilder extends QueryBuilder
 {
 
     /**
-     * @param int $length
-     * @param int $start
+     * @param int $limit
+     * @param int $offset
      * @return $this
      */
-    public function limit(int $length, int $start = 0): self
+    public function limit(int $limit, int $offset = 0): self
     {
-        $this->limit = $start ?
-            ' LIMIT ' . $length . ',' . $start :
-            ' LIMIT ' . $length;
+        $this->limit = ' LIMIT ' . $limit . ' OFFSET ' . $offset;
 
         return $this;
     }

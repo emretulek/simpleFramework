@@ -119,7 +119,7 @@ class Response
     /**
      * Header gönderilmemişse temizlenir
      */
-    public function clearHeader():void
+    public function clearHeader(): void
     {
         $this->response['headers'] = [];
 

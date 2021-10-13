@@ -318,8 +318,10 @@ class Language
                 return '';
             }
 
-            $this->routePrefix = $language;
-            $this->setActive($language);
+            if($this->exists($language)) {
+                $this->routePrefix = $language;
+                $this->setActive($language);
+            }
 
             return $this->getKey() == $this->default ? '' : $this->getKey();
         }

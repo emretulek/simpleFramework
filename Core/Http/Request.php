@@ -315,12 +315,12 @@ class Request
      * @param bool $basic
      * @return string
      */
-    public function local($basic = false): string
+    public function local(bool $basic = false): string
     {
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             $local = preg_split("/[,;]/", $_SERVER['HTTP_ACCEPT_LANGUAGE']);
-            if (array_key_exists(0, $local) && ctype_alpha($local) && $basic == false) {
-                return $local;
+            if (array_key_exists(0, $local) && preg_match('/[a-z-]/i', $local[0]) && $basic == false) {
+                return $local[0];
             }
             $local = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
             if (ctype_alpha($local)) {

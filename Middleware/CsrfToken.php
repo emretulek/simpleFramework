@@ -9,7 +9,7 @@ class CsrfToken {
 
     function before()
     {
-        if (Csrf::checkPost()) {
+        if (request()->isAjax() && Csrf::checkHeader()) {
             echo jsonError("Csrf protection.", "");
             exit;
         }

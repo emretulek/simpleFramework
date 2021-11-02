@@ -405,6 +405,20 @@ class QueryBuilder
         return $this;
     }
 
+
+    /**
+     * @param int $limit
+     * @return $this
+     */
+    public function rand(int $limit): self
+    {
+        $this->order .= $this->order ? ', RAND()' : ' ORDER BY RAND()';
+        $this->limit($limit);
+
+        return $this;
+    }
+
+
     /**
      * @param $column
      * @param mixed $operant

@@ -21,10 +21,9 @@ class DatabaseServiceProvider extends ServiceProvider
     {
         $this->app->singleton($name, function ($app) use ($driver) {
 
-            $selectConnectionType = '\\Core\\Database\\' . ucfirst($driver) . 'Connection';
-            $connectionConfig = $app->config['database'][$driver];
+            $selectConnectionType = '\\Core\\Database\\' . ucfirst($app->config['database'][$driver]['driver']) . 'Connection';
 
-            return new Database(new $selectConnectionType($connectionConfig));
+            return new Database(new $selectConnectionType($app->config['database'][$driver]));
         });
     }
 }

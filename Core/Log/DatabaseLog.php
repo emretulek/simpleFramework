@@ -4,6 +4,7 @@ namespace Core\Log;
 
 use Core\Database\Database;
 use Core\Database\QueryBuilder;
+use Core\Era\Era;
 use Exception;
 use RuntimeException;
 
@@ -46,7 +47,8 @@ class DatabaseLog implements LoggerInterface
             return (bool)$this->table()->insert([
                 'message' => $message,
                 'data' => $data,
-                'level' => $level
+                'level' => $level,
+                'time' => Era::now()
             ]);
         } catch (Exception $e) {
             throw new RuntimeException($e->getMessage(), E_WARNING);

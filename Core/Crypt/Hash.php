@@ -93,7 +93,8 @@ class Hash
 
 
     /**
-     * yeni hash üretilmesi gerekiyorsa üretir gerekmiyorsa false döndürür
+     * yeni hash üretilmesi gerekiyorsa üretir ve yeni şifreyi döndürür
+     * yeni hash gerekmiyorsa eski şifreyi döndürür
      *
      * @param string $password
      * @param string $hashedPassword

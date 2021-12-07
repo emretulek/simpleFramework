@@ -160,12 +160,20 @@ class QueryBuilder
      */
     public function between(string $column, $param1, $param2, string $andOR = 'AND'): self
     {
-        if($rawParam1 = $this->paramToRaw($param1)){
+        if ($rawParam1 = $this->paramToRaw($param1)) {
             $param1 = $rawParam1;
+        } else {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $param1;
+            $param1 = $paramName;
         }
 
-        if($rawParam2 = $this->paramToRaw($param2)){
+        if ($rawParam2 = $this->paramToRaw($param2)) {
             $param2 = $rawParam2;
+        } else {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $param2;
+            $param2 = $paramName;
         }
 
         $this->where .= $this->where
@@ -185,12 +193,20 @@ class QueryBuilder
      */
     public function notBetween(string $column, $param1, $param2, string $andOR = 'AND'): self
     {
-        if($rawParam1 = $this->paramToRaw($param1)){
+        if ($rawParam1 = $this->paramToRaw($param1)) {
             $param1 = $rawParam1;
+        } else {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $param1;
+            $param1 = $paramName;
         }
 
-        if($rawParam2 = $this->paramToRaw($param2)){
+        if ($rawParam2 = $this->paramToRaw($param2)) {
             $param2 = $rawParam2;
+        } else {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $param2;
+            $param2 = $paramName;
         }
 
         $this->where .= $this->where
@@ -208,12 +224,17 @@ class QueryBuilder
      */
     public function in(string $column, array $params, string $andOR = 'AND'): self
     {
-        $questionMark = array_fill(0, count($params), '?');
-        array_push($this->params, ...$params);
+        $paramNames = [];
+
+        foreach ($params as $value) {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $value;
+            $paramNames[] = $paramName;
+        }
 
         $this->where .= $this->where
-            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IN (' .implode(',', $questionMark). ')'
-            : ' WHERE ' . $this->quoteColumn($column) . ' IN (' .implode(',', $questionMark). ') ';
+            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' IN (' . implode(',', $paramNames) . ')'
+            : ' WHERE ' . $this->quoteColumn($column) . ' IN (' . implode(',', $paramNames) . ') ';
 
         return $this;
     }
@@ -227,12 +248,17 @@ class QueryBuilder
      */
     public function notIn(string $column, array $params, string $andOR = 'AND'): self
     {
-        $questionMark = array_fill(0, count($params), '?');
-        array_push($this->params, ...$params);
+        $paramNames = [];
+
+        foreach ($params as $value) {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $value;
+            $paramNames[] = $paramName;
+        }
 
         $this->where .= $this->where
-            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' NOT IN (' .implode(',', $questionMark). ')'
-            : ' WHERE ' . $this->quoteColumn($column) . ' NOT IN (' .implode(',', $questionMark). ') ';
+            ? ' ' . $andOR . ' ' . $this->quoteColumn($column) . ' NOT IN (' . implode(',', $paramNames) . ')'
+            : ' WHERE ' . $this->quoteColumn($column) . ' NOT IN (' . implode(',', $paramNames) . ') ';
 
         return $this;
     }
@@ -246,20 +272,21 @@ class QueryBuilder
      */
     public function findInSet(string $param1, $param2, string $andOR = 'AND'): self
     {
-        if(is_array($param2)){
-            array_push($this->params, implode(',', $param2));
-            $param2 = '?';
+        if (is_array($param2)) {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = implode(',', $param2);
+            $param2 = $paramName;
             $param1 = $this->quoteColumn($param1);
-        }else{
-            array_push($this->params, $param1);
-            $param1 = '?';
+        } else {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $param1;
+            $param1 = $paramName;
             $param2 = $this->quoteColumn($param2);
         }
 
-
         $this->where .= $this->where
-            ? ' ' . $andOR .  ' FIND_IN_SET ('.$param1.','.$param2.') '
-            : ' WHERE ' . ' FIND_IN_SET ('.$param1.','.$param2.') ';
+            ? ' ' . $andOR . ' FIND_IN_SET (' . $param1 . ',' . $param2 . ') '
+            : ' WHERE ' . ' FIND_IN_SET (' . $param1 . ',' . $param2 . ') ';
 
         return $this;
     }
@@ -273,20 +300,21 @@ class QueryBuilder
      */
     public function notFindInSet(string $param1, $param2, string $andOR = 'AND'): self
     {
-        if(is_array($param2)){
-            array_push($this->params, implode(',', $param2));
-            $param2 = '?';
+        if (is_array($param2)) {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = implode(',', $param2);
+            $param2 = $paramName;
             $param1 = $this->quoteColumn($param1);
-        }else{
-            array_push($this->params, $param1);
-            $param1 = '?';
+        } else {
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $param1;
+            $param1 = $paramName;
             $param2 = $this->quoteColumn($param2);
         }
 
-
         $this->where .= $this->where
-            ? ' ' . $andOR .  ' NOT FIND_IN_SET ('.$param1.','.$param2.') '
-            : ' WHERE ' . ' NOT FIND_IN_SET ('.$param1.','.$param2.') ';
+            ? ' ' . $andOR . ' NOT FIND_IN_SET (' . $param1 . ',' . $param2 . ') '
+            : ' WHERE ' . ' NOT FIND_IN_SET (' . $param1 . ',' . $param2 . ') ';
 
         return $this;
     }
@@ -297,13 +325,17 @@ class QueryBuilder
      * @param string $andOR
      * @return $this
      */
-    public function exists(string $query, array $bindings = [], string $andOR = 'AND'):self
+    public function exists(string $query, array $bindings = [], string $andOR = 'AND'): self
     {
-        array_push($this->params, ...$bindings);
+        foreach ($bindings as $binding){
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $binding;
+            $query = preg_replace('/\?/', $paramName, $query, 1);
+        }
 
         $this->where .= $this->where
-            ? ' ' . $andOR . ' EXISTS (' .$query. ')'
-            : ' WHERE EXISTS (' .$query. ') ';
+            ? ' ' . $andOR . ' EXISTS (' . $query . ')'
+            : ' WHERE EXISTS (' . $query . ') ';
 
         return $this;
     }
@@ -314,13 +346,17 @@ class QueryBuilder
      * @param string $andOR
      * @return $this
      */
-    public function notExists(string $query, array $bindings = [], string $andOR = 'AND'):self
+    public function notExists(string $query, array $bindings = [], string $andOR = 'AND'): self
     {
-        array_push($this->params, ...$bindings);
+        foreach ($bindings as $binding){
+            $paramName = $this->newParamName();
+            $this->params[$paramName] = $binding;
+            $query = preg_replace('/\?/', $paramName, $query, 1);
+        }
 
         $this->where .= $this->where
-            ? ' ' . $andOR . ' NOT EXISTS (' .$query. ')'
-            : ' WHERE NOT EXISTS (' .$query. ') ';
+            ? ' ' . $andOR . ' NOT EXISTS (' . $query . ')'
+            : ' WHERE NOT EXISTS (' . $query . ') ';
 
         return $this;
     }
@@ -586,7 +622,7 @@ class QueryBuilder
      */
     public function buildQuery(): string
     {
-        if($this->table) {
+        if ($this->table) {
             if ($this->insert) {
                 return $this->prepend . 'INSERT INTO ' . $this->table . ' ' . $this->insert . $this->append;
             }
@@ -620,7 +656,7 @@ class QueryBuilder
      * Hazırlanan sorguyu string ve çalıştırmaya hazır olarak döndürür
      * @return string
      */
-    public function getQuery():string
+    public function getQuery(): string
     {
         try {
             $query = $this->buildQuery();
@@ -740,7 +776,7 @@ class QueryBuilder
      */
     public function getClause($clauseName)
     {
-        if(property_exists($this, $clauseName)){
+        if (property_exists($this, $clauseName)) {
             return $this->$clauseName ?: false;
         }
 
@@ -842,7 +878,7 @@ class QueryBuilder
 
         if (is_array($column)) {
             foreach ($column as $key => $value) {
-                $query[] = $this-> comparison($key, '=', $value, false);
+                $query[] = $this->comparison($key, '=', $value, false);
             }
         } elseif ($param !== false) {
             $query[] = $this->comparison($column, '=', $param, false);

@@ -188,6 +188,7 @@ class Router
     {
         $this->routeID++;
 
+        $this->routes[$this->routeID]['routeID'] = $this->routeID;
         $this->routes[$this->routeID]['requestUri'] = $this->request->requestUri();
         $this->routes[$this->routeID]['pattern'] = $pattern;
         $this->routes[$this->routeID]['cmp'] = $cmp;
@@ -399,10 +400,42 @@ class Router
                     //prefix
                     $this->prefix = $route['prefix'];
 
-                    //Request method check
-                    if (in_array($this->request->method(), $route['method']) == false) {
-                        throw new MethodNotAllowedHttpException("Http method allowed " . implode(",", $route['method']));
+                    //Request method check start
+                    $allPatterns = array_column($this->routes, 'pattern', 'routeID');
+                    $similarRouteIDs = array_filter($allPatterns, function ($key) use ($route){
+                        $pattern1 = $this->routes[$key]['prefix'] . $this->routes[$key]['pattern'];
+                        $pattern2 = $route['prefix'] . $route['pattern'];
+                        return $pattern1 == $pattern2;
+                    }, ARRAY_FILTER_USE_KEY);
+
+                    unset($similarRouteIDs[$route['routeID']]);
+
+                    //if there is route matching method with same pattern
+                    $similarRouteMethods = $route['method'];
+                    $similarRouteMethodsExists = false;
+
+                    foreach ($similarRouteIDs as $key => $similarRouteID){
+                        if(in_array($this->request->method(), $this->routes[$key]['method']) == true){
+                            $similarRouteMethodsExists = true;
+                        }
+                        $similarRouteMethods = array_merge($similarRouteMethods, $this->routes[$key]['method']);
                     }
+
+                    if(in_array($this->request->method(), $route['method']) && $this->request->method('options')){
+                        echo response()->headers([
+                            "Allow" => implode(',', $similarRouteMethods),
+                            "Access-Control-Allow-Methods" => implode(',', $similarRouteMethods),
+                        ])->code(204);
+                        return;
+                    }
+
+                    if (in_array($this->request->method(), $route['method']) == false) {
+                        if($similarRouteMethodsExists) {
+                            continue;
+                        }
+                        throw new MethodNotAllowedHttpException("Http method not allowed " . $this->request->method());
+                    }
+                    //Request method check end
 
                     //load middlewares before
                     foreach ($route['middleware'] as $middleware) {

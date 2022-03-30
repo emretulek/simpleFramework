@@ -170,7 +170,7 @@ class Router
         if (is_array($middleware)) {
             $this->routes[$this->routeID]['middleware'] = array_merge($this->routes[$this->routeID]['middleware'], $middleware);
         } else {
-            array_push($this->routes[$this->routeID]['middleware'], $middleware);
+            $this->routes[$this->routeID]['middleware'][] = $middleware;
         }
 
         return $this;
@@ -181,10 +181,10 @@ class Router
      *
      * @param string $pattern yönlendirilecek istek deseni (regex)
      * @param string|callback $cmp İsteğin yönlendirileceği callback veya controller
-     * @param null $method zorlanacak istek türü POST, GET
+     * @param array|null $method zorlanacak istek türü POST, GET
      * @return Router
      */
-    private function addRoute(string $pattern, $cmp, $method): self
+    private function addRoute(string $pattern, $cmp, ?array $method): self
     {
         $this->routeID++;
 
@@ -203,7 +203,7 @@ class Router
             if (is_array($middleware)) {
                 $this->routes[$this->routeID]['middleware'] = array_merge($this->routes[$this->routeID]['middleware'], $middleware);
             } else {
-                array_push($this->routes[$this->routeID]['middleware'], $middleware);
+                $this->routes[$this->routeID]['middleware'][] = $middleware;
             }
         }
 
@@ -415,16 +415,16 @@ class Router
                     $similarRouteMethodsExists = false;
 
                     foreach ($similarRouteIDs as $key => $similarRouteID){
-                        if(in_array($this->request->method(), $this->routes[$key]['method']) == true){
+                        if(in_array($this->request->method(), $this->routes[$key]['method'])){
                             $similarRouteMethodsExists = true;
                         }
                         $similarRouteMethods = array_merge($similarRouteMethods, $this->routes[$key]['method']);
                     }
 
-                    if(in_array($this->request->method(), $route['method']) && $this->request->method('options')){
+                    if($similarRouteMethods && $this->request->method('options')){
                         echo response()->headers([
                             "Allow" => implode(',', $similarRouteMethods),
-                            "Access-Control-Allow-Methods" => implode(',', $similarRouteMethods),
+                            "Access-Control-Allow-Methods" => implode(',', array_merge($similarRouteMethods, ["OPTIONS"])),
                         ])->code(204);
                         return;
                     }

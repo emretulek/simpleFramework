@@ -67,7 +67,7 @@ trait Attempt
      * @param string $string
      * @return string
      */
-    protected function hash(string $string)
+    protected function hash(string $string): string
     {
         return md5('attempt_'.$string.request()->ip());
     }

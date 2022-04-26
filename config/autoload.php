@@ -26,6 +26,7 @@ return [
         'db' => Core\Facades\DB::class,
         'language' => Core\Facades\Language::class,
         'auth' => Core\Facades\Auth::class,
+        'authJWT' => Core\Facades\AuthJWT::class,
         'hook' => Core\Facades\Hook::class,
         'cache' => Core\Facades\Cache::class,
         'logger' => Core\Facades\Logger::class,

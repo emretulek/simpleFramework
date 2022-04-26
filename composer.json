@@ -21,7 +21,8 @@
     "ext-mbstring": "*",
     "ext-openssl": "*"
   },
-  "suggest": {
+  "suggested": {
+    "firebase/php-jwt": "^v5.5.0",
     "ext-memcached": "*",
     "ext-apcu": "*",
     "ext-redis": "*"

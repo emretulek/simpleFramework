@@ -14,6 +14,7 @@ class Hook extends \Core\Facades\Hook{}
 class Session extends \Core\Facades\Session {}
 class Cookie extends \Core\Facades\Cookie {}
 class Auth extends \Core\Facades\Auth{}
+class AuthJWT extends \Core\Facades\AuthJWT{}
 class Cache extends \Core\Facades\Cache {}
 class Logger extends \Core\Facades\Logger{}
 

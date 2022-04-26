@@ -13,6 +13,7 @@ use Core\Http\Request;
 use Core\Session\Session;
 use DateInterval;
 use Core\Era\Era;
+use Exception;
 
 
 /**
@@ -38,7 +39,7 @@ class Auth
      */
     public array $userWhere = [
         'deleted_at' => null,
-        'status' => 1
+        'status'     => 1
     ];
 
     protected array $sessionNotStored = [
@@ -55,14 +56,14 @@ class Auth
     {
         $this->app = $app;
 
-        $this->table = $this->app->config['auth']['table'] ?? $this->table;
-        $this->tokenName = $this->app->config['auth']['token_name'] ?? $this->tokenName;
-        $this->multiDevice = $this->app->config['auth']['multi_device'] ?? $this->tokenName;
-        $this->userWhere = $this->app->config['auth']['user_where'] ?? $this->userWhere;
+        $this->table            = $this->app->config['auth']['table'] ?? $this->table;
+        $this->tokenName        = $this->app->config['auth']['token_name'] ?? $this->tokenName;
+        $this->multiDevice      = $this->app->config['auth']['multi_device'] ?? $this->tokenName;
+        $this->userWhere        = $this->app->config['auth']['user_where'] ?? $this->userWhere;
         $this->sessionNotStored = $this->app->config['auth']['session_not_stored'] ?? $this->sessionNotStored;
 
-        $this->attempt = $this->app->config['auth']['login_attempt'] ?? $this->attempt;
-        $this->attemptMax = $this->app->config['auth']['login_attempt_max'] ?? $this->attemptMax;
+        $this->attempt        = $this->app->config['auth']['login_attempt'] ?? $this->attempt;
+        $this->attemptMax     = $this->app->config['auth']['login_attempt_max'] ?? $this->attemptMax;
         $this->attemptTimeout = $this->app->config['auth']['login_attempt_timeout'] ?? $this->attemptTimeout;
 
         if ($this->check()) {
@@ -78,6 +79,7 @@ class Auth
      * @param array $where
      * @return bool
      * @throws AuthError
+     * @throws SqlErrorException
      */
     public function loginWithUserName(string $password, string $userName, $remember = 0, array $where = []): bool
     {
@@ -94,6 +96,7 @@ class Auth
      * @param array $where
      * @return bool
      * @throws AuthError
+     * @throws SqlErrorException
      */
     public function loginWithEmail(string $password, string $email, $remember = 0, array $where = []): bool
     {
@@ -110,6 +113,7 @@ class Auth
      * @param array $where
      * @return bool
      * @throws AuthError
+     * @throws SqlErrorException
      */
     public function loginWithEmailOrUserName(string $password, string $userNameOrEmail, $remember = 0, array $where = []): bool
     {
@@ -128,8 +132,9 @@ class Auth
      * @return bool
      * @throws AuthError
      * @throws SqlErrorException
+     * @throws Exception
      */
-    public function login(string $password, array $userInfo = [], $remember = 0):bool
+    public function login(string $password, array $userInfo = [], $remember = 0): bool
     {
         $user = $this->findUserWithPassword($password, $userInfo);
 
@@ -146,7 +151,7 @@ class Auth
         $this->table()->where('userID', $user->userID)->update([
             'session_id' => session_id(),
             'last_login' => Era::now(),
-            'ip' => $this->request()->ip()
+            'ip'         => $this->request()->ip()
         ]);
 
         return true;
@@ -156,6 +161,7 @@ class Auth
     /**
      * Kullanıcı session bilgilerini oluşturur
      * @param $user
+     * @throws SqlErrorException
      */
     public function generateUserSessions($user)
     {
@@ -196,7 +202,7 @@ class Auth
         }
 
         //login attempt
-        if($this->checkAttempt($user->email)){
+        if ($this->checkAttempt($user->email)) {
             throw new AuthError(AuthError::TOOMANYATTEMPTS);
         }
 
@@ -236,7 +242,7 @@ class Auth
      * @return false
      * @throws SqlErrorException
      */
-    public function rememberMe()
+    public function rememberMe(): bool
     {
         $remembermeToken = $this->cookie()->get($this->tokenName);
 
@@ -327,7 +333,7 @@ class Auth
     {
         if ($this->check()) {
             $permissions = is_array($permissions) ? $permissions : [$permissions];
-            $perm = array_intersect($permissions, $this->authSession('permissions.permissions'));
+            $perm        = array_intersect($permissions, $this->authSession('permissions.permissions'));
 
             if ($perm == $permissions) {
                 return true;
@@ -401,12 +407,14 @@ class Auth
 
     /**
      * Gruba ait izin ve bilgileri döndürür
+     * @param $roleID
      * @return array [groupID, groupName, permissions]
+     * @throws SqlErrorException
      */
-    protected function userPermissions($roleID)
+    protected function userPermissions($roleID): array
     {
-        $permissions['roleID'] = $roleID;
-        $permissions['role_name'] = $this->getRoleName($roleID);
+        $permissions['roleID']      = $roleID;
+        $permissions['role_name']   = $this->getRoleName($roleID);
         $permissions['permissions'] = [];
 
         $rolePerms = $this->app->resolve(Database::class)->table('role_permissions rp')

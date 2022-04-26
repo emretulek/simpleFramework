@@ -123,6 +123,18 @@ use Exception;
  * @see QueryBuilder::bindingParams()
  * @method static array bindingParams()
  *  * -------------------------------------------------------------------------
+ * @see QueryBuilder::get()
+ * @method static array|string|string[] get(int $fetchStyle = PDO::FETCH_OBJ)
+ * * -------------------------------------------------------------------------
+ * @see QueryBuilder::getVar()
+ * @method static mixed getVar()
+ * * -------------------------------------------------------------------------
+ * @see QueryBuilder::getRow()
+ * @method static mixed getRow(int $fetchStyle = PDO::FETCH_OBJ)
+ * * -------------------------------------------------------------------------
+ * @see QueryBuilder::getCol()
+ * @method static mixed getCol()
+ * * ------------------------------------------------------------------------
  * @see QueryBuilder::find()
  * @method static mixed|array|bool find($param)
  *  * -------------------------------------------------------------------------

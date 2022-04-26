@@ -200,21 +200,23 @@ class Era
      * Date constructor.
      * @param string $datetime
      * @param null $timezone
-     * @throws Exception
      */
-    public function __construct($datetime = 'now', $timezone = null)
+    public function __construct(string $datetime = 'now', $timezone = null)
     {
-        $timezone = $timezone ? new DateTimeZone($timezone) : null;
-        $this->dateTime = new DateTime($datetime, $timezone);
+        try {
+            $timezone       = $timezone ? new DateTimeZone($timezone) : null;
+            $this->dateTime = new DateTime($datetime, $timezone);
 
-        $this->locale = setlocale(LC_TIME, 0);
+            $this->locale = setlocale(LC_TIME, 0);
+        }catch (Exception $e){
+            debug($e);
+        }
     }
 
 
     /**
      * @param null $timezone
      * @return static
-     * @throws Exception
      */
     public static function now($timezone = null): self
     {
@@ -225,7 +227,6 @@ class Era
     /**
      * @param null $timezone
      * @return static
-     * @throws Exception
      */
     public static function today($timezone = null): self
     {
@@ -236,7 +237,6 @@ class Era
     /**
      * @param null $timezone
      * @return static
-     * @throws Exception
      */
     public static function tomorrow($timezone = null): self
     {
@@ -247,7 +247,6 @@ class Era
     /**
      * @param null $timezone
      * @return static
-     * @throws Exception
      */
     public static function yesterday($timezone = null): self
     {
@@ -276,7 +275,6 @@ class Era
     /**
      * @param string $dateTime
      * @return Era
-     * @throws Exception
      */
     public static function parse(string $dateTime): self
     {
@@ -287,7 +285,6 @@ class Era
      * @param string $format
      * @param string $datetime
      * @return Era
-     * @throws Exception
      */
     public static function createFromFormat(string $format, string $datetime): self
     {
@@ -363,9 +360,10 @@ class Era
     /**
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute default true
-     * @return DateInterval|false
+     * @return DateInterval
+     * @throws Exception
      */
-    public function diff($targetDate, $absolute = true)
+    public function diff($targetDate, bool $absolute = true): DateInterval
     {
         if (is_string($targetDate)) {
             $targetDateTime = new DateTime($targetDate);
@@ -383,8 +381,9 @@ class Era
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute
      * @return float
+     * @throws Exception
      */
-    public function diffMilliSecond($targetDate, $absolute = true): float
+    public function diffMilliSecond($targetDate, bool $absolute = true): float
     {
         return $this->diff($targetDate, $absolute)->f;
     }
@@ -393,8 +392,9 @@ class Era
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute
      * @return int
+     * @throws Exception
      */
-    public function diffSecond($targetDate, $absolute = true): int
+    public function diffSecond($targetDate, bool $absolute = true): int
     {
         return $this->diff($targetDate, $absolute)->s;
     }
@@ -403,8 +403,9 @@ class Era
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute
      * @return int
+     * @throws Exception
      */
-    public function diffMinute($targetDate, $absolute = true): int
+    public function diffMinute($targetDate, bool $absolute = true): int
     {
         return $this->diff($targetDate, $absolute)->i;
     }
@@ -414,8 +415,9 @@ class Era
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute
      * @return int
+     * @throws Exception
      */
-    public function diffHour($targetDate, $absolute = true): int
+    public function diffHour($targetDate, bool $absolute = true): int
     {
         return $this->diff($targetDate, $absolute)->h;
     }
@@ -425,8 +427,9 @@ class Era
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute
      * @return int
+     * @throws Exception
      */
-    public function diffDay($targetDate, $absolute = true): int
+    public function diffDay($targetDate, bool $absolute = true): int
     {
         return $this->diff($targetDate, $absolute)->d;
     }
@@ -436,8 +439,9 @@ class Era
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute
      * @return int
+     * @throws Exception
      */
-    public function diffMonth($targetDate, $absolute = true): int
+    public function diffMonth($targetDate, bool $absolute = true): int
     {
         return $this->diff($targetDate, $absolute)->m;
     }
@@ -447,8 +451,9 @@ class Era
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute
      * @return int
+     * @throws Exception
      */
-    public function diffYear($targetDate, $absolute = true): int
+    public function diffYear($targetDate, bool $absolute = true): int
     {
         return $this->diff($targetDate, $absolute)->y;
     }
@@ -458,8 +463,9 @@ class Era
      * @param DateTimeInterface|Era|string $targetDate
      * @param bool $absolute
      * @return int
+     * @throws Exception
      */
-    public function diffDays($targetDate, $absolute = true): int
+    public function diffDays($targetDate, bool $absolute = true): int
     {
         return $this->diff($targetDate, $absolute)->days;
     }
@@ -776,7 +782,7 @@ class Era
         $locale = $locale ?: $this->locale;
         $locale = strtolower($locale);
 
-        if ($short == false) {
+        if (!$short) {
             $placeholder = $invert ? ':ph-after' : ':ph-before';
         }
 

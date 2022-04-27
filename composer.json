@@ -19,7 +19,8 @@
     "ext-json": "*",
     "ext-ctype": "*",
     "ext-mbstring": "*",
-    "ext-openssl": "*"
+    "ext-openssl": "*",
+    "firebase/php-jwt": "^6.1"
   },
   "suggested": {
     "firebase/php-jwt": "^v5.5.0",

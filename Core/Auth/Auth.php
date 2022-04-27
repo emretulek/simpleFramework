@@ -195,20 +195,19 @@ class Auth
     {
         $userInfo = array_merge($this->userWhere, $userInfo);
 
-        $query = $this->table()->select();
-
-        if (!$user = $query->where($userInfo)->getRow()) {
-            throw new AuthError(AuthError::USER_NOT_FOUND);
+        //login attempt
+        if ($this->checkAttempt(implode($userInfo))) {
+            throw new AuthError(AuthError::TOOMANYATTEMPTS);
         }
 
-        //login attempt
-        if ($this->checkAttempt($user->email)) {
-            throw new AuthError(AuthError::TOOMANYATTEMPTS);
+        if (!$user = $this->table()->where($userInfo)->getRow()) {
+            $this->setAttempt(implode($userInfo));
+            throw new AuthError(AuthError::USER_NOT_FOUND);
         }
 
         //şifre kontrolü
         if (!$rehash = $this->app->resolve(Hash::class)->passwordCheck($password, $user->password)) {
-            $this->setAttempt($user->email);
+            $this->setAttempt(implode($userInfo));
             throw new AuthError(AuthError::PASSWORD_MISMATCH);
         }
 
@@ -217,7 +216,7 @@ class Auth
             $this->table()->where('userID', $user->userID)->update(['password', $rehash]);
         }
 
-        $this->clearAttempt($user->email);
+        $this->clearAttempt(implode($userInfo));
 
         return $user;
     }

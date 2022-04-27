@@ -73,7 +73,7 @@ class AuthJWT
      * @param string $userName
      * @param int|DateInterval|Era $remember
      * @param array $where
-     * @return bool
+     * @return string
      * @throws AuthError
      * @throws SqlErrorException
      */
@@ -165,20 +165,19 @@ class AuthJWT
     {
         $userInfo = array_merge($this->userWhere, $userInfo);
 
-        $query = $this->table()->select();
-
-        if (!$user = $query->where($userInfo)->getRow()) {
-            throw new AuthError(AuthError::USER_NOT_FOUND);
+        //login attempt
+        if ($this->checkAttempt(implode($userInfo))) {
+            throw new AuthError(AuthError::TOOMANYATTEMPTS);
         }
 
-        //login attempt
-        if ($this->checkAttempt($user->email)) {
-            throw new AuthError(AuthError::TOOMANYATTEMPTS);
+        if (!$user = $this->table()->where($userInfo)->getRow()) {
+            $this->setAttempt(implode($userInfo));
+            throw new AuthError(AuthError::USER_NOT_FOUND);
         }
 
         //şifre kontrolü
         if (!$rehash = $this->app->resolve(Hash::class)->passwordCheck($password, $user->password)) {
-            $this->setAttempt($user->email);
+            $this->setAttempt(implode($userInfo));
             throw new AuthError(AuthError::PASSWORD_MISMATCH);
         }
 
@@ -187,7 +186,7 @@ class AuthJWT
             $this->table()->where('userID', $user->userID)->update(['password', $rehash]);
         }
 
-        $this->clearAttempt($user->email);
+        $this->clearAttempt(implode($userInfo));
 
         return $user;
     }
@@ -200,7 +199,7 @@ class AuthJWT
     public function check(): bool
     {
         try {
-            $data = JWT::decode($this->getToken(), $this->secret, [$this->algo]);
+            $data       = JWT::decode($this->getToken(), $this->secret, [$this->algo]);
             $this->user = $this->table()->select()->where('userID', $data->data->userID)->getRow();
         } catch (Exception $e) {
             return false;
@@ -228,7 +227,7 @@ class AuthJWT
     /**
      * @return string
      */
-    protected function getToken():string
+    protected function getToken(): string
     {
         $bearer = request()->server($this->jwtHeader);
         return str_replace("Bearer ", "", $bearer);
@@ -324,8 +323,8 @@ class AuthJWT
 
         try {
             $rolePerms = $this->app->resolve(Database::class)->table('role_permissions rp')
-                ->join('permissions p', 'rp.permissionID = p.permissionID')
-                ->select('p.permissionID, p.perm_name')->where('rp.roleID', $roleID)->get();
+                                   ->join('permissions p', 'rp.permissionID = p.permissionID')
+                                   ->select('p.permissionID, p.perm_name')->where('rp.roleID', $roleID)->get();
 
             foreach ($rolePerms as $rolePerm) {
                 $permissions['permissions'][$rolePerm->permissionID] = $rolePerm->perm_name;
@@ -346,9 +345,9 @@ class AuthJWT
     {
         try {
             return $this->app->resolve(Database::class)->table("user_roles")
-                ->select('role_name')
-                ->where('roleID', $roleID)
-                ->getVar();
+                             ->select('role_name')
+                             ->where('roleID', $roleID)
+                             ->getVar();
         } catch (Exception $e) {
             debug($e);
         }

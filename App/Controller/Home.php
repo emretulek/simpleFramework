@@ -18,7 +18,7 @@ class Home extends Controller
         ]);*/
 
         return layout('index', [
-            'content' => 'This content here'
+            'content' => 'This content here',
         ]);
     }
 }

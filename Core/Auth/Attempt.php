@@ -10,9 +10,9 @@ use Core\Cache\CacheInterface;
 trait Attempt
 {
 
-    protected bool $attempt = true;
-    protected int $attemptMax = 3;
-    protected int $attemptTimeout = 60;
+    protected bool $attempt        = true;
+    protected int  $attemptMax     = 3;
+    protected int  $attemptTimeout = 60;
 
 
     /**
@@ -23,9 +23,7 @@ trait Attempt
     private function checkAttempt(string $string): bool
     {
         if ($this->attempt) {
-
             if ($this->cache()->get($this->hash($string)) >= $this->attemptMax) {
-
                 return true;
             }
         }
@@ -69,7 +67,7 @@ trait Attempt
      */
     protected function hash(string $string): string
     {
-        return md5('attempt_'.$string.request()->ip());
+        return md5('attempt_' . $string . request()->ip());
     }
 
     /**

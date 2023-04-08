@@ -37,6 +37,8 @@ class Router
 
     private string $controller = 'home';
     private string $method = 'index';
+    private string $middlewareBeforeMethod = 'before';
+    private string $middlewareAfterMethod = 'after';
     private array $params = [];
 
     private array $errors = [];
@@ -386,7 +388,7 @@ class Router
      *
      * @return void
      */
-    public function start()
+    public function start(): void
     {
         try {
 
@@ -439,8 +441,8 @@ class Router
 
                     //load middlewares before
                     foreach ($route['middleware'] as $middleware) {
-                        if (is_callable([$middleware, 'before'])) {
-                            call_user_func([new $middleware, 'before']);
+                        if (method_exists($middleware, $this->middlewareBeforeMethod)) {
+                            call_user_func([new $middleware, $this->middlewareBeforeMethod]);
                         }
                     }
 
@@ -451,23 +453,23 @@ class Router
                         $response = $this->startController($route, $matches);
                     }
 
+                    //if response is view instance
+                    if ($response instanceof View) {
+                        $response = $response->response();
+                    }
+
+                    if(!$response instanceof Response){
+                        $response = $this->app->resolve(Response::class)->content($response);
+                    }
+
                     //load middleware after
                     foreach ($route['middleware'] as $middleware) {
-                        if (is_callable([$middleware, 'after'])) {
-                            $response = call_user_func([new $middleware, 'after'], $response);
+                        if (method_exists($middleware, $this->middlewareAfterMethod)) {
+                            $response = call_user_func([new $middleware, $this->middlewareAfterMethod], $response);
                         }
                     }
 
-                    //if response view or response class
-                    if ($response instanceof View || $response instanceof Response) {
-                        echo $response;
-                        return;
-                    }
-
-                    if(!is_null($response)){
-                        echo $this->app->resolve(Response::class)->content($response);
-                        return;
-                    }
+                    echo $response;
 
                     return;
                 }

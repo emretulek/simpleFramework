@@ -150,7 +150,7 @@ class Response
      */
     public function send()
     {
-        echo $this->setResponce();
+        echo $this->setResponse();
     }
 
 
@@ -159,13 +159,13 @@ class Response
      */
     public function __toString(): string
     {
-        return $this->setResponce();
+        return $this->setResponse();
     }
 
     /**
      * @return string
      */
-    private function setResponce(): string
+    private function setResponse(): string
     {
         $body = $this->getBody();
 

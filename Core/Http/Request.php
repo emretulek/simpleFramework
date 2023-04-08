@@ -99,7 +99,8 @@ class Request
      */
     public function baseUrl(): string
     {
-        return $this->scheme() . '://' . self::host() . rtrim($this->basePath, '/') . '/';
+        $port = $this->port() == 80 || $this->port() == 443 ? '' : ':' . $this->port();
+        return $this->scheme() . '://' . self::host()  . $port . rtrim($this->basePath, '/') . '/';
     }
 
     /**
@@ -308,6 +309,15 @@ class Request
         return $_SERVER['SERVER_NAME'] ?? '';
     }
 
+    /**
+     *
+     * @return string
+     */
+    public function port(): string
+    {
+        return $this->server('server_port');
+    }
+
 
     /**
      * İstek üst bilgisinde varsa dil anahtarını yoksa ön tanımlı dili anahtarını döndürür.
@@ -409,7 +419,7 @@ class Request
     {
         $value = str_replace('-', '_', $value);
         $serverVariable = $_SERVER[strtoupper($value)] ?? $_SERVER['HTTP_' . strtoupper($value)] ?? null;
-        return (string)filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        return (string) filter_var($serverVariable, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     }
 }
 

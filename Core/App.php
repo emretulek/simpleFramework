@@ -29,7 +29,7 @@ class App
     /**
      * semantic version
      */
-    const VERSION = "3.5.4";
+    const VERSION = "3.5.6";
 
     /**
      * @var static
